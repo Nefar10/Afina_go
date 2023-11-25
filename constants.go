@@ -7,6 +7,7 @@ const (
 	BOTNAME_IN_OS         = "AFINA_NAMES"  //Имена бота
 	BOTGENDER_IN_OS       = "AFINA_GENDER" //Пол бота
 	REDIS_IN_OS           = "REDIS_IP"     //Адрес сервера redis
+	REDISDB_IN_OS         = "REDIS_DB"     //Используемая база
 	REDIS_PASS_IN_OS      = "REDIS_PASS"   //Пароль к redis
 	UPDATE_CONFIG_TIMEOUT = 60             //Какая то настройка бота
 	MALE                  = 1              //Мужско пол
@@ -19,6 +20,9 @@ const (
 	BLACKLISTED = 3 //Заблокировано
 	SLEEP       = 0 //Сон
 	RUN         = 1 //Бодрствоание
+	//Quest statuses
+	QUEST_IN_ORIGRESS = 1 //В процессе решения
+	QUEST_SOLVED      = 2 //Решение принято
 	//File links
 	FILES_ALLOW_LIST = "/ds/Allowed.list" //размещение файла с ифнормацией о чатах
 	//Questions

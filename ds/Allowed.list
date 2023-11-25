@@ -1,2 +1,1 @@
-0 All 0 1
-355838520 Owner 2 1
+[{"ChatID":355838520,"UserName":"Owner","AllowState":2,"BotState":1},{"ChatID":0,"UserName":"All","AllowState":0,"BotState":0}]
