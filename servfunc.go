@@ -18,7 +18,7 @@ func AllowChat(chatID int64, username, text string) int {
 		if err != nil {
 			log.Fatal(err)
 		}
-		SendToOwner("Пользователь "+username+" открыл диалог.\nCообщение пользователя \n```\n"+text+"\n```\nРазрешите мне общаться с этим пользователем?", ALLOW)
+		SendToOwner("Пользователь "+username+" открыл диалог.\nCообщение пользователя \n```\n"+text+"\n```\nРазрешите мне общаться с этим пользователем?", ACCESS)
 		defer file.Close()
 
 	}
