@@ -1,4 +1,5 @@
 #!/bin/bash
+#Новый скрипт
   rm -rf Afina_go
   apt-get install git -y
   git clone https://github.com/Nefar10/Afina_go.git
