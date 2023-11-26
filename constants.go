@@ -21,7 +21,7 @@ const (
 	SLEEP       = 0 //Сон
 	RUN         = 1 //Бодрствоание
 	//Quest statuses
-	QUEST_IN_ORIGRESS = 1 //В процессе решения
+	QUEST_IN_PROGRESS = 1 //В процессе решения
 	QUEST_SOLVED      = 2 //Решение принято
 	//File links
 	FILES_ALLOW_LIST = "/ds/Allowed.list" //размещение файла с ифнормацией о чатах
