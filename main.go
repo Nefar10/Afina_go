@@ -273,6 +273,8 @@ func main() {
 				}
 			case "RESTART":
 				{
+					msg := tgbotapi.NewMessage(gOwner, "Перезагружаюсь")
+					gBot.Send(msg)
 					os.Exit(0)
 				}
 			default:
