@@ -269,7 +269,25 @@ func main() {
 				}
 			case "FLUSHCACHE":
 				{
-					continue
+					keys, err = gRedisClient.Keys("QuestState:*").Result() //Пытаемся прочесть все ключи чатов
+					if err != nil {
+						log.Panic(err)
+					}
+					if len(keys) > 0 { //Если ключи были считаны - запомнить их
+						msgString = "Кеш очищен\n"
+						for _, key := range keys {
+							err = gRedisClient.Del(key).Err()
+							if err != nil {
+								log.Panic(err)
+							}
+						}
+						msgString = msgString + "Было удалено " + strconv.Itoa(len(keys)) + " устаревших записей"
+						msg := tgbotapi.NewMessage(gOwner, msgString)
+						gBot.Send(msg)
+					} else {
+						msg := tgbotapi.NewMessage(gOwner, "Очищать нечего")
+						gBot.Send(msg)
+					}
 				}
 			case "RESTART":
 				{
@@ -301,11 +319,15 @@ func main() {
 								{
 									chatItem.AllowState = ALLOW
 									SendToOwner("Доступ предоставлен", NOTHING)
+									msg := tgbotapi.NewMessage(chatItem.ChatID, "Мне позволили с Вами общаться!")
+									gBot.Send(msg)
 								}
 							case DISALLOW:
 								{
 									chatItem.AllowState = DISALLOW
 									SendToOwner("Доступ запрещен", NOTHING)
+									msg := tgbotapi.NewMessage(chatItem.ChatID, "Прошу прощения, для продолжения общения необхоимо оформить подписку.")
+									gBot.Send(msg)
 								}
 							case BLACKLISTED:
 								{
@@ -368,8 +390,8 @@ func main() {
 							}
 						case DISALLOW:
 							{
-								msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Запрещено")
-								msg.ReplyToMessageID = update.Message.MessageID
+								SendToOwner("Пользователь "+update.Message.From.FirstName+" "+update.Message.From.UserName+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться с этим пользователем?", ACCESS, update.Message.Chat.ID)
+
 								//gBot.Send(msg)
 							}
 						case BLACKLISTED:
