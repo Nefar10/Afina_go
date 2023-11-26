@@ -95,6 +95,9 @@ func SendToOwner(mesText string, quest int, chatID ...int64) { //отправк�
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData("Полный сброс", "RESETTODEFAULTS"),
 					tgbotapi.NewInlineKeyboardButtonData("Очистка кеша", "FLUSHCACHE"),
+				),
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("Перезагрузка", "RESTART"),
 				))
 			msg.ReplyMarkup = numericKeyboard
 		}
@@ -263,6 +266,14 @@ func main() {
 						msg := tgbotapi.NewMessage(gOwner, msgString)
 						gBot.Send(msg)
 					}
+				}
+			case "FLUSHCACHE":
+				{
+					continue
+				}
+			case "RESTART":
+				{
+					os.Exit(0)
 				}
 			default:
 				{
