@@ -11,4 +11,5 @@ require (
 require (
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.30.0 // indirect
+	github.com/sashabaranov/go-openai v1.17.9 // indirect
 )

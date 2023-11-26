@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"github.com/go-redis/redis"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/google/uuid"
+	openai "github.com/sashabaranov/go-openai"
 )
 
 type ChatState struct { //Структура для хранения настроек чатов
@@ -27,7 +29,7 @@ type QuestState struct { //струдктура для оперативного 
 	Time       time.Time //текущее время
 }
 
-type Answer struct {
+type Answer struct { //Структура callback
 	CallbackID uuid.UUID //идентификатор вопроса
 	State      int       //ответ
 }
@@ -40,9 +42,11 @@ var gBotGender int             //Пол бота оказывает влияни
 var gChatsStates []ChatState   //Для инициализации списка доступов для чатов. Сохраняется в файл
 var gRedisIP string            //Адрес сервера БД
 var gRedisDB int               //Используемая БД 0-15
+var gAIToken string            //AI API ключ
 var gRedisPASS string          //Пароль к redis
 var gRedisClient *redis.Client //Клиент redis
 var gDir string                //Для хранения текущей директории
+var gLastRequest time.Time
 
 func SendToOwner(mesText string, quest int, chatID ...int64) { //отправка сообщения владельцу
 	var jsonData []byte
@@ -95,8 +99,6 @@ func SendToOwner(mesText string, quest int, chatID ...int64) { //отправк�
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData("Полный сброс", "RESETTODEFAULTS"),
 					tgbotapi.NewInlineKeyboardButtonData("Очистка кеша", "FLUSHCACHE"),
-				),
-				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData("Перезагрузка", "RESTART"),
 				))
 			msg.ReplyMarkup = numericKeyboard
@@ -122,6 +124,7 @@ func init() {
 		gRedisDB = db //запоминаем идентификатор БД
 	}
 	gToken = os.Getenv(TOKEN_NAME_IN_OS)                    //читаем токен бота из переменных окружения
+	gAIToken = os.Getenv(AI_IN_OS)                          //Читаем токен OpenAI из переменных окружения
 	if gBot, err = tgbotapi.NewBotAPI(gToken); err != nil { //инициализируем бота
 		log.Panic(err)
 	} else {
@@ -169,19 +172,21 @@ func init() {
 }
 
 func main() {
-	var err error
-	var itemStr string
-	var jsonData []byte
-	var chatItem ChatState
-	var questItem QuestState
-	var ansItem Answer
-	var keys []string
-	var msgString string
+	var err error            //Для реакции на ошибки
+	var itemStr string       //Оперативное хранение строки json
+	var jsonData []byte      //Строка json конвертированная в byte-код
+	var chatItem ChatState   //Для оперативного хранения структуры ChatState
+	var questItem QuestState //Для оперативного хранения структуры QuestState
+	var ansItem Answer       //Для оперативного хранения структуры Answer
+	var keys []string        //Для оперативного хранения считанных ключей
+	var msgString string     //Для формирования сообщения
+	var prompt string        //Для формирования promt для AI
 	log.Printf("Authorized on account %s", gBot.Self.UserName)
 
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = UPDATE_CONFIG_TIMEOUT
 	updates := gBot.GetUpdatesChan(updateConfig)
+	client := openai.NewClient(gAIToken)
 
 	for update := range updates {
 		if update.CallbackQuery != nil { //Если прилетел ответ на вопрос
@@ -333,6 +338,8 @@ func main() {
 								{
 									chatItem.AllowState = BLACKLISTED
 									SendToOwner("Доступ заблокирован", NOTHING)
+									msg := tgbotapi.NewMessage(chatItem.ChatID, "Поздравляю! Вы были добавлены в список проказников!")
+									gBot.Send(msg)
 								}
 							}
 							jsonData, err = json.Marshal(chatItem) //Конвертируем новое состояние чата в json и записываем в тот же ключ БД
@@ -383,10 +390,60 @@ func main() {
 						switch chatItem.AllowState {
 						case ALLOW:
 							{
-								msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Принято")
+								msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
 								msg.ReplyToMessageID = update.Message.MessageID
-								//Здесь начинается обработка сообщения
-								//gBot.Send(msg)
+								prompt, err = gRedisClient.Get("Dialog:" + strconv.FormatInt(update.Message.Chat.ID, 10)).Result()
+								if err == redis.Nil {
+									prompt = update.Message.From.FirstName + ": " + update.Message.Text + "\n"
+									err = gRedisClient.Set("Dialog:"+strconv.FormatInt(update.Message.Chat.ID, 10), prompt, 0).Err()
+									if err != nil {
+										log.Panic(err)
+									}
+								} else if err != nil {
+									log.Panic(err)
+								} else {
+									prompt = prompt + update.Message.From.FirstName + ": " + update.Message.Text + "\n"
+									err = gRedisClient.Set("Dialog:"+strconv.FormatInt(update.Message.Chat.ID, 10), prompt, 0).Err()
+									if err != nil {
+										log.Panic(err)
+									}
+								}
+								action := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
+								gBot.Send(action)
+								for {
+									currentTime := time.Now()
+									elapsedTime := currentTime.Sub(gLastRequest)
+
+									if elapsedTime >= 20*time.Second {
+										break
+									}
+								}
+								gLastRequest = time.Now()
+								gBot.Send(action)
+								resp, err := client.CreateChatCompletion(
+									context.Background(),
+									openai.ChatCompletionRequest{
+										Model: openai.GPT3Dot5Turbo1106,
+										Messages: []openai.ChatCompletionMessage{
+											{
+												Role:    openai.ChatMessageRoleUser,
+												Content: prompt,
+											},
+										},
+									},
+								)
+
+								if err != nil {
+									log.Printf("ChatCompletion error: %v\n", err)
+									return
+								}
+								msg.Text = resp.Choices[0].Message.Content
+								prompt = prompt + msg.Text
+								err = gRedisClient.Set("Dialog:"+strconv.FormatInt(update.Message.Chat.ID, 10), prompt, 0).Err()
+								if err != nil {
+									log.Panic(err)
+								}
+								gBot.Send(msg)
 							}
 						case DISALLOW:
 							{

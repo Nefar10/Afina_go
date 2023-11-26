@@ -2,17 +2,18 @@ package main
 
 const (
 	//Bot options
-	TOKEN_NAME_IN_OS      = "TB_API_KEY"   //API ключ бота
-	OWNER_IN_OS           = "OWNER"        //ID чата владельца
-	BOTNAME_IN_OS         = "AFINA_NAMES"  //Имена бота
-	BOTGENDER_IN_OS       = "AFINA_GENDER" //Пол бота
-	REDIS_IN_OS           = "REDIS_IP"     //Адрес сервера redis
-	REDISDB_IN_OS         = "REDIS_DB"     //Используемая база
-	REDIS_PASS_IN_OS      = "REDIS_PASS"   //Пароль к redis
-	UPDATE_CONFIG_TIMEOUT = 60             //Какая то настройка бота
-	MALE                  = 1              //Мужско пол
-	FEMALE                = 2              //Женский пол
-	NEUTRAL               = 0              //Хз что это за существо
+	TOKEN_NAME_IN_OS      = "TB_API_KEY"    //API ключ бота
+	AI_IN_OS              = "AFINA_API_KEY" //API OpenAI
+	OWNER_IN_OS           = "OWNER"         //ID чата владельца
+	BOTNAME_IN_OS         = "AFINA_NAMES"   //Имена бота
+	BOTGENDER_IN_OS       = "AFINA_GENDER"  //Пол бота
+	REDIS_IN_OS           = "REDIS_IP"      //Адрес сервера redis
+	REDISDB_IN_OS         = "REDIS_DB"      //Используемая база
+	REDIS_PASS_IN_OS      = "REDIS_PASS"    //Пароль к redis
+	UPDATE_CONFIG_TIMEOUT = 60              //Какая то настройка бота
+	MALE                  = 1               //Мужско пол
+	FEMALE                = 2               //Женский пол
+	NEUTRAL               = 0               //Хз что это за существо
 	//Statuses
 	ALLOW       = 2 //Разрешено
 	DISALLOW    = 0 //Запрещено
