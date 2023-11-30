@@ -15,30 +15,6 @@ import (
 	openai "github.com/sashabaranov/go-openai"
 )
 
-type ChatState struct { //Структура для хранения настроек чатов
-	ChatID      int64                          //Идентификатор чата
-	UserName    string                         //Имя пользователя
-	AllowState  int                            //Флаг разрешения/запрещения доступа
-	BotState    int                            //Состояние бота в чате
-	Type        string                         //Тип чата private,group,supergroup
-	Model       string                         //Выбранная для чата модель общения
-	Temperature float32                        //Креативность бота
-	History     []openai.ChatCompletionMessage //Предыстория чата
-}
-
-type QuestState struct { //струдктура для оперативного хранения вопросов
-	ChatID     int64     //идентификатор чатов
-	CallbackID uuid.UUID //идентификатор запроса
-	Question   int       //тип запроса
-	State      int       //состояние обработки
-	Time       time.Time //текущее время
-}
-
-type Answer struct { //Структура callback
-	CallbackID uuid.UUID //идентификатор вопроса
-	State      int       //ответ
-}
-
 var gBot *tgbotapi.BotAPI      //Указатель на бота
 var gToken string              //API токен бота
 var gOwner int64               //Владелец бота сюда будут приходить служебные сообщения и вопросы от бота
