@@ -34,19 +34,20 @@ const (
 	//File links
 	FILES_ALLOW_LIST = "/ds/Allowed.list" //размещение файла с ифнормацией о чатах
 	//Questions
-	NOTHING  = 0 //ниего не спрашивать
-	ACCESS   = 1 //запрос доступа
-	MENU     = 2 //открыть меню администратора
-	USERMENU = 3 //открыть меню пользователя
-	TUNECHAT = 4 //открыть меню настройки чата
-
-	//PROMTS
+	NOTHING    = 0 //ниего не спрашивать
+	ACCESS     = 1 //запрос доступа
+	MENU       = 2 //открыть меню администратора
+	USERMENU   = 3 //открыть меню пользователя
+	SELECTCHAT = 4 //Выбрать чат
+	TUNECHAT   = 5 //открыть меню настройки чата
+	//PROMPTS
 
 )
 
 type ChatState struct { //Структура для хранения настроек чатов
 	ChatID      int64                          //Идентификатор чата
 	UserName    string                         //Имя пользователя
+	Title       string                         //Название для группового чата
 	AllowState  int                            //Флаг разрешения/запрещения доступа
 	BotState    int                            //Состояние бота в чате
 	Type        string                         //Тип чата private,group,supergroup
@@ -67,3 +68,14 @@ type Answer struct { //Структура callback
 	CallbackID uuid.UUID //идентификатор вопроса
 	State      int       //ответ
 }
+
+var gHsNulled = []openai.ChatCompletionMessage{{Role: openai.ChatMessageRoleUser, Content: ""}}
+var gHsOwner = []openai.ChatCompletionMessage{
+	{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль универсального персонального асисстента. Зови себя - Адам."},
+	{Role: openai.ChatMessageRoleAssistant, Content: "Здравствуйте. Понял, можете называть меня Адам."}}
+var gITAlias = []openai.ChatCompletionMessage{
+	{Role: openai.ChatMessageRoleUser, Content: "Давай поиграем в IT Элиас. Ты будешь в роли ведущего. Правила следующие:\n" +
+		"1) Ты загадываешь сложный термин из области IT поддержки и рассказываешь - что это такое\n" +
+		"2) Ты не должен сообщать загаданный термин пока он не будет отгадан или не закончатся попытки.\n" +
+		"3) У нас есть три попытки, чтобы отгадать очередной загаданный термин. После каждой нашей попытки ты сообщаешь о количестве оставшихся попыток."},
+	{Role: openai.ChatMessageRoleAssistant, Content: "Понял. Я буду загазывать различные термины из области IT поддержки и не буду называть их."}}
