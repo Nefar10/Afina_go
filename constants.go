@@ -89,6 +89,7 @@ type ChatState struct {
 	Model       string                         //GPT model selected
 	Temperature float32                        //Bot's creativity
 	History     []openai.ChatCompletionMessage //Current chat prompts
+	Inity       int                            //Bot's initiativity
 }
 
 // Quest operating structure
@@ -123,6 +124,8 @@ var gITAlias = []openai.ChatCompletionMessage{
 		"3) У нас есть три попытки, чтобы отгадать очередной загаданный термин. После каждой нашей попытки ты сообщаешь о количестве оставшихся попыток.\n" +
 		"4) После завершения каждого тура ты предлагаешь продолжить игру."},
 	{Role: openai.ChatMessageRoleAssistant, Content: "Понял. Я буду загазывать различные термины из области IT поддержки и не буду называть их."}}
+var gIntFacts = []openai.ChatCompletionMessage{
+	{Role: openai.ChatMessageRoleUser, Content: "Расскажи какой-нибудь необычный и интересный факт, начав с фразы 'Интересный факт'"}}
 
 var gBot *tgbotapi.BotAPI      //Pointer to initialized bot
 var gToken string              //Bot API token
