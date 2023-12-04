@@ -228,7 +228,7 @@ func init() {
 	}
 	//Default chat states init
 	gChatsStates = append(gChatsStates, ChatState{ChatID: 0, Model: openai.GPT3Dot5Turbo1106, Inity: 0, Temperature: 1, AllowState: DISALLOW, UserName: "All", BotState: SLEEP, Type: "private", History: gHsNulled})
-	gChatsStates = append(gChatsStates, ChatState{ChatID: gOwner, Model: openai.GPT3Dot5Turbo1106, Inity: 5, Temperature: 1, AllowState: ALLOW, UserName: "Owner", BotState: RUN, Type: "private", History: gHsOwner})
+	gChatsStates = append(gChatsStates, ChatState{ChatID: gOwner, Model: openai.GPT3Dot5Turbo1106, Inity: 2, Temperature: 1, AllowState: ALLOW, UserName: "Owner", BotState: RUN, Type: "private", History: gHsOwner})
 	//Storing default chat states to DB
 	for _, item := range gChatsStates {
 		jsonData, err = json.Marshal(item)
@@ -675,7 +675,7 @@ func main() {
 		}
 	}()
 	for {
-		time.Sleep(time.Second)
+		time.Sleep(time.Minute)
 		rand.Seed(time.Now().UnixNano())    // Инициализация генератора случайных чисел с использованием текущего времени
 		randomNumber := rand.Intn(1000) + 1 // Генерация случайного числа в диапазоне от 1 до 1000
 		keys, err = gRedisClient.Keys("ChatState:*").Result()
