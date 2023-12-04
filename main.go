@@ -137,7 +137,7 @@ func init() {
 	var owner int
 	var db int
 	var jsonData []byte
-
+	gRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 	//Read bot API key from OS env
 	gToken = os.Getenv(TOKEN_NAME_IN_OS)
 	if gToken == "" {
@@ -228,7 +228,7 @@ func init() {
 	}
 	//Default chat states init
 	gChatsStates = append(gChatsStates, ChatState{ChatID: 0, Model: openai.GPT3Dot5Turbo1106, Inity: 0, Temperature: 1, AllowState: DISALLOW, UserName: "All", BotState: SLEEP, Type: "private", History: gHsNulled})
-	gChatsStates = append(gChatsStates, ChatState{ChatID: gOwner, Model: openai.GPT3Dot5Turbo1106, Inity: 2, Temperature: 1, AllowState: ALLOW, UserName: "Owner", BotState: RUN, Type: "private", History: gHsOwner})
+	gChatsStates = append(gChatsStates, ChatState{ChatID: gOwner, Model: openai.GPT3Dot5Turbo1106, Inity: 5, Temperature: 1, AllowState: ALLOW, UserName: "Owner", BotState: RUN, Type: "private", History: gHsOwner})
 	//Storing default chat states to DB
 	for _, item := range gChatsStates {
 		jsonData, err = json.Marshal(item)
@@ -504,7 +504,7 @@ func main() {
 						chatItem.Title = update.Message.Chat.Title
 						chatItem.Model = openai.GPT3Dot5Turbo1106
 						chatItem.Temperature = 1.1
-						chatItem.Inity = 2
+						chatItem.Inity = 5
 						chatItem.History = gHsOwner
 						jsonData, err = json.Marshal(chatItem)
 						err = gRedisClient.Set("ChatState:"+strconv.FormatInt(update.Message.Chat.ID, 10), string(jsonData), 0).Err() //Записываем инфо о чате в БД
@@ -676,8 +676,7 @@ func main() {
 	}()
 	for {
 		time.Sleep(time.Minute)
-		rand.Seed(time.Now().UnixNano())    // Инициализация генератора случайных чисел с использованием текущего времени
-		randomNumber := rand.Intn(1000) + 1 // Генерация случайного числа в диапазоне от 1 до 1000
+		rd := gRand.Intn(1000) + 1
 		keys, err = gRedisClient.Keys("ChatState:*").Result()
 		if err != nil {
 			SendToUser(gOwner, E12+err.Error(), ERROR)
@@ -696,7 +695,7 @@ func main() {
 				SendToUser(gOwner, E14+err.Error(), ERROR)
 				log.Fatalln(err)
 			}
-			if randomNumber <= chatItem.Inity && chatItem.AllowState == ALLOW {
+			if rd <= chatItem.Inity && chatItem.AllowState == ALLOW {
 				act := tgbotapi.NewChatAction(chatItem.ChatID, tgbotapi.ChatTyping)
 				gBot.Send(act) //Здесь мы делаем вид, что бот отреагировал на новое сообщение
 				for {          //Здесь мы делаем паузу, позволяющую не отправлять промпты чаще чем раз в 20 секунд

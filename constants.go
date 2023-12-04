@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math/rand"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -140,3 +141,4 @@ var gRedisPass string          //Password for redis connect
 var gRedisClient *redis.Client //Pointer for redis client
 var gDir string                //Current dir in OS
 var gLastRequest time.Time     //Time of last request to openAI
+var gRand *rand.Rand           //New Rand generator
