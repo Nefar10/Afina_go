@@ -68,13 +68,22 @@ const (
 	E13 = " Error reading key value from DB "
 	E14 = " Error json unmarshaling "
 	E15 = " Error convetring string to int "
+	E16 = " Unknown Error "
+	E17 = " ChatCompletion error: %v\n "
 	//INFO MESSAGES
-	IM0 = " Program has been stoped "
-	IM1 = " Bot name(s) not found or not valid in OS environment.\n Name Afina will be used. "
-	IM2 = " Bot gender not found or not valid in OS environment.\n Neutral gender will be used. "
-	IM3 = " I'm back! "
-	IM4 = " All DB data has been remowed. I'll reboot now "
-	IM5 = " I'll be back "
+	IM0  = " Program has been stoped "
+	IM1  = " Bot name(s) not found or not valid in OS environment.\n Name Afina will be used. "
+	IM2  = " Bot gender not found or not valid in OS environment.\n Neutral gender will be used. "
+	IM3  = " I'm back! "
+	IM4  = " All DB data has been remowed. I'll reboot now "
+	IM5  = " I'll be back "
+	IM6  = " Access granted "
+	IM7  = " I was allowed to communicate with you! "
+	IM8  = " Access denied "
+	IM9  = " I apologize, but to continue the conversation, it is necessary to subscribe. "
+	IM10 = " Access bocked "
+	IM11 = " Congratulations! You have been added to the pranksters list! "
+	IM12 = " Please select what needs to be done. "
 )
 
 // Global types
