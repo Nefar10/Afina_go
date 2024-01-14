@@ -249,13 +249,15 @@ func init() {
 			}
 		}
 	}
+	//OpenAI client init
+	gclient = openai.NewClient(gAIToken)
 	//Send init complete message to owner
 	SendToUser(gOwner, IM3, INFO)
 	log.Println("Initialization complete!")
 
 }
 
-func main() {
+func process_message(update tgbotapi.Update) error {
 	//Temporary variables
 	var err error                                   //Some errors
 	var jsonStr string                              //Current json string
@@ -266,295 +268,197 @@ func main() {
 	var keys []string                               //Curent keys array
 	var msgString string                            //Current message string
 	var ChatMessages []openai.ChatCompletionMessage //Current prompt
-
-	//Telegram update channel init
-	updateConfig := tgbotapi.NewUpdate(0)
-	updateConfig.Timeout = UPDATE_CONFIG_TIMEOUT
-	updates := gBot.GetUpdatesChan(updateConfig)
-	//OpenAI client init
-	client := openai.NewClient(gAIToken)
-
-	//Beginning of message processing
-	go func() {
-		for update := range updates {
-			//Has been recieved callback
-			if update.CallbackQuery != nil {
-				if update.CallbackQuery.Data == "WHITELIST" || update.CallbackQuery.Data == "BLACKLIST" || update.CallbackQuery.Data == "INPROCESS" {
-					keys, err = gRedisClient.Keys("ChatState:*").Result()
+	//Has been recieved callback
+	if update.CallbackQuery != nil {
+		if update.CallbackQuery.Data == "WHITELIST" || update.CallbackQuery.Data == "BLACKLIST" || update.CallbackQuery.Data == "INPROCESS" {
+			keys, err = gRedisClient.Keys("ChatState:*").Result()
+			if err != nil {
+				SendToUser(gOwner, E12+err.Error(), ERROR)
+				log.Fatalln(err)
+			}
+			//keys processing
+			msgString = ""
+			for _, key := range keys {
+				jsonStr, err = gRedisClient.Get(key).Result()
+				if err == redis.Nil {
+					SendToUser(gOwner, E16+err.Error(), ERROR)
+					log.Println(err)
+					continue
+				} else if err != nil {
+					SendToUser(gOwner, E13+err.Error(), ERROR)
+					log.Fatalln(err)
+				} else {
+					err = json.Unmarshal([]byte(jsonStr), &chatItem)
 					if err != nil {
-						SendToUser(gOwner, E12+err.Error(), ERROR)
+						SendToUser(gOwner, E14+err.Error(), ERROR)
 						log.Fatalln(err)
 					}
-					//keys processing
-					msgString = ""
-					for _, key := range keys {
-						jsonStr, err = gRedisClient.Get(key).Result()
-						if err == redis.Nil {
-							SendToUser(gOwner, E16+err.Error(), ERROR)
-							log.Println(err)
-							continue
-						} else if err != nil {
-							SendToUser(gOwner, E13+err.Error(), ERROR)
-							log.Fatalln(err)
+					if chatItem.AllowState == ALLOW && update.CallbackQuery.Data == "WHITELIST" {
+						if chatItem.Type != "private" {
+							msgString = msgString + "ID: " + strconv.FormatInt(chatItem.ChatID, 10) + " ~ " + chatItem.Title + "\n"
 						} else {
-							err = json.Unmarshal([]byte(jsonStr), &chatItem)
-							if err != nil {
-								SendToUser(gOwner, E14+err.Error(), ERROR)
-								log.Fatalln(err)
-							}
-							if chatItem.AllowState == ALLOW && update.CallbackQuery.Data == "WHITELIST" {
-								if chatItem.Type != "private" {
-									msgString = msgString + "ID: " + strconv.FormatInt(chatItem.ChatID, 10) + " ~ " + chatItem.Title + "\n"
-								} else {
-									msgString = msgString + "ID: " + strconv.FormatInt(chatItem.ChatID, 10) + " ~ " + chatItem.UserName + "\n"
-								}
-							}
-							if chatItem.AllowState == DISALLOW && update.CallbackQuery.Data == "BLACKLIST" {
-								if chatItem.Type != "private" {
-									msgString = msgString + "ID: " + strconv.FormatInt(chatItem.ChatID, 10) + " ~ " + chatItem.Title + "\n"
-								} else {
-									msgString = msgString + "ID: " + strconv.FormatInt(chatItem.ChatID, 10) + " ~ " + chatItem.UserName + "\n"
-								}
-							}
-							if chatItem.AllowState == IN_PROCESS && update.CallbackQuery.Data == "INPROCESS" {
-								if chatItem.Type != "private" {
-									msgString = msgString + "ID: " + strconv.FormatInt(chatItem.ChatID, 10) + " ~ " + chatItem.Title + "\n"
-								} else {
-									msgString = msgString + "ID: " + strconv.FormatInt(chatItem.ChatID, 10) + " ~ " + chatItem.UserName + "\n"
-								}
-							}
+							msgString = msgString + "ID: " + strconv.FormatInt(chatItem.ChatID, 10) + " ~ " + chatItem.UserName + "\n"
 						}
 					}
-					SendToUser(gOwner, msgString, SELECTCHAT)
+					if chatItem.AllowState == DISALLOW && update.CallbackQuery.Data == "BLACKLIST" {
+						if chatItem.Type != "private" {
+							msgString = msgString + "ID: " + strconv.FormatInt(chatItem.ChatID, 10) + " ~ " + chatItem.Title + "\n"
+						} else {
+							msgString = msgString + "ID: " + strconv.FormatInt(chatItem.ChatID, 10) + " ~ " + chatItem.UserName + "\n"
+						}
+					}
+					if chatItem.AllowState == IN_PROCESS && update.CallbackQuery.Data == "INPROCESS" {
+						if chatItem.Type != "private" {
+							msgString = msgString + "ID: " + strconv.FormatInt(chatItem.ChatID, 10) + " ~ " + chatItem.Title + "\n"
+						} else {
+							msgString = msgString + "ID: " + strconv.FormatInt(chatItem.ChatID, 10) + " ~ " + chatItem.UserName + "\n"
+						}
+					}
 				}
-				if update.CallbackQuery.Data == "RESETTODEFAULTS" {
-					err := gRedisClient.FlushAll().Err()
+			}
+			SendToUser(gOwner, msgString, SELECTCHAT)
+		}
+		if update.CallbackQuery.Data == "RESETTODEFAULTS" {
+			err := gRedisClient.FlushAll().Err()
+			if err != nil {
+				SendToUser(gOwner, E10+err.Error(), ERROR)
+				log.Fatalln(err)
+			} else {
+				SendToUser(gOwner, IM4, INFO)
+				os.Exit(0)
+			}
+		}
+		if update.CallbackQuery.Data == "FLUSHCACHE" {
+			keys, err = gRedisClient.Keys("QuestState:*").Result()
+			if err != nil {
+				SendToUser(gOwner, E12+err.Error(), ERROR)
+				log.Fatalln(err)
+			}
+			if len(keys) > 0 {
+				msgString = "Кеш очищен\n"
+				for _, key := range keys {
+					err = gRedisClient.Del(key).Err()
 					if err != nil {
 						SendToUser(gOwner, E10+err.Error(), ERROR)
 						log.Fatalln(err)
-					} else {
-						SendToUser(gOwner, IM4, INFO)
-						os.Exit(0)
 					}
 				}
-				if update.CallbackQuery.Data == "FLUSHCACHE" {
-					keys, err = gRedisClient.Keys("QuestState:*").Result()
-					if err != nil {
-						SendToUser(gOwner, E12+err.Error(), ERROR)
-						log.Fatalln(err)
-					}
-					if len(keys) > 0 {
-						msgString = "Кеш очищен\n"
-						for _, key := range keys {
-							err = gRedisClient.Del(key).Err()
-							if err != nil {
-								SendToUser(gOwner, E10+err.Error(), ERROR)
-								log.Fatalln(err)
-							}
-						}
-						SendToUser(gOwner, msgString+"Было удалено "+strconv.Itoa(len(keys))+" устаревших записей.", INFO)
-					} else {
-						SendToUser(gOwner, "Очищать нечего.", INFO)
-					}
-				}
-				if update.CallbackQuery.Data == "RESTART" {
-					SendToUser(gOwner, IM5, INFO)
-					os.Exit(0)
-				}
-				if strings.Contains(update.CallbackQuery.Data, "ID:") {
-					chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
-					chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
-					if err != nil {
-						SendToUser(gOwner, E15+err.Error(), ERROR)
-						log.Fatalln(err)
-					}
-					SendToUser(update.CallbackQuery.From.ID, "Выберите действие c чатом "+chatIDstr, TUNECHAT, chatID)
-				}
-				if strings.Contains(update.CallbackQuery.Data, "CLEAR_CONTEXT:") {
-					chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
-					chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
-					if err != nil {
-						SendToUser(gOwner, E15+err.Error(), ERROR)
-						log.Fatalln(err)
-					}
-					jsonStr, err = gRedisClient.Get("ChatState:" + chatIDstr).Result()
-					if err == redis.Nil {
-						SendToUser(gOwner, E16+err.Error(), ERROR)
-						log.Println(err)
-						break
-					} else if err != nil {
-						SendToUser(gOwner, E13+err.Error(), ERROR)
-						log.Fatalln(err)
-					} else {
-						err = json.Unmarshal([]byte(msgString), &chatItem)
-						if err != nil {
-							SendToUser(gOwner, E14+err.Error(), ERROR)
-							log.Fatalln(err)
-						}
-						ChatMessages = chatItem.History
-						jsonData, err = json.Marshal(ChatMessages)
-						if err != nil {
-							SendToUser(gOwner, E11+err.Error(), ERROR)
-							log.Fatalln(err)
-						}
-						err = gRedisClient.Set("Dialog:"+chatIDstr, string(jsonData), 0).Err()
-						if err != nil {
-							SendToUser(gOwner, E10+err.Error(), ERROR)
-							log.Fatalln(err)
-						}
-						SendToUser(chatID, "Контекст очищен!", NOTHING)
-					}
-				}
-				if strings.Contains(update.CallbackQuery.Data, "GAME_IT_ALIAS") {
-					chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
-					chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
-					if err != nil {
-						SendToUser(gOwner, E15+err.Error(), ERROR)
-						log.Fatalln(err)
-					}
-					jsonStr, err = gRedisClient.Get("ChatState:" + chatIDstr).Result() //Читаем инфо от чате в БД
-					if err == redis.Nil {
-						SendToUser(gOwner, E16+err.Error(), ERROR)
-						log.Println(err)
-						break
-					} else if err != nil {
-						SendToUser(gOwner, E13+err.Error(), ERROR)
-						log.Fatalln(err)
-					} else {
-						err = json.Unmarshal([]byte(msgString), &chatItem)
-						if err != nil {
-							SendToUser(gOwner, E14+err.Error(), ERROR)
-							log.Fatalln(err)
-						}
-						ChatMessages = chatItem.History
-						ChatMessages = append(ChatMessages, gITAlias...)
-						jsonData, err = json.Marshal(ChatMessages)
-						if err != nil {
-							SendToUser(gOwner, E11+err.Error(), ERROR)
-							log.Fatalln(err)
-						}
-						err = gRedisClient.Set("Dialog:"+chatIDstr, string(jsonData), 0).Err() //Записываем диалог в БД
-						if err != nil {
-							SendToUser(gOwner, E10+err.Error(), ERROR)
-							log.Fatalln(err)
-						}
-						SendToUser(chatID, "Пишите - как только будете готовы начать игру.", NOTHING)
-					}
-				}
-				if update.CallbackQuery.Data == "MENU" {
-					if update.CallbackQuery.From.ID == gOwner {
-						SendToUser(gOwner, "Выберите, что необходимо сделать", MENU)
-					} else {
-						SendToUser(update.CallbackQuery.From.ID, "Выберите, что необходимо сделать", USERMENU)
-					}
-				}
-				err = json.Unmarshal([]byte(update.CallbackQuery.Data), &ansItem)
-				if err == nil {
-					jsonStr, err = gRedisClient.Get("QuestState:" + ansItem.CallbackID.String()).Result() //читаем состояние запрса из БД
-					if err == redis.Nil {
-						SendToUser(gOwner, E16+err.Error(), ERROR)
-						log.Println(err)
-					} else if err != nil {
-						SendToUser(gOwner, E13+err.Error(), ERROR)
-						log.Fatalln(err)
-					} else {
-						err = json.Unmarshal([]byte(jsonStr), &questItem)
-						if err != nil {
-							SendToUser(gOwner, E14+err.Error(), ERROR)
-							log.Fatalln(err)
-						}
-						if questItem.State == QUEST_IN_PROGRESS {
-							jsonStr, err = gRedisClient.Get("ChatState:" + strconv.FormatInt(questItem.ChatID, 10)).Result()
-							if err == redis.Nil {
-								SendToUser(gOwner, E16+err.Error(), ERROR)
-								log.Println(err)
-							} else if err != nil {
-								SendToUser(gOwner, E13+err.Error(), ERROR)
-								log.Fatalln(err)
-							} else {
-								err = json.Unmarshal([]byte(jsonStr), &chatItem)
-								if err != nil {
-									SendToUser(gOwner, E14+err.Error(), ERROR)
-									log.Fatalln(err)
-								}
-							}
-							switch ansItem.State { //Изменяем флаг доступа
-							case ALLOW:
-								{
-									chatItem.AllowState = ALLOW
-									SendToUser(gOwner, IM6, INFO)
-									SendToUser(chatItem.ChatID, IM7, INFO)
-								}
-							case DISALLOW:
-								{
-									chatItem.AllowState = DISALLOW
-									SendToUser(gOwner, IM8, INFO)
-									SendToUser(chatItem.ChatID, IM9, INFO)
-								}
-							case BLACKLISTED:
-								{
-									chatItem.AllowState = BLACKLISTED
-									SendToUser(gOwner, IM10, INFO)
-									SendToUser(chatItem.ChatID, IM11, INFO)
-								}
-							}
-							jsonData, err = json.Marshal(chatItem)
-							if err != nil {
-								SendToUser(gOwner, E11+err.Error(), ERROR)
-								log.Fatalln(err)
-							}
-							err = gRedisClient.Set("ChatState:"+strconv.FormatInt(questItem.ChatID, 10), string(jsonData), 0).Err()
-							if err != nil {
-								SendToUser(gOwner, E10+err.Error(), ERROR)
-								log.Fatalln(err)
-							}
-						}
-					}
-				}
-				continue
+				SendToUser(gOwner, msgString+"Было удалено "+strconv.Itoa(len(keys))+" устаревших записей.", INFO)
+			} else {
+				SendToUser(gOwner, "Очищать нечего.", INFO)
 			}
-			if update.Message != nil {
-				if update.Message.IsCommand() { //Begin command processing
-					command := update.Message.Command()
-					switch command {
-					case "menu":
-						if update.Message.Chat.ID == gOwner {
-							SendToUser(gOwner, IM12, MENU)
-						} else {
-							SendToUser(update.Message.Chat.ID, IM12, USERMENU)
-						}
-					}
-					continue
+		}
+		if update.CallbackQuery.Data == "RESTART" {
+			SendToUser(gOwner, IM5, INFO)
+			os.Exit(0)
+		}
+		if strings.Contains(update.CallbackQuery.Data, "ID:") {
+			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
+			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
+			if err != nil {
+				SendToUser(gOwner, E15+err.Error(), ERROR)
+				log.Fatalln(err)
+			}
+			SendToUser(update.CallbackQuery.From.ID, "Выберите действие c чатом "+chatIDstr, TUNECHAT, chatID)
+		}
+		if strings.Contains(update.CallbackQuery.Data, "CLEAR_CONTEXT:") {
+			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
+			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
+			if err != nil {
+				SendToUser(gOwner, E15+err.Error(), ERROR)
+				log.Fatalln(err)
+			}
+			jsonStr, err = gRedisClient.Get("ChatState:" + chatIDstr).Result()
+			if err == redis.Nil {
+				SendToUser(gOwner, E16+err.Error(), ERROR)
+				log.Println(err)
+				return err
+			} else if err != nil {
+				SendToUser(gOwner, E13+err.Error(), ERROR)
+				log.Fatalln(err)
+			} else {
+				err = json.Unmarshal([]byte(jsonStr), &chatItem)
+				if err != nil {
+					SendToUser(gOwner, E14+err.Error(), ERROR)
+					log.Fatalln(err)
 				}
-				if update.Message.Text != "" { //Begin message processing
-					jsonStr, err = gRedisClient.Get("ChatState:" + strconv.FormatInt(update.Message.Chat.ID, 10)).Result()
+				ChatMessages = chatItem.History
+				jsonData, err = json.Marshal(ChatMessages)
+				if err != nil {
+					SendToUser(gOwner, E11+err.Error(), ERROR)
+					log.Fatalln(err)
+				}
+				err = gRedisClient.Set("Dialog:"+chatIDstr, string(jsonData), 0).Err()
+				if err != nil {
+					SendToUser(gOwner, E10+err.Error(), ERROR)
+					log.Fatalln(err)
+				}
+				SendToUser(chatID, "Контекст очищен!", NOTHING)
+			}
+		}
+		if strings.Contains(update.CallbackQuery.Data, "GAME_IT_ALIAS") {
+			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
+			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
+			if err != nil {
+				SendToUser(gOwner, E15+err.Error(), ERROR)
+				log.Fatalln(err)
+			}
+			jsonStr, err = gRedisClient.Get("ChatState:" + chatIDstr).Result() //Читаем инфо от чате в БД
+			if err == redis.Nil {
+				SendToUser(gOwner, E16+err.Error(), ERROR)
+				log.Println(err)
+				return err
+			} else if err != nil {
+				SendToUser(gOwner, E13+err.Error(), ERROR)
+				log.Fatalln(err)
+			} else {
+				err = json.Unmarshal([]byte(jsonStr), &chatItem)
+				if err != nil {
+					SendToUser(gOwner, E14+err.Error(), ERROR)
+					log.Fatalln(err)
+				}
+				ChatMessages = chatItem.History
+				ChatMessages = append(ChatMessages, gITAlias...)
+				jsonData, err = json.Marshal(ChatMessages)
+				if err != nil {
+					SendToUser(gOwner, E11+err.Error(), ERROR)
+					log.Fatalln(err)
+				}
+				err = gRedisClient.Set("Dialog:"+chatIDstr, string(jsonData), 0).Err() //Записываем диалог в БД
+				if err != nil {
+					SendToUser(gOwner, E10+err.Error(), ERROR)
+					log.Fatalln(err)
+				}
+				SendToUser(chatID, "Пишите - как только будете готовы начать игру.", NOTHING)
+			}
+		}
+		if update.CallbackQuery.Data == "MENU" {
+			if update.CallbackQuery.From.ID == gOwner {
+				SendToUser(gOwner, "Выберите, что необходимо сделать", MENU)
+			} else {
+				SendToUser(update.CallbackQuery.From.ID, "Выберите, что необходимо сделать", USERMENU)
+			}
+		}
+		err = json.Unmarshal([]byte(update.CallbackQuery.Data), &ansItem)
+		if err == nil {
+			jsonStr, err = gRedisClient.Get("QuestState:" + ansItem.CallbackID.String()).Result() //читаем состояние запрса из БД
+			if err == redis.Nil {
+				SendToUser(gOwner, E16+err.Error(), ERROR)
+				log.Println(err)
+			} else if err != nil {
+				SendToUser(gOwner, E13+err.Error(), ERROR)
+				log.Fatalln(err)
+			} else {
+				err = json.Unmarshal([]byte(jsonStr), &questItem)
+				if err != nil {
+					SendToUser(gOwner, E14+err.Error(), ERROR)
+					log.Fatalln(err)
+				}
+				if questItem.State == QUEST_IN_PROGRESS {
+					jsonStr, err = gRedisClient.Get("ChatState:" + strconv.FormatInt(questItem.ChatID, 10)).Result()
 					if err == redis.Nil {
-						log.Println(err) //Если записи в БД нет - формирруем новую запись
-						chatItem.ChatID = update.Message.Chat.ID
-						chatItem.BotState = RUN
-						chatItem.AllowState = IN_PROCESS
-						chatItem.UserName = update.Message.From.UserName
-						chatItem.Type = update.Message.Chat.Type
-						chatItem.Title = update.Message.Chat.Title
-						chatItem.Model = openai.GPT3Dot5Turbo1106
-						chatItem.Temperature = 1.1
-						chatItem.Inity = 5
-						chatItem.History = gHsOwner
-						jsonData, err = json.Marshal(chatItem)
-						if err != nil {
-							SendToUser(gOwner, E11+err.Error(), ERROR)
-							log.Fatalln(err)
-						}
-						err = gRedisClient.Set("ChatState:"+strconv.FormatInt(update.Message.Chat.ID, 10), string(jsonData), 0).Err()
-						if err != nil {
-							SendToUser(gOwner, E10+err.Error(), ERROR)
-							log.Fatalln(err)
-						}
-						if update.Message.Chat.Type == "private" {
-							SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.From.UserName+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться с этим пользователем?", ACCESS, update.Message.Chat.ID)
-						} else {
-							SendToUser(gOwner, "В группововм чате "+update.Message.From.FirstName+" "+update.Message.Chat.Title+" открыли диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться в этом чате?", ACCESS, update.Message.Chat.ID)
-						}
+						SendToUser(gOwner, E16+err.Error(), ERROR)
+						log.Println(err)
 					} else if err != nil {
 						SendToUser(gOwner, E13+err.Error(), ERROR)
 						log.Fatalln(err)
@@ -564,232 +468,344 @@ func main() {
 							SendToUser(gOwner, E14+err.Error(), ERROR)
 							log.Fatalln(err)
 						}
-						if chatItem.BotState == RUN {
-							switch chatItem.AllowState { //Если доступ предоставлен
-							case ALLOW:
-								{
-									ChatMessages = nil                                     //Формируем новый диалог
-									msg := tgbotapi.NewMessage(update.Message.Chat.ID, "") //Формирум новый ответ
-									if update.Message.Chat.Type != "private" {             //Если чат не приватный, то ставим отметку - на какое соощение отвечаем
-										msg.ReplyToMessageID = update.Message.MessageID
-									}
-									msgString, err = gRedisClient.Get("Dialog:" + strconv.FormatInt(update.Message.Chat.ID, 10)).Result() //Пытаемся прочесть из БД диалог
-									if err == redis.Nil {                                                                                 //Если диалога в БД нет, формируем новый и записываем в БД
+					}
+					switch ansItem.State { //Изменяем флаг доступа
+					case ALLOW:
+						{
+							chatItem.AllowState = ALLOW
+							SendToUser(gOwner, IM6, INFO)
+							SendToUser(chatItem.ChatID, IM7, INFO)
+						}
+					case DISALLOW:
+						{
+							chatItem.AllowState = DISALLOW
+							SendToUser(gOwner, IM8, INFO)
+							SendToUser(chatItem.ChatID, IM9, INFO)
+						}
+					case BLACKLISTED:
+						{
+							chatItem.AllowState = BLACKLISTED
+							SendToUser(gOwner, IM10, INFO)
+							SendToUser(chatItem.ChatID, IM11, INFO)
+						}
+					}
+					jsonData, err = json.Marshal(chatItem)
+					if err != nil {
+						SendToUser(gOwner, E11+err.Error(), ERROR)
+						log.Fatalln(err)
+					}
+					err = gRedisClient.Set("ChatState:"+strconv.FormatInt(questItem.ChatID, 10), string(jsonData), 0).Err()
+					if err != nil {
+						SendToUser(gOwner, E10+err.Error(), ERROR)
+						log.Fatalln(err)
+					}
+				}
+			}
+		}
+		return nil
+	}
+	if update.Message != nil {
+		if update.Message.IsCommand() { //Begin command processing
+			command := update.Message.Command()
+			switch command {
+			case "menu":
+				if update.Message.Chat.ID == gOwner {
+					SendToUser(gOwner, IM12, MENU)
+				} else {
+					SendToUser(update.Message.Chat.ID, IM12, USERMENU)
+				}
+			}
+			return nil
+		}
+		if update.Message.Text != "" { //Begin message processing
+			jsonStr, err = gRedisClient.Get("ChatState:" + strconv.FormatInt(update.Message.Chat.ID, 10)).Result()
+			if err == redis.Nil {
+				log.Println(err) //Если записи в БД нет - формирруем новую запись
+				chatItem.ChatID = update.Message.Chat.ID
+				chatItem.BotState = RUN
+				chatItem.AllowState = IN_PROCESS
+				chatItem.UserName = update.Message.From.UserName
+				chatItem.Type = update.Message.Chat.Type
+				chatItem.Title = update.Message.Chat.Title
+				chatItem.Model = openai.GPT3Dot5Turbo1106
+				chatItem.Temperature = 1.1
+				chatItem.Inity = 5
+				chatItem.History = gHsOwner
+				jsonData, err = json.Marshal(chatItem)
+				if err != nil {
+					SendToUser(gOwner, E11+err.Error(), ERROR)
+					log.Fatalln(err)
+				}
+				err = gRedisClient.Set("ChatState:"+strconv.FormatInt(update.Message.Chat.ID, 10), string(jsonData), 0).Err()
+				if err != nil {
+					SendToUser(gOwner, E10+err.Error(), ERROR)
+					log.Fatalln(err)
+				}
+				if update.Message.Chat.Type == "private" {
+					SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.From.UserName+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться с этим пользователем?", ACCESS, update.Message.Chat.ID)
+				} else {
+					SendToUser(gOwner, "В группововм чате "+update.Message.From.FirstName+" "+update.Message.Chat.Title+" открыли диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться в этом чате?", ACCESS, update.Message.Chat.ID)
+				}
+			} else if err != nil {
+				SendToUser(gOwner, E13+err.Error(), ERROR)
+				log.Fatalln(err)
+			} else {
+				err = json.Unmarshal([]byte(jsonStr), &chatItem)
+				if err != nil {
+					SendToUser(gOwner, E14+err.Error(), ERROR)
+					log.Fatalln(err)
+				}
+				if chatItem.BotState == RUN {
+					switch chatItem.AllowState { //Если доступ предоставлен
+					case ALLOW:
+						{
+							ChatMessages = nil                                     //Формируем новый диалог
+							msg := tgbotapi.NewMessage(update.Message.Chat.ID, "") //Формирум новый ответ
+							if update.Message.Chat.Type != "private" {             //Если чат не приватный, то ставим отметку - на какое соощение отвечаем
+								msg.ReplyToMessageID = update.Message.MessageID
+							}
+							msgString, err = gRedisClient.Get("Dialog:" + strconv.FormatInt(update.Message.Chat.ID, 10)).Result() //Пытаемся прочесть из БД диалог
+							if err == redis.Nil {                                                                                 //Если диалога в БД нет, формируем новый и записываем в БД
+								log.Println(err)
+								ChatMessages = append(ChatMessages, chatItem.History...)
+								if update.Message.Chat.Type == "private" { //Если текущий чат приватный
+									ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: update.Message.Text})
+								} else { //Если текущи чат групповой записываем первое сообщение чата дополняя его именем текущего собеседника
+									ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: update.Message.From.FirstName + ": " + update.Message.Text})
+								}
+								jsonData, err = json.Marshal(ChatMessages)
+								if err != nil {
+									SendToUser(gOwner, E11+err.Error(), ERROR)
+								}
+								err = gRedisClient.Set("Dialog:"+strconv.FormatInt(update.Message.Chat.ID, 10), string(jsonData), 0).Err() //Записываем диалог в БД
+								if err != nil {
+									SendToUser(gOwner, E10+err.Error(), ERROR) //Здесь могут быть всякие ошибки записи в БД
+									log.Fatalln(err)
+								}
+							} else if err != nil {
+								SendToUser(gOwner, E13+err.Error(), ERROR)
+								log.Fatalln(err)
+							} else { //Если диалог уже существует
+								err = json.Unmarshal([]byte(msgString), &ChatMessages)
+								if err != nil {
+									SendToUser(gOwner, E14+err.Error(), ERROR)
+									log.Fatalln(err)
+								}
+								if update.Message.Chat.Type == "private" { //Если текущий чат приватный
+									ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: update.Message.Text})
+
+								} else { //Если текущи чат групповой дописываем сообщение чата дополняя его именем текущего собеседника
+									ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: update.Message.From.FirstName + ": " + update.Message.Text})
+								}
+								jsonData, err = json.Marshal(ChatMessages)
+								if err != nil {
+									SendToUser(gOwner, E11+err.Error(), ERROR)
+									log.Fatalln(err)
+								}
+								err = gRedisClient.Set("Dialog:"+strconv.FormatInt(update.Message.Chat.ID, 10), string(jsonData), 0).Err() //Записываем диалог в БД
+								if err != nil {
+									SendToUser(gOwner, E10+err.Error(), ERROR) //Здесь могут быть всякие ошибки записи в БД
+									log.Fatalln(err)
+								}
+							}
+							for { //Здесь мы делаем паузу, позволяющую не отправлять промпты чаще чем раз в 20 секунд
+								currentTime := time.Now()
+								elapsedTime := currentTime.Sub(gLastRequest)
+								time.Sleep(time.Second)
+								if elapsedTime >= 20*time.Second {
+									break
+								}
+							}
+							action := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
+							toBotFlag := false
+							for _, name := range gBotNames { //Определим - есть ли в контексте последнего сообщения имя бота
+								if (strings.Contains(strings.ToUpper(update.Message.Text), name)) || (update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.ID == gBot.Self.ID) { //Если имя бота встречается
+									toBotFlag = true
+									break
+								}
+							}
+							if update.Message.Chat.Type == "private" || toBotFlag {
+								gLastRequest = time.Now() //Прежде чем формировать запрос, запомним текущее время
+								for i := 0; i < 3; i++ {
+									gBot.Send(action)                          //Здесь мы продолжаем делать вид, что бот отреагировал на новое сообщение
+									resp, err := gclient.CreateChatCompletion( //Формируем запрос к мозгам
+										context.Background(),
+										openai.ChatCompletionRequest{
+											Model:       chatItem.Model,
+											Temperature: chatItem.Temperature,
+											Messages:    ChatMessages,
+										},
+									)
+									if err != nil {
+										SendToUser(gOwner, E17+err.Error(), ERROR)
 										log.Println(err)
-										ChatMessages = append(ChatMessages, chatItem.History...)
-										if update.Message.Chat.Type == "private" { //Если текущий чат приватный
-											ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: update.Message.Text})
-										} else { //Если текущи чат групповой записываем первое сообщение чата дополняя его именем текущего собеседника
-											ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: update.Message.From.FirstName + ": " + update.Message.Text})
-										}
-										jsonData, err = json.Marshal(ChatMessages)
-										if err != nil {
-											SendToUser(gOwner, E11+err.Error(), ERROR)
-										}
-										err = gRedisClient.Set("Dialog:"+strconv.FormatInt(update.Message.Chat.ID, 10), string(jsonData), 0).Err() //Записываем диалог в БД
-										if err != nil {
-											SendToUser(gOwner, E10+err.Error(), ERROR) //Здесь могут быть всякие ошибки записи в БД
-											log.Fatalln(err)
-										}
-									} else if err != nil {
-										SendToUser(gOwner, E13+err.Error(), ERROR)
-										log.Fatalln(err)
-									} else { //Если диалог уже существует
-										err = json.Unmarshal([]byte(msgString), &ChatMessages)
-										if err != nil {
-											SendToUser(gOwner, E14+err.Error(), ERROR)
-											log.Fatalln(err)
-										}
-										if update.Message.Chat.Type == "private" { //Если текущий чат приватный
-											ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: update.Message.Text})
+										time.Sleep(20 * time.Second)
+									} else {
+										//log.Printf("Чат ID: %d Токенов использовано: %d", update.Message.Chat.ID, resp.Usage.TotalTokens)
+										msg.Text = resp.Choices[0].Message.Content //Записываем ответ в сообщение
+										break
+									}
+								}
+							}
+							ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: msg.Text})
+							jsonData, err = json.Marshal(ChatMessages)
+							if err != nil {
+								SendToUser(gOwner, E11+err.Error(), ERROR)
+								log.Fatalln(err)
+							}
+							err = gRedisClient.Set("Dialog:"+strconv.FormatInt(update.Message.Chat.ID, 10), string(jsonData), 0).Err()
+							if err != nil {
+								SendToUser(gOwner, E10+err.Error(), ERROR)
+								log.Fatalln(err)
+							}
+							gBot.Send(msg)
+						}
+					case DISALLOW:
+						{
+							if update.Message.Chat.Type == "private" {
+								SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.From.UserName+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться с этим пользователем?", ACCESS, update.Message.Chat.ID)
+							} else {
+								SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.Chat.Title+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться в этом чате?", ACCESS, update.Message.Chat.ID)
 
-										} else { //Если текущи чат групповой дописываем сообщение чата дополняя его именем текущего собеседника
-											ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: update.Message.From.FirstName + ": " + update.Message.Text})
-										}
-										jsonData, err = json.Marshal(ChatMessages)
-										if err != nil {
-											SendToUser(gOwner, E11+err.Error(), ERROR)
-											log.Fatalln(err)
-										}
-										err = gRedisClient.Set("Dialog:"+strconv.FormatInt(update.Message.Chat.ID, 10), string(jsonData), 0).Err() //Записываем диалог в БД
-										if err != nil {
-											SendToUser(gOwner, E10+err.Error(), ERROR) //Здесь могут быть всякие ошибки записи в БД
-											log.Fatalln(err)
-										}
-									}
-									for { //Здесь мы делаем паузу, позволяющую не отправлять промпты чаще чем раз в 20 секунд
-										currentTime := time.Now()
-										elapsedTime := currentTime.Sub(gLastRequest)
-										time.Sleep(time.Second)
-										if elapsedTime >= 20*time.Second {
-											break
-										}
-									}
-									action := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
-									toBotFlag := false
-									for _, name := range gBotNames { //Определим - есть ли в контексте последнего сообщения имя бота
-										if (strings.Contains(strings.ToUpper(update.Message.Text), name)) || (update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.ID == gBot.Self.ID) { //Если имя бота встречается
-											toBotFlag = true
-											break
-										}
-									}
-									if update.Message.Chat.Type == "private" || toBotFlag {
-										gLastRequest = time.Now() //Прежде чем формировать запрос, запомним текущее время
-										for i := 0; i < 3; i++ {
-											gBot.Send(action)                         //Здесь мы продолжаем делать вид, что бот отреагировал на новое сообщение
-											resp, err := client.CreateChatCompletion( //Формируем запрос к мозгам
-												context.Background(),
-												openai.ChatCompletionRequest{
-													Model:       chatItem.Model,
-													Temperature: chatItem.Temperature,
-													Messages:    ChatMessages,
-												},
-											)
-											if err != nil {
-												SendToUser(gOwner, E17+err.Error(), ERROR)
-												log.Println(err)
-												time.Sleep(20 * time.Second)
-											} else {
-												//log.Printf("Чат ID: %d Токенов использовано: %d", update.Message.Chat.ID, resp.Usage.TotalTokens)
-												msg.Text = resp.Choices[0].Message.Content //Записываем ответ в сообщение
-												break
-											}
-										}
-									}
-									ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: msg.Text})
-									jsonData, err = json.Marshal(ChatMessages)
-									if err != nil {
-										SendToUser(gOwner, E11+err.Error(), ERROR)
-										log.Fatalln(err)
-									}
-									err = gRedisClient.Set("Dialog:"+strconv.FormatInt(update.Message.Chat.ID, 10), string(jsonData), 0).Err()
-									if err != nil {
-										SendToUser(gOwner, E10+err.Error(), ERROR)
-										log.Fatalln(err)
-									}
-									gBot.Send(msg)
-								}
-							case DISALLOW:
-								{
-									if update.Message.Chat.Type == "private" {
-										SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.From.UserName+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться с этим пользователем?", ACCESS, update.Message.Chat.ID)
-									} else {
-										SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.Chat.Title+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться в этом чате?", ACCESS, update.Message.Chat.ID)
-
-									}
-								}
-							case BLACKLISTED:
-								{
-									if update.Message.Chat.Type == "private" {
-										log.Println("Запрос заблокированного диалога от " + update.Message.From.FirstName + " " + update.Message.From.UserName + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
-									} else {
-										log.Println("Запрос заблокированного диалога от " + update.Message.From.FirstName + " " + update.Message.Chat.Title + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
-									}
-								}
-							case IN_PROCESS:
-								{
-									if update.Message.Chat.Type == "private" {
-										log.Println("Запрос диалога от " + update.Message.From.FirstName + " " + update.Message.From.UserName + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
-									} else {
-										log.Println("Запрос диалога от " + update.Message.From.FirstName + " " + update.Message.Chat.Title + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
-									}
-								}
+							}
+						}
+					case BLACKLISTED:
+						{
+							if update.Message.Chat.Type == "private" {
+								log.Println("Запрос заблокированного диалога от " + update.Message.From.FirstName + " " + update.Message.From.UserName + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
+							} else {
+								log.Println("Запрос заблокированного диалога от " + update.Message.From.FirstName + " " + update.Message.Chat.Title + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
+							}
+						}
+					case IN_PROCESS:
+						{
+							if update.Message.Chat.Type == "private" {
+								log.Println("Запрос диалога от " + update.Message.From.FirstName + " " + update.Message.From.UserName + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
+							} else {
+								log.Println("Запрос диалога от " + update.Message.From.FirstName + " " + update.Message.Chat.Title + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
 							}
 						}
 					}
 				}
 			}
 		}
+	}
+	return nil
+}
+
+func process_initiative() {
+	//Temporary variables
+	var err error                                   //Some errors
+	var jsonStr string                              //Current json string
+	var jsonData []byte                             //Current json bytecode
+	var chatItem ChatState                          //Current ChatState item
+	var keys []string                               //Curent keys array
+	var msgString string                            //Current message string
+	var ChatMessages []openai.ChatCompletionMessage //Current prompt
+	rd := gRand.Intn(1000) + 1
+	//log.Println(rd)
+	keys, err = gRedisClient.Keys("ChatState:*").Result()
+	if err != nil {
+		SendToUser(gOwner, E12+err.Error(), ERROR)
+		log.Fatalln(err)
+	}
+	//keys processing
+	msgString = ""
+	for _, key := range keys {
+		jsonStr, err = gRedisClient.Get(key).Result()
+		if err != nil {
+			SendToUser(gOwner, E13+err.Error(), ERROR)
+			log.Fatalln(err)
+		}
+		err = json.Unmarshal([]byte(jsonStr), &chatItem)
+		if err != nil {
+			SendToUser(gOwner, E14+err.Error(), ERROR)
+			log.Fatalln(err)
+		}
+		if rd <= chatItem.Inity && chatItem.AllowState == ALLOW {
+			act := tgbotapi.NewChatAction(chatItem.ChatID, tgbotapi.ChatTyping)
+			gBot.Send(act)
+			for {
+				currentTime := time.Now()
+				elapsedTime := currentTime.Sub(gLastRequest)
+				time.Sleep(time.Second)
+				if elapsedTime >= 20*time.Second {
+					break
+				}
+			}
+			gLastRequest = time.Now() //Прежде чем формировать запрос, запомним текущее время
+			ChatMessages = gIntFacts
+			ansText := ""
+			resp, err := gclient.CreateChatCompletion( //Формируем запрос к мозгам
+				context.Background(),
+				openai.ChatCompletionRequest{
+					Model:       chatItem.Model,
+					Temperature: chatItem.Temperature,
+					Messages:    ChatMessages,
+				},
+			)
+			if err != nil {
+				SendToUser(gOwner, E17+err.Error(), ERROR)
+				log.Println(err)
+			} else {
+				//log.Printf("Чат ID: %d Токенов использовано: %d", chatItem.ChatID, resp.Usage.TotalTokens)
+				ansText = resp.Choices[0].Message.Content
+				SendToUser(chatItem.ChatID, ansText, NOTHING)
+			}
+			msgString, err = gRedisClient.Get("Dialog:" + strconv.FormatInt(chatItem.ChatID, 10)).Result() //Пытаемся прочесть из БД диалог
+			if err == redis.Nil {                                                                          //Если диалога в БД нет, формируем новый и записываем в БД
+				ChatMessages = append(ChatMessages, chatItem.History...)
+				ChatMessages = append(ChatMessages, gIntFacts...)
+				ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: ansText})
+				jsonData, err = json.Marshal(ChatMessages)
+				if err != nil {
+					SendToUser(gOwner, E11+err.Error(), ERROR)
+					log.Fatalln(err)
+				}
+				err = gRedisClient.Set("Dialog:"+strconv.FormatInt(chatItem.ChatID, 10), string(jsonData), 0).Err() //Записываем диалог в БД
+				if err != nil {
+					SendToUser(gOwner, E10+err.Error(), ERROR)
+					log.Fatalln(err)
+				}
+			} else if err != nil {
+				SendToUser(gOwner, E13+err.Error(), ERROR)
+				log.Fatalln(err)
+			} else {
+				err = json.Unmarshal([]byte(msgString), &ChatMessages)
+				if err != nil {
+					SendToUser(gOwner, E14+err.Error(), ERROR)
+					log.Fatalln(err)
+				}
+				ChatMessages = append(ChatMessages, gIntFacts...)
+				ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: ansText})
+				jsonData, err = json.Marshal(ChatMessages)
+				if err != nil {
+					SendToUser(gOwner, E11+err.Error(), ERROR)
+					log.Fatalln(err)
+				}
+				err = gRedisClient.Set("Dialog:"+strconv.FormatInt(chatItem.ChatID, 10), string(jsonData), 0).Err()
+				if err != nil {
+					SendToUser(gOwner, E10+err.Error(), ERROR)
+					log.Fatalln(err)
+				}
+			}
+		}
+	}
+}
+
+func main() {
+	go func() {
+		//Telegram update channel init
+		updateConfig := tgbotapi.NewUpdate(0)
+		updateConfig.Timeout = UPDATE_CONFIG_TIMEOUT
+		updates := gBot.GetUpdatesChan(updateConfig)
+		//Beginning of message processing
+		for update := range updates {
+			process_message(update)
+		}
 	}()
 	for {
 		time.Sleep(time.Minute)
-		rd := gRand.Intn(1000) + 1
-		keys, err = gRedisClient.Keys("ChatState:*").Result()
-		if err != nil {
-			SendToUser(gOwner, E12+err.Error(), ERROR)
-			log.Fatalln(err)
-		}
-		//keys processing
-		msgString = ""
-		for _, key := range keys {
-			jsonStr, err = gRedisClient.Get(key).Result()
-			if err != nil {
-				SendToUser(gOwner, E13+err.Error(), ERROR)
-				log.Fatalln(err)
-			}
-			err = json.Unmarshal([]byte(jsonStr), &chatItem)
-			if err != nil {
-				SendToUser(gOwner, E14+err.Error(), ERROR)
-				log.Fatalln(err)
-			}
-			if rd <= chatItem.Inity && chatItem.AllowState == ALLOW {
-				act := tgbotapi.NewChatAction(chatItem.ChatID, tgbotapi.ChatTyping)
-				gBot.Send(act)
-				for {
-					currentTime := time.Now()
-					elapsedTime := currentTime.Sub(gLastRequest)
-					time.Sleep(time.Second)
-					if elapsedTime >= 20*time.Second {
-						break
-					}
-				}
-				gLastRequest = time.Now() //Прежде чем формировать запрос, запомним текущее время
-				ChatMessages = gIntFacts
-				ansText := ""
-				resp, err := client.CreateChatCompletion( //Формируем запрос к мозгам
-					context.Background(),
-					openai.ChatCompletionRequest{
-						Model:       chatItem.Model,
-						Temperature: chatItem.Temperature,
-						Messages:    ChatMessages,
-					},
-				)
-				if err != nil {
-					SendToUser(gOwner, E17+err.Error(), ERROR)
-					log.Println(err)
-				} else {
-					//log.Printf("Чат ID: %d Токенов использовано: %d", chatItem.ChatID, resp.Usage.TotalTokens)
-					ansText = resp.Choices[0].Message.Content
-					SendToUser(chatItem.ChatID, ansText, NOTHING)
-				}
-				msgString, err = gRedisClient.Get("Dialog:" + strconv.FormatInt(chatItem.ChatID, 10)).Result() //Пытаемся прочесть из БД диалог
-				if err == redis.Nil {                                                                          //Если диалога в БД нет, формируем новый и записываем в БД
-					ChatMessages = append(ChatMessages, chatItem.History...)
-					ChatMessages = append(ChatMessages, gIntFacts...)
-					ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: ansText})
-					jsonData, err = json.Marshal(ChatMessages)
-					if err != nil {
-						SendToUser(gOwner, E11+err.Error(), ERROR)
-						log.Fatalln(err)
-					}
-					err = gRedisClient.Set("Dialog:"+strconv.FormatInt(chatItem.ChatID, 10), string(jsonData), 0).Err() //Записываем диалог в БД
-					if err != nil {
-						SendToUser(gOwner, E10+err.Error(), ERROR)
-						log.Fatalln(err)
-					}
-				} else if err != nil {
-					SendToUser(gOwner, E13+err.Error(), ERROR)
-					log.Fatalln(err)
-				} else {
-					err = json.Unmarshal([]byte(msgString), &ChatMessages)
-					if err != nil {
-						SendToUser(gOwner, E14+err.Error(), ERROR)
-						log.Fatalln(err)
-					}
-					ChatMessages = append(ChatMessages, gIntFacts...)
-					ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: ansText})
-					jsonData, err = json.Marshal(ChatMessages)
-					if err != nil {
-						SendToUser(gOwner, E11+err.Error(), ERROR)
-						log.Fatalln(err)
-					}
-					err = gRedisClient.Set("Dialog:"+strconv.FormatInt(chatItem.ChatID, 10), string(jsonData), 0).Err()
-					if err != nil {
-						SendToUser(gOwner, E10+err.Error(), ERROR)
-						log.Fatalln(err)
-					}
-				}
-			}
-		}
+		process_initiative()
 	}
 }

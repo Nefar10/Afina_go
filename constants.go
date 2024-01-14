@@ -137,7 +137,9 @@ var gITAlias = []openai.ChatCompletionMessage{
 var gIntFacts = []openai.ChatCompletionMessage{
 	{Role: openai.ChatMessageRoleUser, Content: "Расскажи какой-нибудь необычный и интересный факт, начав с фразы 'Интересный факт'"}}
 
-var gBot *tgbotapi.BotAPI      //Pointer to initialized bot
+var gBot *tgbotapi.BotAPI //Pointer to initialized bot
+// OpenAI client init
+var gclient *openai.Client
 var gToken string              //Bot API token
 var gOwner int64               //Bot's owner chat ID for send confirmations
 var gBotNames []string         //Bot names for calling he in group chats
@@ -151,3 +153,4 @@ var gRedisClient *redis.Client //Pointer for redis client
 var gDir string                //Current dir in OS
 var gLastRequest time.Time     //Time of last request to openAI
 var gRand *rand.Rand           //New Rand generator
+var gContextLength int         //Max context length
