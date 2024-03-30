@@ -702,7 +702,7 @@ func process_initiative() {
 	var keys []string                               //Curent keys array
 	var msgString string                            //Current message string
 	var ChatMessages []openai.ChatCompletionMessage //Current prompt
-	rd := gRand.Intn(1000) + 1
+	rd := gRand.Intn(10) + 1
 	//log.Println(rd)
 	keys, err = gRedisClient.Keys("ChatState:*").Result()
 	if err != nil {
