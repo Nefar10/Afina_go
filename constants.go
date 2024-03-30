@@ -137,7 +137,7 @@ var gITAlias = []openai.ChatCompletionMessage{
 var gIntFacts = []openai.ChatCompletionMessage{
 	{Role: openai.ChatMessageRoleUser, Content: "Расскажи какой-нибудь необычный и интересный факт про автомобили и гонки, начав с фразы 'Интересный факт'"}}
 
-var gBot *tgbotapi.BotAPI //Pointer to initialized bot
+var gBot *tgbotapi.BotAPI //Pointer to initialized bot.
 // OpenAI client init
 var gclient *openai.Client
 var gToken string              //Bot API token

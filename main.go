@@ -612,7 +612,7 @@ func process_message(update tgbotapi.Update) error {
 								currentTime := time.Now()
 								elapsedTime := currentTime.Sub(gLastRequest)
 								time.Sleep(time.Second)
-								if elapsedTime >= 20*time.Second {
+								if elapsedTime >= 30*time.Second {
 									break
 								}
 							}
@@ -752,6 +752,7 @@ func process_initiative() {
 				//log.Printf("Чат ID: %d Токенов использовано: %d", chatItem.ChatID, resp.Usage.TotalTokens)
 				ansText = resp.Choices[0].Message.Content
 				SendToUser(chatItem.ChatID, ansText, NOTHING)
+
 			}
 			msgString, err = gRedisClient.Get("Dialog:" + strconv.FormatInt(chatItem.ChatID, 10)).Result() //Пытаемся прочесть из БД диалог
 			if err == redis.Nil {                                                                          //Если диалога в БД нет, формируем новый и записываем в БД
