@@ -729,11 +729,12 @@ func process_initiative() {
 				currentTime := time.Now()
 				elapsedTime := currentTime.Sub(gLastRequest)
 				time.Sleep(time.Second)
-				if elapsedTime >= 20*time.Second {
+				if elapsedTime >= 25*time.Second {
 					break
 				}
 			}
 			gLastRequest = time.Now() //Прежде чем формировать запрос, запомним текущее время
+
 			ChatMessages = gIntFacts
 			ansText := ""
 			resp, err := gclient.CreateChatCompletion( //Формируем запрос к мозгам
