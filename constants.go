@@ -135,7 +135,7 @@ var gITAlias = []openai.ChatCompletionMessage{
 		"4) После завершения каждого тура ты предлагаешь продолжить игру."},
 	{Role: openai.ChatMessageRoleAssistant, Content: "Понял. Я буду загазывать различные термины из области IT поддержки и не буду называть их."}}
 var gIntFacts = []openai.ChatCompletionMessage{
-	{Role: openai.ChatMessageRoleUser, Content: "Расскажи какой-нибудь необычный и интересный факт, начав с фразы 'Интересный факт'"}}
+	{Role: openai.ChatMessageRoleUser, Content: "Расскажи какой-нибудь необычный и интересный факт про автомобили и гонки, начав с фразы 'Интересный факт'"}}
 
 var gBot *tgbotapi.BotAPI //Pointer to initialized bot
 // OpenAI client init
