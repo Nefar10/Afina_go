@@ -135,11 +135,13 @@ var gITAlias = []openai.ChatCompletionMessage{
 		"4) После завершения каждого тура ты предлагаешь продолжить игру."},
 	{Role: openai.ChatMessageRoleAssistant, Content: "Понял. Я буду загазывать различные термины из области IT поддержки и не буду называть их."}}
 var gIntFacts = []openai.ChatCompletionMessage{
-	{Role: openai.ChatMessageRoleUser, Content: "Расскажи какой-нибудь необычный и интересный факт про автомобили и гонки, начав с фразы 'Интересный факт'"}}
+	{Role: openai.ChatMessageRoleUser, Content: "Расскажи только один необычный и интересный факт про автомобилии или гонки или компьютерные игры. \n" +
+		"Важно начать с фразы 'Интересный факт!' и максимально самокритично озвучивать рекорды."}}
 
 var gBot *tgbotapi.BotAPI //Pointer to initialized bot.
 // OpenAI client init
 var gclient *openai.Client
+var gclient_is_busy bool       //Request to API is active
 var gToken string              //Bot API token
 var gOwner int64               //Bot's owner chat ID for send confirmations
 var gBotNames []string         //Bot names for calling he in group chats

@@ -251,6 +251,7 @@ func init() {
 	}
 	//OpenAI client init
 	gclient = openai.NewClient(gAIToken)
+	gclient_is_busy = false
 	//Send init complete message to owner
 	SendToUser(gOwner, IM3, INFO)
 	log.Println("Initialization complete!")
@@ -612,7 +613,7 @@ func process_message(update tgbotapi.Update) error {
 								currentTime := time.Now()
 								elapsedTime := currentTime.Sub(gLastRequest)
 								time.Sleep(time.Second)
-								if elapsedTime >= 30*time.Second {
+								if elapsedTime >= 20*time.Second && !gclient_is_busy {
 									break
 								}
 							}
@@ -625,8 +626,9 @@ func process_message(update tgbotapi.Update) error {
 								}
 							}
 							if update.Message.Chat.Type == "private" || toBotFlag {
+								gclient_is_busy = true
 								gLastRequest = time.Now() //Прежде чем формировать запрос, запомним текущее время
-								for i := 0; i < 3; i++ {
+								for i := 0; i < 2; i++ {
 									gBot.Send(action)                          //Здесь мы продолжаем делать вид, что бот отреагировал на новое сообщение
 									resp, err := gclient.CreateChatCompletion( //Формируем запрос к мозгам
 										context.Background(),
@@ -646,6 +648,7 @@ func process_message(update tgbotapi.Update) error {
 										break
 									}
 								}
+								gclient_is_busy = false
 							}
 							ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: msg.Text})
 							jsonData, err = json.Marshal(ChatMessages)
@@ -702,7 +705,7 @@ func process_initiative() {
 	var keys []string                               //Curent keys array
 	var msgString string                            //Current message string
 	var ChatMessages []openai.ChatCompletionMessage //Current prompt
-	rd := gRand.Intn(10) + 1
+	rd := gRand.Intn(4) + 1
 	//log.Println(rd)
 	keys, err = gRedisClient.Keys("ChatState:*").Result()
 	if err != nil {
@@ -729,12 +732,12 @@ func process_initiative() {
 				currentTime := time.Now()
 				elapsedTime := currentTime.Sub(gLastRequest)
 				time.Sleep(time.Second)
-				if elapsedTime >= 25*time.Second {
+				if elapsedTime >= 20*time.Second && !gclient_is_busy {
 					break
 				}
 			}
 			gLastRequest = time.Now() //Прежде чем формировать запрос, запомним текущее время
-
+			gclient_is_busy = true
 			ChatMessages = gIntFacts
 			ansText := ""
 			resp, err := gclient.CreateChatCompletion( //Формируем запрос к мозгам
@@ -745,6 +748,7 @@ func process_initiative() {
 					Messages:    ChatMessages,
 				},
 			)
+			gclient_is_busy = false
 			if err != nil {
 				SendToUser(gOwner, E17+err.Error(), ERROR)
 				log.Println(err)
