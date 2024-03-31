@@ -38,14 +38,16 @@ const (
 	QUEST_IN_PROGRESS = 1 //Quest is'nt solved
 	QUEST_SOLVED      = 2 //Quest is solved
 	//Called menu types
-	NOTHING    = 0 //Do nosting
-	ACCESS     = 1 //Access query
-	MENU       = 2 //Admin's menu calling
-	USERMENU   = 3 //User's menu calling
-	SELECTCHAT = 4 //Select chat to change options
-	TUNECHAT   = 5 //Cahnge chat options
-	ERROR      = 6 //Error's information
-	INFO       = 7 //Some informtion
+	NOTHING      = 0 //Do nosting
+	ACCESS       = 1 //Access query
+	MENU         = 2 //Admin's menu calling
+	USERMENU     = 3 //User's menu calling
+	SELECTCHAT   = 4 //Select chat to change options
+	TUNECHAT     = 5 //Cahnge chat options
+	ERROR        = 6 //Error's information
+	INFO         = 7 //Some informtion
+	TUNECHATUSER = 8 //same the 5
+	INTFACTS     = 9 //Edit intfacts
 	//MENULEVELS
 	NO_ACCESS = 1  //No access to menu
 	DEFAULT   = 2  //Default user menu
@@ -84,7 +86,9 @@ const (
 	IM10 = " Access bocked "
 	IM11 = " Congratulations! You have been added to the pranksters list! "
 	IM12 = " Please select what needs to be done. "
-	IM13 = " Current version is 0.2.1 "
+	IM13 = "Current version is 0.2.1"
+	IM14 = " Choose a topic. "
+	IM15 = " Topic has been changed. "
 )
 
 // Global types
@@ -100,6 +104,7 @@ type ChatState struct {
 	Model       string                         //GPT model selected
 	Temperature float32                        //Bot's creativity
 	History     []openai.ChatCompletionMessage //Current chat prompts
+	IntFacts    []openai.ChatCompletionMessage //Interesting facts prompt
 	Inity       int                            //Bot's initiativity
 }
 
@@ -124,8 +129,8 @@ var gHsNulled = []openai.ChatCompletionMessage{{Role: openai.ChatMessageRoleUser
 
 // Default prompt
 var gHsOwner = []openai.ChatCompletionMessage{
-	{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль универсального персонального асисстента. Зови себя - Адам."},
-	{Role: openai.ChatMessageRoleAssistant, Content: "Здравствуйте. Понял, можете называть меня Адам. Я Ваш универсальный ассистент."}}
+	{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль универсального персонального асисстента. Зови себя - Афина."},
+	{Role: openai.ChatMessageRoleAssistant, Content: "Здравствуйте. Поняла, можете называть меня Афина. Я Ваш универсальный ассистент."}}
 
 // Game IT-alias prompt
 var gITAlias = []openai.ChatCompletionMessage{
@@ -135,12 +140,18 @@ var gITAlias = []openai.ChatCompletionMessage{
 		"3) У нас есть три попытки, чтобы отгадать очередной загаданный термин. После каждой нашей попытки ты сообщаешь о количестве оставшихся попыток.\n" +
 		"4) После завершения каждого тура ты предлагаешь продолжить игру."},
 	{Role: openai.ChatMessageRoleAssistant, Content: "Понял. Я буду загазывать различные термины из области IT поддержки и не буду называть их."}}
-var gIntFacts = []openai.ChatCompletionMessage{
+var gIntFactsGen = []openai.ChatCompletionMessage{
 	{Role: openai.ChatMessageRoleUser, Content: "Расскажи только один необычный и интересный факт.\n" +
+		"Важно начать с фразы 'Интересный факт!'."}}
+var gIntFactsSci = []openai.ChatCompletionMessage{
+	{Role: openai.ChatMessageRoleUser, Content: "Расскажи только один необычный и интересный факт из области естественных наук.\n" +
+		"Важно начать с фразы 'Интересный факт!'."}}
+var gIntFactsIT = []openai.ChatCompletionMessage{
+	{Role: openai.ChatMessageRoleUser, Content: "Расскажи только один необычный и интересный факт из области IT.\n" +
+		"Важно начать с фразы 'Интересный факт!'."}}
+var gIntFactsAuto = []openai.ChatCompletionMessage{
+	{Role: openai.ChatMessageRoleUser, Content: "Расскажи только один необычный и интересный факт про автомобилии или гонки или компьютерные игры. \n" +
 		"Важно начать с фразы 'Интересный факт!' и максимально самокритично озвучивать рекорды."}}
-
-//{Role: openai.ChatMessageRoleUser, Content: "Расскажи только один необычный и интересный факт про автомобилии или гонки или компьютерные игры. \n" +
-//	"Важно начать с фразы 'Интересный факт!' и максимально самокритично озвучивать рекорды."}}
 
 var gBot *tgbotapi.BotAPI //Pointer to initialized bot.
 // OpenAI client init
