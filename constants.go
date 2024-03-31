@@ -84,6 +84,7 @@ const (
 	IM10 = " Access bocked "
 	IM11 = " Congratulations! You have been added to the pranksters list! "
 	IM12 = " Please select what needs to be done. "
+	IM13 = " Current version is 0.2.1 "
 )
 
 // Global types
@@ -135,8 +136,11 @@ var gITAlias = []openai.ChatCompletionMessage{
 		"4) После завершения каждого тура ты предлагаешь продолжить игру."},
 	{Role: openai.ChatMessageRoleAssistant, Content: "Понял. Я буду загазывать различные термины из области IT поддержки и не буду называть их."}}
 var gIntFacts = []openai.ChatCompletionMessage{
-	{Role: openai.ChatMessageRoleUser, Content: "Расскажи только один необычный и интересный факт про автомобилии или гонки или компьютерные игры. \n" +
+	{Role: openai.ChatMessageRoleUser, Content: "Расскажи только один необычный и интересный факт.\n" +
 		"Важно начать с фразы 'Интересный факт!' и максимально самокритично озвучивать рекорды."}}
+
+//{Role: openai.ChatMessageRoleUser, Content: "Расскажи только один необычный и интересный факт про автомобилии или гонки или компьютерные игры. \n" +
+//	"Важно начать с фразы 'Интересный факт!' и максимально самокритично озвучивать рекорды."}}
 
 var gBot *tgbotapi.BotAPI //Pointer to initialized bot.
 // OpenAI client init
