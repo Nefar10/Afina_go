@@ -253,8 +253,9 @@ func init() {
 	gclient = openai.NewClient(gAIToken)
 	gclient_is_busy = false
 	//Send init complete message to owner
-	SendToUser(gOwner, IM3, INFO)
+	SendToUser(gOwner, IM3+"\n"+IM13, INFO)
 	log.Println("Initialization complete!")
+	log.Println(IM13)
 
 }
 
