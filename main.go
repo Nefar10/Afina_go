@@ -116,7 +116,7 @@ func init() {
 	}
 	//Default chat states init
 	gChatsStates = append(gChatsStates, ChatState{ChatID: 0, Model: openai.GPT3Dot5Turbo1106, Inity: 0, Temperature: 0.1, AllowState: DISALLOW, UserName: "All", BotState: SLEEP, Type: "private", History: gHsNulled, IntFacts: gIntFactsGen})
-	gChatsStates = append(gChatsStates, ChatState{ChatID: gOwner, Model: openai.GPT3Dot5Turbo1106, Inity: 5, Temperature: 0.8, AllowState: ALLOW, UserName: "Owner", BotState: RUN, Type: "private", History: gHsOwner, IntFacts: gIntFactsGen})
+	gChatsStates = append(gChatsStates, ChatState{ChatID: gOwner, Model: openai.GPT3Dot5Turbo1106, Inity: 2, Temperature: 0.8, AllowState: ALLOW, UserName: "Owner", BotState: RUN, Type: "private", History: gHsOwner, IntFacts: gIntFactsGen})
 	//Storing default chat states to DB
 	for _, item := range gChatsStates {
 		jsonData, err = json.Marshal(item)
@@ -688,7 +688,7 @@ func process_message(update tgbotapi.Update) error {
 				chatItem.Title = update.Message.Chat.Title
 				chatItem.Model = openai.GPT3Dot5Turbo1106
 				chatItem.Temperature = 0.8
-				chatItem.Inity = 5
+				chatItem.Inity = 2
 				chatItem.History = gHsOwner
 				chatItem.IntFacts = gIntFactsGen
 				jsonData, err = json.Marshal(chatItem)
