@@ -86,7 +86,7 @@ const (
 	IM10 = " Access bocked "
 	IM11 = " Congratulations! You have been added to the pranksters list! "
 	IM12 = " Please select what needs to be done. "
-	IM13 = "Current version is 0.2.3"
+	IM13 = "Current version is 0.2.4"
 	IM14 = " Choose a topic. "
 	IM15 = " Topic has been changed. "
 )
