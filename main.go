@@ -16,6 +16,7 @@ import (
 	openai "github.com/sashabaranov/go-openai"
 )
 
+// test
 func init() {
 	//Temporary variables
 	var err error
