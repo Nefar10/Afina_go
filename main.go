@@ -117,7 +117,7 @@ func init() {
 	}
 	//Default chat states init
 	gChatsStates = append(gChatsStates, ChatState{ChatID: 0, Model: openai.GPT3Dot5Turbo1106, Inity: 0, Temperature: 0.1, AllowState: DISALLOW, UserName: "All", BotState: SLEEP, Type: "private", History: gHsNulled, IntFacts: gIntFactsGen})
-	gChatsStates = append(gChatsStates, ChatState{ChatID: gOwner, Model: "gpt-4o-mini", Inity: 2, Temperature: 0.8, AllowState: ALLOW, UserName: "Owner", BotState: RUN, Type: "private", History: gHsOwner, IntFacts: gIntFactsGen})
+	gChatsStates = append(gChatsStates, ChatState{ChatID: gOwner, Model: "gpt-4o-mini", Inity: 0, Temperature: 0.8, AllowState: ALLOW, UserName: "Owner", BotState: RUN, Type: "private", History: gHsOwner, IntFacts: gIntFactsGen})
 	//Storing default chat states to DB
 	for _, item := range gChatsStates {
 		jsonData, err = json.Marshal(item)
