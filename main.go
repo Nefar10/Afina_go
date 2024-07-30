@@ -28,7 +28,7 @@ func init() {
 	gCurProcName = "Environment initialization"
 	switch os.Getenv(AFINA_LOCALE_IN_OS) {
 	case "Ru":
-		gLocale = 0
+		gLocale = 1
 	case "En":
 		gLocale = 0
 	default:
