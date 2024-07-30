@@ -93,9 +93,10 @@ var IM9 = [2]string{" I apologize, but to continue the conversation, it is neces
 var IM10 = [2]string{" Access bocked ", " Доступ заблокирован "}
 var IM11 = [2]string{" Congratulations! You have been added to the pranksters list! ", " Поздравляю! Вы были добавлены в список проказников! "}
 var IM12 = [2]string{" Please select what needs to be done. ", " Пожалуйста, выберите, что необходимо выполнить. "}
-var IM13 = [2]string{"Current version is 0.3.2", " Текущая версия 0.3.2"}
+var IM13 = [2]string{" Current version is 0.3.2", " Текущая версия 0.3.2"}
 var IM14 = [2]string{" Choose a topic. ", " Выберите тему "}
 var IM15 = [2]string{" Topic has been changed. ", " Тема изменена "}
+var IM16 = [2]string{" Write - as soon as you are ready to start the game. ", " Пишите - как только будете готовы начать игру. "}
 
 // Global types
 // Chat's structure for storing options in DB and operate with them
@@ -146,26 +147,56 @@ var gHsOwner = [2][]openai.ChatCompletionMessage{
 }
 
 // Game IT-alias prompt
-var gITAlias = []openai.ChatCompletionMessage{
-	{Role: openai.ChatMessageRoleUser, Content: "Давай поиграем в IT Элиас. Ты будешь в роли ведущего. Правила следующие:\n" +
-		"1) Ты загадываешь сложный термин из области IT поддержки и рассказываешь - что это такое не используя однокоренных слов\n" +
-		"2) Ты не должен называть загаданный термин, пока он не будет отгадан или не закончатся попытки.\n" +
-		"3) У нас есть три попытки, чтобы отгадать очередной загаданный термин. После каждой нашей попытки ты сообщаешь о количестве оставшихся попыток.\n" +
-		"4) После завершения каждого тура ты предлагаешь продолжить игру."},
-	{Role: openai.ChatMessageRoleAssistant, Content: "Понял. Я буду загазывать различные термины из области IT поддержки и не буду называть их."}}
-var gIntFactsGen = []openai.ChatCompletionMessage{
-	{Role: openai.ChatMessageRoleUser, Content: "Расскажи только один необычный и интересный факт.\n" +
-		"Важно начать с фразы 'Интересный факт!'."}}
-var gIntFactsSci = []openai.ChatCompletionMessage{
-	{Role: openai.ChatMessageRoleUser, Content: "Расскажи только один необычный и интересный факт из области естественных наук.\n" +
-		"Важно начать с фразы 'Интересный факт!'."}}
-var gIntFactsIT = []openai.ChatCompletionMessage{
-	{Role: openai.ChatMessageRoleUser, Content: "Расскажи только один необычный и интересный факт из области IT.\n" +
-		"Важно начать с фразы 'Интересный факт!'."}}
-var gIntFactsAuto = []openai.ChatCompletionMessage{
-	{Role: openai.ChatMessageRoleUser, Content: "Расскажи только один необычный и интересный факт про автомобилии или гонки или компьютерные игры. \n" +
-		"Важно начать с фразы 'Интересный факт!' и максимально самокритично озвучивать рекорды."}}
-
+var gITAlias = [2][]openai.ChatCompletionMessage{
+	{
+		{Role: openai.ChatMessageRoleUser, Content: "Let’s play IT Charades. You’ll take on the role of the host. The rules are as follows:\n" +
+			"1) You’ll think of a complex term from the IT support realm and explain what it is without using any root words.\n" +
+			"2) You mustn't reveal the term until it’s guessed or we run out of attempts.\n" +
+			"3) We have three chances to guess the chosen term. After each of our guesses, you’ll let us know how many attempts we have left.\n" +
+			"4) After each round, you’ll ask if we want to keep the ball rolling."},
+		{Role: openai.ChatMessageRoleAssistant, Content: "Got it. I will think of various terms from the IT support field and I won’t reveal them."},
+	},
+	{
+		{Role: openai.ChatMessageRoleUser, Content: "Давай поиграем в IT Элиас. Ты будешь в роли ведущего. Правила следующие:\n" +
+			"1) Ты загадываешь сложный термин из области IT поддержки и рассказываешь - что это такое не используя однокоренных слов\n" +
+			"2) Ты не должен называть загаданный термин, пока он не будет отгадан или не закончатся попытки.\n" +
+			"3) У нас есть три попытки, чтобы отгадать очередной загаданный термин. После каждой нашей попытки ты сообщаешь о количестве оставшихся попыток.\n" +
+			"4) После завершения каждого тура ты предлагаешь продолжить игру."},
+		{Role: openai.ChatMessageRoleAssistant, Content: "Понял. Я буду загазывать различные термины из области IT поддержки и не буду называть их."},
+	},
+}
+var gIntFactsGen = [2][]openai.ChatCompletionMessage{
+	{
+		{Role: openai.ChatMessageRoleUser, Content: "Tell me just one unusual and interesting fact. It's important to start with the phrase 'Interesting fact!'."},
+	},
+	{
+		{Role: openai.ChatMessageRoleUser, Content: "Расскажи только один необычный и интересный факт. Важно начать с фразы 'Интересный факт!'."},
+	},
+}
+var gIntFactsSci = [2][]openai.ChatCompletionMessage{
+	{
+		{Role: openai.ChatMessageRoleUser, Content: "Tell me just one unusual and interesting fact from the natural sciences. It's important to start with the phrase 'Interesting fact!'."},
+	},
+	{
+		{Role: openai.ChatMessageRoleUser, Content: "Расскажи только один необычный и интересный факт из области естественных наук. Важно начать с фразы 'Интересный факт!'."},
+	},
+}
+var gIntFactsIT = [2][]openai.ChatCompletionMessage{
+	{
+		{Role: openai.ChatMessageRoleUser, Content: "Tell me just one unusual and interesting fact from the field of IT. It's important to start with the phrase 'Interesting fact!'."},
+	},
+	{
+		{Role: openai.ChatMessageRoleUser, Content: "Расскажи только один необычный и интересный факт из области IT. Важно начать с фразы 'Интересный факт!'."},
+	},
+}
+var gIntFactsAuto = [2][]openai.ChatCompletionMessage{
+	{
+		{Role: openai.ChatMessageRoleUser, Content: "Tell me just one unusual and interesting fact about cars, racing, or video games. It's important to start with the phrase 'Interesting fact!' and to mention records in a self-deprecating manner."},
+	},
+	{
+		{Role: openai.ChatMessageRoleUser, Content: "Расскажи только один необычный и интересный факт про автомобилии или гонки или компьютерные игры. Важно начать с фразы 'Интересный факт!' и максимально самокритично озвучивать рекорды."},
+	},
+}
 var gBot *tgbotapi.BotAPI //Pointer to initialized bot.
 // OpenAI client init
 var gclient *openai.Client

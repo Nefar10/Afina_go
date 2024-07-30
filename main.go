@@ -28,7 +28,7 @@ func init() {
 	gCurProcName = "Environment initialization"
 	switch os.Getenv(AFINA_LOCALE_IN_OS) {
 	case "Ru":
-		gLocale = 1
+		gLocale = 0
 	case "En":
 		gLocale = 0
 	default:
@@ -128,8 +128,8 @@ func init() {
 		log.Println(IM2[gLocale] + BOTGENDER_IN_OS + " in process " + gCurProcName)
 	}
 	//Default chat states init
-	gChatsStates = append(gChatsStates, ChatState{ChatID: 0, Model: openai.GPT3Dot5Turbo1106, Inity: 0, Temperature: 0.1, AllowState: DISALLOW, UserName: "All", BotState: SLEEP, Type: "private", History: gHsNulled, IntFacts: gIntFactsGen})
-	gChatsStates = append(gChatsStates, ChatState{ChatID: gOwner, Model: "gpt-4o-mini", Inity: 0, Temperature: 0.7, AllowState: ALLOW, UserName: "Owner", BotState: RUN, Type: "private", History: gHsOwner[gLocale], IntFacts: gIntFactsGen})
+	gChatsStates = append(gChatsStates, ChatState{ChatID: 0, Model: openai.GPT3Dot5Turbo1106, Inity: 0, Temperature: 0.1, AllowState: DISALLOW, UserName: "All", BotState: SLEEP, Type: "private", History: gHsNulled, IntFacts: gIntFactsGen[gLocale]})
+	gChatsStates = append(gChatsStates, ChatState{ChatID: gOwner, Model: "gpt-4o-mini", Inity: 0, Temperature: 0.7, AllowState: ALLOW, UserName: "Owner", BotState: RUN, Type: "private", History: gHsOwner[gLocale], IntFacts: gIntFactsGen[gLocale]})
 	//Storing default chat states to DB
 	gCurProcName = "Chats initialization"
 	for _, item := range gChatsStates {
@@ -472,7 +472,7 @@ func process_message(update tgbotapi.Update) error {
 					SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 				ChatMessages = chatItem.History
-				ChatMessages = append(ChatMessages, gITAlias...)
+				ChatMessages = append(ChatMessages, gITAlias[gLocale]...)
 				jsonData, err = json.Marshal(ChatMessages)
 				if err != nil {
 					SendToUser(gOwner, E11[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
@@ -481,7 +481,7 @@ func process_message(update tgbotapi.Update) error {
 				if err != nil {
 					SendToUser(gOwner, E10[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
-				SendToUser(chatID, "Пишите - как только будете готовы начать игру.", NOTHING, 0)
+				SendToUser(chatID, IM16[gLocale], NOTHING, 0)
 			}
 		}
 		gCurProcName = "Menu processing"
@@ -599,16 +599,16 @@ func process_message(update tgbotapi.Update) error {
 					SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 				if strings.Contains(update.CallbackQuery.Data, "IF_GENERAL:") {
-					chatItem.IntFacts = gIntFactsGen
+					chatItem.IntFacts = gIntFactsGen[gLocale]
 				}
 				if strings.Contains(update.CallbackQuery.Data, "IF_SCIENCE:") {
-					chatItem.IntFacts = gIntFactsSci
+					chatItem.IntFacts = gIntFactsSci[gLocale]
 				}
 				if strings.Contains(update.CallbackQuery.Data, "IF_IT:") {
-					chatItem.IntFacts = gIntFactsIT
+					chatItem.IntFacts = gIntFactsIT[gLocale]
 				}
 				if strings.Contains(update.CallbackQuery.Data, "IF_AUTO") {
-					chatItem.IntFacts = gIntFactsAuto
+					chatItem.IntFacts = gIntFactsAuto[gLocale]
 				}
 				jsonData, err = json.Marshal(chatItem)
 				if err != nil {
@@ -707,7 +707,7 @@ func process_message(update tgbotapi.Update) error {
 				chatItem.Temperature = 0.7
 				chatItem.Inity = 1
 				chatItem.History = gHsOwner[gLocale]
-				chatItem.IntFacts = gIntFactsGen
+				chatItem.IntFacts = gIntFactsGen[gLocale]
 				jsonData, err = json.Marshal(chatItem)
 				if err != nil {
 					SendToUser(gOwner, E11[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
