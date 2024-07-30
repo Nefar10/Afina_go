@@ -12,11 +12,12 @@ import (
 
 const (
 	//Bot options from ENV
-	TOKEN_NAME_IN_OS = "TB_API_KEY"    //Bot API key
-	AI_IN_OS         = "AFINA_API_KEY" //OpenAI API key
-	OWNER_IN_OS      = "OWNER"         //Owner's chat ID
-	BOTNAME_IN_OS    = "AFINA_NAMES"   //Bot's names
-	BOTGENDER_IN_OS  = "AFINA_GENDER"  //Bot's gender
+	AFINA_LOCALE_IN_OS = "AFINA_LOCALE"  //Localization
+	TOKEN_NAME_IN_OS   = "TB_API_KEY"    //Bot API key
+	AI_IN_OS           = "AFINA_API_KEY" //OpenAI API key
+	OWNER_IN_OS        = "OWNER"         //Owner's chat ID
+	BOTNAME_IN_OS      = "AFINA_NAMES"   //Bot's names
+	BOTGENDER_IN_OS    = "AFINA_GENDER"  //Bot's gender
 	//DB connectore settings
 	REDIS_IN_OS      = "REDIS_IP"   //Redis ip address and port
 	REDISDB_IN_OS    = "REDIS_DB"   //Number DB in redis
@@ -54,42 +55,47 @@ const (
 	MODERATOR = 4  //Moderator menu
 	ADMIN     = 8  //Administrator menu
 	OWNER     = 16 //Owner menu
-	//ERRORS
-	E1  = " Telegram bot API key not forund in OS environment "
-	E2  = " Owner's chat ID not found or not valid in os environment "
-	E3  = " DB server IP address and port not found in OS environment "
-	E4  = " DB password not found in OS environment "
-	E5  = " DB ID not forind or not valid in OS environment "
-	E6  = " Telegram bot initialization error "
-	E7  = " OpenAI API tocken not found in OS environment "
-	E8  = " Error initializing work dir "
-	E9  = " DB connection error "
-	E10 = " Error writting to DB "
-	E11 = " Error json marshaling "
-	E12 = " Error reading keys from DB "
-	E13 = " Error reading key value from DB "
-	E14 = " Error json unmarshaling "
-	E15 = " Error convetring string to int "
-	E16 = " Unknown Error "
-	E17 = " ChatCompletion error: %v\n "
-	//INFO MESSAGES
-	IM0  = " Program has been stoped "
-	IM1  = " Bot name(s) not found or not valid in OS environment.\n Name Afina will be used. "
-	IM2  = " Bot gender not found or not valid in OS environment.\n Neutral gender will be used. "
-	IM3  = " I'm back! "
-	IM4  = " All DB data has been remowed. I'll reboot now "
-	IM5  = " I'll be back "
-	IM6  = " Access granted "
-	IM7  = " I was allowed to communicate with you! "
-	IM8  = " Access denied "
-	IM9  = " I apologize, but to continue the conversation, it is necessary to subscribe. "
-	IM10 = " Access bocked "
-	IM11 = " Congratulations! You have been added to the pranksters list! "
-	IM12 = " Please select what needs to be done. "
-	IM13 = "Current version is 0.3.1"
-	IM14 = " Choose a topic. "
-	IM15 = " Topic has been changed. "
+	//LOCALES
+	RU = 1
+	EN = 0
 )
+
+// ERRORS
+var E1 = [2]string{" Telegram bot API key not forund in OS environment ", " Не найден API ключ телеграмм бота в переменных окружения "}
+var E2 = [2]string{" Owner's chat ID not found or not valid in os environment ", " Не найден ID чата владельца в переменных окружения "}
+var E3 = [2]string{" DB server IP address and port not found in OS environment ", " Адрес сервера базы данных не найден в переменных окружения "}
+var E4 = [2]string{" DB password not found in OS environment ", " Пароль к базе данных не найден в переменных окружения "}
+var E5 = [2]string{" DB ID not forind or not valid in OS environment ", " Идентификатор базы не найден в переменных окружения "}
+var E6 = [2]string{" Telegram bot initialization error ", " Ошибка инициализации телеграмм бота "}
+var E7 = [2]string{" OpenAI API tocken not found in OS environment ", " API ключ OpenAI не найден в перменных окружения "}
+var E8 = [2]string{" Error initializing work dir ", " Ошибка инициализации рабочей директории "}
+var E9 = [2]string{" DB connection error ", " Ошибка подключения к базе данных "}
+var E10 = [2]string{" Error writting to DB ", " Ошибка записи в базу данных "}
+var E11 = [2]string{" Error json marshaling ", " Ошибка преобразования в json "}
+var E12 = [2]string{" Error reading keys from DB ", " Ошибка чтения ключа из базы данных "}
+var E13 = [2]string{" Error reading key value from DB ", " Ошибка чтения знаяения ключа из базы данных "}
+var E14 = [2]string{" Error json unmarshaling ", " Ошибка парсинга Json "}
+var E15 = [2]string{" Error convetring string to int ", " Ошибка преобразования строки в число "}
+var E16 = [2]string{" Unknown Error ", " Неизвестная ошибка "}
+var E17 = [2]string{" ChatCompletion error: %v\n ", " Ошибка обработки запроса к нейросети: %v\n"}
+
+// INFO MESSAGES
+var IM0 = [2]string{" Process has been stoped ", " Процесс был остановлен "}
+var IM1 = [2]string{" Bot name(s) not found or not valid in OS environment.\n Name Afina will be used. ", " Имя бота не найдено или не корректно в переменных окружения.\n Будет использовано имя Afina. "}
+var IM2 = [2]string{" Bot gender not found or not valid in OS environment.\n Neutral gender will be used. ", " Пол бота не найден или некорректен среди переменных окружения.\n Будет использован средний род. "}
+var IM3 = [2]string{" I'm back! ", " Я снова с Вами! "}
+var IM4 = [2]string{" All DB data has been remowed. I'll reboot now ", " Все данные в бахе данных будут удалены. Проиводится перезагрузка "}
+var IM5 = [2]string{" I'll be back ", " Я еще вернусь "}
+var IM6 = [2]string{" Access granted ", " Доступ разрешен "}
+var IM7 = [2]string{" I was allowed to communicate with you! ", " Мне было разрешено с вами общаться "}
+var IM8 = [2]string{" Access denied ", " Доступ запрещен "}
+var IM9 = [2]string{" I apologize, but to continue the conversation, it is necessary to subscribe. ", " Простите, но для продолжения общения необходимо оформить подписку. "}
+var IM10 = [2]string{" Access bocked ", " Доступ заблокирован "}
+var IM11 = [2]string{" Congratulations! You have been added to the pranksters list! ", " Поздравляю! Вы были добавлены в список проказников! "}
+var IM12 = [2]string{" Please select what needs to be done. ", " Пожалуйста, выберите, что необходимо выполнить. "}
+var IM13 = [2]string{"Current version is 0.3.2", " Текущая версия 0.3.2"}
+var IM14 = [2]string{" Choose a topic. ", " Выберите тему "}
+var IM15 = [2]string{" Topic has been changed. ", " Тема изменена "}
 
 // Global types
 // Chat's structure for storing options in DB and operate with them
@@ -128,9 +134,16 @@ type Answer struct {
 var gHsNulled = []openai.ChatCompletionMessage{{Role: openai.ChatMessageRoleUser, Content: ""}}
 
 // Default prompt
-var gHsOwner = []openai.ChatCompletionMessage{
-	{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль универсального персонального асисстента. Зови себя - Афина."},
-	{Role: openai.ChatMessageRoleAssistant, Content: "Здравствуйте. Поняла, можете называть меня Афина. Я Ваш универсальный ассистент."}}
+var gHsOwner = [2][]openai.ChatCompletionMessage{
+	{
+		{Role: openai.ChatMessageRoleUser, Content: "Hi! You are playing the role of a universal personal assistant. Call yourself - Athena."},
+		{Role: openai.ChatMessageRoleAssistant, Content: "Hello! Got it, you can call me Athena. I am your universal assistant."},
+	},
+	{
+		{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль универсального персонального ассистента. Зови себя - Афина."},
+		{Role: openai.ChatMessageRoleAssistant, Content: "Здравствуйте. Поняла, можете называть меня Афина. Я Ваш универсальный ассистент."},
+	},
+}
 
 // Game IT-alias prompt
 var gITAlias = []openai.ChatCompletionMessage{
@@ -157,6 +170,7 @@ var gBot *tgbotapi.BotAPI //Pointer to initialized bot.
 // OpenAI client init
 var gclient *openai.Client
 var gclient_is_busy bool       //Request to API is active
+var gLocale byte               //Localization
 var gToken string              //Bot API token
 var gOwner int64               //Bot's owner chat ID for send confirmations
 var gBotNames []string         //Bot names for calling he in group chats
@@ -171,3 +185,4 @@ var gDir string                //Current dir in OS
 var gLastRequest time.Time     //Time of last request to openAI
 var gRand *rand.Rand           //New Rand generator
 var gContextLength int         //Max context length
+var gCurProcName string        //Name of curren process

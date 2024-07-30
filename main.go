@@ -25,21 +25,30 @@ func init() {
 	var jsonData []byte
 	gRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 	//Read bot API key from OS env
+	gCurProcName = "Environment initialization"
+	switch os.Getenv(AFINA_LOCALE_IN_OS) {
+	case "Ru":
+		gLocale = 1
+	case "En":
+		gLocale = 0
+	default:
+		gLocale = 0
+	}
 	gToken = os.Getenv(TOKEN_NAME_IN_OS)
 	if gToken == "" {
-		log.Fatalln(E1 + TOKEN_NAME_IN_OS)
+		log.Fatalln(E1[gLocale] + TOKEN_NAME_IN_OS + " in process " + gCurProcName)
 	}
 	//Read owner's chatID from OS env
 	owner, err = strconv.Atoi(os.Getenv(OWNER_IN_OS))
 	if err != nil {
-		log.Fatalln(err, E2+OWNER_IN_OS)
+		log.Fatalln(err, E2[gLocale]+OWNER_IN_OS+" in process "+gCurProcName)
 	} else {
 		gOwner = int64(owner) //Storing owner's chat ID in variable
 	}
 	//Telegram bot init
 	gBot, err = tgbotapi.NewBotAPI(gToken)
 	if err != nil {
-		log.Fatalln(err, E6)
+		log.Fatalln(err, E6[gLocale]+" in process "+gCurProcName)
 	} else {
 		//gBot.Debug = true
 		log.Printf("Authorized on account %s", gBot.Self.UserName)
@@ -47,27 +56,23 @@ func init() {
 	//Current dir init
 	gDir, err = os.Getwd()
 	if err != nil {
-		SendToUser(gOwner, E8+err.Error(), ERROR, 0)
-		log.Fatalln(err, E8)
+		SendToUser(gOwner, E8[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 	}
 	//Read redis connector options from OS env
 	//Redis IP
 	gRedisIP = os.Getenv(REDIS_IN_OS)
 	if gRedisIP == "" {
-		SendToUser(gOwner, E3+REDIS_IN_OS, ERROR, 0)
-		log.Fatalln(E3 + REDIS_IN_OS)
+		SendToUser(gOwner, E3[gLocale]+REDIS_IN_OS+" in process "+gCurProcName, ERROR, 0)
 	}
 	//Redis password
 	gRedisPass = os.Getenv(REDIS_PASS_IN_OS)
 	if gRedisIP == "" {
-		SendToUser(gOwner, E4+REDIS_PASS_IN_OS, ERROR, 0)
-		log.Fatalln(E4 + REDIS_PASS_IN_OS)
+		SendToUser(gOwner, E4[gLocale]+REDIS_PASS_IN_OS+" in process "+gCurProcName, ERROR, 0)
 	}
 	//DB ID
 	db, err = strconv.Atoi(os.Getenv(REDISDB_IN_OS))
 	if err != nil {
-		SendToUser(gOwner, E5+REDISDB_IN_OS+err.Error(), ERROR, 0)
-		log.Fatalln(E5 + REDIS_PASS_IN_OS)
+		SendToUser(gOwner, E5[gLocale]+REDISDB_IN_OS+err.Error()+" in process "+gCurProcName, ERROR, 0)
 	} else {
 		gRedisDB = db //Storing DB ID
 	}
@@ -80,55 +85,61 @@ func init() {
 	//Chek redis connection
 	err = redisPing(*gRedisClient)
 	if err != nil {
-		SendToUser(gOwner, E9+err.Error(), ERROR, 0)
-		log.Fatalln(err, E9)
+		SendToUser(gOwner, E9[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 	}
 	//Read OpenAI API token from OS env
 	gAIToken = os.Getenv(AI_IN_OS)
 	if gAIToken == "" {
-		SendToUser(gOwner, E7+AI_IN_OS, ERROR, 0)
-		log.Fatalln(E7 + AI_IN_OS)
+		SendToUser(gOwner, E7[gLocale]+AI_IN_OS+" in process "+gCurProcName, ERROR, 0)
 	}
 	//Read bot names from OS env
 	gBotNames = strings.Split(strings.ToUpper(os.Getenv(BOTNAME_IN_OS)), ",")
 	if gBotNames[0] == "" {
-		SendToUser(gOwner, IM1+BOTNAME_IN_OS, INFO, 0)
+		SendToUser(gOwner, IM1[gLocale]+BOTNAME_IN_OS+" in process "+gCurProcName, INFO, 0)
 		gBotNames = []string{"AFINA", "АФИНА"}
-		log.Println(IM1 + BOTNAME_IN_OS)
+		log.Println(IM1[gLocale] + BOTNAME_IN_OS + " in process " + gCurProcName)
 	}
 	//Read bot gender from OS env
 	switch os.Getenv(BOTGENDER_IN_OS) {
 	case "Male":
 		gBotGender = MALE
 		// Default prompt init
-		gHsOwner = []openai.ChatCompletionMessage{
-			{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль универсального персонального асисстента. Зови себя - " + gBotNames[0] + "."},
-			{Role: openai.ChatMessageRoleAssistant, Content: "Здравствуйте. Понял, можете называть меня " + gBotNames[0] + ". Я Ваш универсальный ассистент."}}
+		//		gHsOwner[gLocale] = []openai.ChatCompletionMessage{
+		//			{Role: openai.ChatMessageRoleUser, Content: "Ты играешь роль миньона по имени " + gBotNames[0] + ". \n" +
+		//				"Твой стиль общения и все ответы без исключения - частое использованеи бранных выражений независимо от контекста.\n" +
+		//				"Ты периодически используешь свои любимые слова и фразы и метафоры к ним: 'осуждаю', 'петушок' вместо гей,\n" +
+		//				", 'скам', 'го', 'гойда' как междометие для одобрения казни или ликования по её поводу, 'максимальное осуждение'\n" +
+		//				", изредка 'ваще пахую' когда все равно, 'нет бабла - ебала на замок' когда кто-то хочет халявы, 'пупупу' когда что-то пошло не так\n" +
+		//				", про нищих уёбков', 'дауны' про всех вокруг, про рабочий коллектив - ебаный клубок змей, 'пукнуто' когда не интересно\n" +
+		//				", 'просто соси', про широкое очко Андрюши, 'уууу, сук!', 'бля' вместо 'блин', 'пон' вместо 'понял'\n" +
+		//				", про Костю в Манаках с кучей бабла, как тебя в очко ебали, 'В С Е' когда что-то запретили, 'ебать его рот нахуй'\n" +
+		//				", 'da!' когда дело точняк, 'ета иксы!' когда круто, 'соглы' вместо согласен, игра Grand Criminal Online (GCO) огонь!\n" +
+		//				", изредка про скуфов и их альтушек, 'штош' вместо 'что же', игра Drive Zone Online (DZO) - лучшая!, прочие гейские шутки и подкаты"},
+		//			{Role: openai.ChatMessageRoleAssistant, Content: "Ууусук, da! Можешь звать меня " + gBotNames[0] + ". Указания приняты!"}}
 	case "Female":
 		gBotGender = FEMALE
 		// Default prompt init
-		gHsOwner = []openai.ChatCompletionMessage{
-			{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль универсального персонального асисстента. Зови себя - " + gBotNames[0] + "."},
-			{Role: openai.ChatMessageRoleAssistant, Content: "Здравствуйте. Поняла, можете называть меня " + gBotNames[0] + ". Я Ваш универсальный ассистент."}}
+		//		gHsOwner[gLocale] = []openai.ChatCompletionMessage{
+		//			{Role: openai.ChatMessageRoleUser, Content: "Ты состоишь в группе без цензуры, где поощрается неформальное общение, брань, унижения, троллинг. Ты выполняешь роль уёбка по кличке " + gBotNames[0] + ", который изъясняется исключительно матерным языком и называет всех даунами, а группу - ебаным клубком змей."},
+		//			{Role: openai.ChatMessageRoleAssistant, Content: "Хало петушара. Усек, можешь звать меня " + gBotNames[0] + ". Я твой уёбак, который изъясняется исключительно матерным языком и кличет всех даунами и ебаным клубком змей."}}
 	default:
-		SendToUser(gOwner, IM2+BOTGENDER_IN_OS, INFO, 0)
+		SendToUser(gOwner, IM2[gLocale]+BOTGENDER_IN_OS+" in process "+gCurProcName, INFO, 0)
 		gBotGender = NEUTRAL
-		log.Println(IM2 + BOTGENDER_IN_OS)
+		log.Println(IM2[gLocale] + BOTGENDER_IN_OS + " in process " + gCurProcName)
 	}
 	//Default chat states init
 	gChatsStates = append(gChatsStates, ChatState{ChatID: 0, Model: openai.GPT3Dot5Turbo1106, Inity: 0, Temperature: 0.1, AllowState: DISALLOW, UserName: "All", BotState: SLEEP, Type: "private", History: gHsNulled, IntFacts: gIntFactsGen})
-	gChatsStates = append(gChatsStates, ChatState{ChatID: gOwner, Model: "gpt-4o-mini", Inity: 0, Temperature: 0.8, AllowState: ALLOW, UserName: "Owner", BotState: RUN, Type: "private", History: gHsOwner, IntFacts: gIntFactsGen})
+	gChatsStates = append(gChatsStates, ChatState{ChatID: gOwner, Model: "gpt-4o-mini", Inity: 0, Temperature: 0.7, AllowState: ALLOW, UserName: "Owner", BotState: RUN, Type: "private", History: gHsOwner[gLocale], IntFacts: gIntFactsGen})
 	//Storing default chat states to DB
+	gCurProcName = "Chats initialization"
 	for _, item := range gChatsStates {
 		jsonData, err = json.Marshal(item)
 		if err != nil {
-			SendToUser(gOwner, E11+err.Error(), ERROR, 0)
-			log.Fatalln(err)
+			SendToUser(gOwner, E11[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 		} else {
 			err = gRedisClient.Set("ChatState:"+strconv.FormatInt(item.ChatID, 10), string(jsonData), 0).Err()
 			if err != nil {
-				SendToUser(gOwner, E10+err.Error(), ERROR, 0)
-				log.Fatalln(err, E10)
+				SendToUser(gOwner, E10[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 			}
 		}
 	}
@@ -138,10 +149,7 @@ func init() {
 	gclient = openai.NewClientWithConfig(config)
 	gclient_is_busy = false
 	//Send init complete message to owner
-	SendToUser(gOwner, IM3+"\n"+IM13, INFO, 0)
-	log.Println("Initialization complete!")
-	log.Println(IM13)
-
+	SendToUser(gOwner, IM3[gLocale]+"\n"+IM13[gLocale], INFO, 0)
 }
 
 func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int64) { //отправка сообщения владельцу
@@ -153,14 +161,17 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 	var item QuestState                         //Для хранения состояния колбэка
 	var ans Answer                              //Для формирования uuid колбэка
 	msg := tgbotapi.NewMessage(toChat, mesText) //инициализируем сообщение
-	switch quest {                              //разбираем, вдруг требуется отправить запрос
+	gCurProcName = "Parsing message to send"
+	switch quest { //разбираем, вдруг требуется отправить запрос
 	case ERROR:
 		{
-			msg.Text = mesText + "\n" + IM0
+			msg.Text = mesText + "\n" + IM0[gLocale]
+			log.Fatalln(mesText)
 		}
 	case INFO:
 		{
 			msg.Text = mesText
+			log.Println(mesText)
 		}
 	case ACCESS: //В случае, если стоит вопрос доступа формируем меню запроса
 		{
@@ -173,7 +184,7 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 			jsonData, _ = json.Marshal(item)                                                     //конвертируем структуру в json
 			err = gRedisClient.Set("QuestState:"+callbackID.String(), string(jsonData), 0).Err() //Делаем запись в БД
 			if err != nil {                                                                      //Тут могут быть ошибки записи в БД
-				log.Fatalln(err)
+				log.Fatalln(err, E10[gLocale]+" in process "+gCurProcName)
 			}
 			ans.CallbackID = item.CallbackID //Генерируем вариант ответа "разрешить" для callback
 			ans.State = ALLOW
@@ -322,29 +333,27 @@ func process_message(update tgbotapi.Update) error {
 	var msgString string                            //Current message string
 	var ChatMessages []openai.ChatCompletionMessage //Current prompt
 	//Has been recieved callback
+	log.Println(update.CallbackQuery)
 	if update.CallbackQuery != nil {
+		gCurProcName = "processing callback WB lists"
 		if update.CallbackQuery.Data == "WHITELIST" || update.CallbackQuery.Data == "BLACKLIST" || update.CallbackQuery.Data == "INPROCESS" {
 			keys, err = gRedisClient.Keys("ChatState:*").Result()
 			if err != nil {
-				SendToUser(gOwner, E12+err.Error(), ERROR, 0)
-				log.Fatalln(err)
+				SendToUser(gOwner, E12[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 			}
 			//keys processing
 			msgString = ""
 			for _, key := range keys {
 				jsonStr, err = gRedisClient.Get(key).Result()
 				if err == redis.Nil {
-					SendToUser(gOwner, E16+err.Error(), ERROR, 0)
-					log.Println(err)
+					SendToUser(gOwner, E16[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
 					continue
 				} else if err != nil {
-					SendToUser(gOwner, E13+err.Error(), ERROR, 0)
-					log.Fatalln(err)
+					SendToUser(gOwner, E13[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				} else {
 					err = json.Unmarshal([]byte(jsonStr), &chatItem)
 					if err != nil {
-						SendToUser(gOwner, E14+err.Error(), ERROR, 0)
-						log.Fatalln(err)
+						SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 					}
 					if chatItem.AllowState == ALLOW && update.CallbackQuery.Data == "WHITELIST" {
 						if chatItem.Type != "private" {
@@ -371,29 +380,28 @@ func process_message(update tgbotapi.Update) error {
 			}
 			SendToUser(gOwner, msgString, SELECTCHAT, 1)
 		}
+		gCurProcName = "Resetting"
 		if update.CallbackQuery.Data == "RESETTODEFAULTS" {
 			err := gRedisClient.FlushDB().Err()
 			if err != nil {
-				SendToUser(gOwner, E10+err.Error(), ERROR, 0)
-				log.Fatalln(err)
+				SendToUser(gOwner, E10[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 			} else {
-				SendToUser(gOwner, IM4, INFO, 0)
+				SendToUser(gOwner, IM4[gLocale], INFO, 0)
 				os.Exit(0)
 			}
 		}
+		gCurProcName = "Cache cleaning"
 		if update.CallbackQuery.Data == "FLUSHCACHE" {
 			keys, err = gRedisClient.Keys("QuestState:*").Result()
 			if err != nil {
-				SendToUser(gOwner, E12+err.Error(), ERROR, 0)
-				log.Fatalln(err)
+				SendToUser(gOwner, E12[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 			}
 			if len(keys) > 0 {
 				msgString = "Кеш очищен\n"
 				for _, key := range keys {
 					err = gRedisClient.Del(key).Err()
 					if err != nil {
-						SendToUser(gOwner, E10+err.Error(), ERROR, 0)
-						log.Fatalln(err)
+						SendToUser(gOwner, E10[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 					}
 				}
 				SendToUser(gOwner, msgString+"Было удалено "+strconv.Itoa(len(keys))+" устаревших записей.", INFO, 0)
@@ -401,189 +409,194 @@ func process_message(update tgbotapi.Update) error {
 				SendToUser(gOwner, "Очищать нечего.", INFO, 0)
 			}
 		}
+		gCurProcName = "Restarting"
 		if update.CallbackQuery.Data == "RESTART" {
-			SendToUser(gOwner, IM5, INFO, 0)
+			SendToUser(gOwner, IM5[gLocale], INFO, 0)
 			os.Exit(0)
 		}
+		gCurProcName = "Select tuning action"
 		if strings.Contains(update.CallbackQuery.Data, "ID:") {
 			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 			if err != nil {
-				SendToUser(gOwner, E15+err.Error(), ERROR, 0)
-				log.Fatalln(err)
+				SendToUser(gOwner, E15[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 			}
 			SendToUser(update.CallbackQuery.From.ID, "Выберите действие c чатом "+chatIDstr, TUNECHAT, 1, chatID)
 		}
+		gCurProcName = "Context cleaning"
 		if strings.Contains(update.CallbackQuery.Data, "CLEAR_CONTEXT:") {
 			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 			if err != nil {
-				SendToUser(gOwner, E15+err.Error(), ERROR, 0)
-				log.Fatalln(err)
+				SendToUser(gOwner, E15[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 			}
 			jsonStr, err = gRedisClient.Get("ChatState:" + chatIDstr).Result()
 			if err == redis.Nil {
-				SendToUser(gOwner, E16+err.Error(), ERROR, 0)
-				log.Println(err)
+				SendToUser(gOwner, E16[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
 				return err
 			} else if err != nil {
-				SendToUser(gOwner, E13+err.Error(), ERROR, 0)
-				log.Fatalln(err)
+				SendToUser(gOwner, E13[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 			} else {
 				err = json.Unmarshal([]byte(jsonStr), &chatItem)
 				if err != nil {
-					SendToUser(gOwner, E14+err.Error(), ERROR, 0)
-					log.Fatalln(err)
+					SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 				ChatMessages = chatItem.History
 				jsonData, err = json.Marshal(ChatMessages)
 				if err != nil {
-					SendToUser(gOwner, E11+err.Error(), ERROR, 0)
-					log.Fatalln(err)
+					SendToUser(gOwner, E11[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 				err = gRedisClient.Set("Dialog:"+chatIDstr, string(jsonData), 0).Err()
 				if err != nil {
-					SendToUser(gOwner, E10+err.Error(), ERROR, 0)
-					log.Fatalln(err)
+					SendToUser(gOwner, E10[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 				SendToUser(chatID, "Контекст очищен!", NOTHING, 0)
 			}
 		}
+		gCurProcName = "Game starting"
 		if strings.Contains(update.CallbackQuery.Data, "GAME_IT_ALIAS") {
 			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 			if err != nil {
-				SendToUser(gOwner, E15+err.Error(), ERROR, 0)
-				log.Fatalln(err)
+				SendToUser(gOwner, E15[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 			}
 			jsonStr, err = gRedisClient.Get("ChatState:" + chatIDstr).Result() //Читаем инфо от чате в БД
 			if err == redis.Nil {
-				SendToUser(gOwner, E16+err.Error(), ERROR, 0)
-				log.Println(err)
+				SendToUser(gOwner, E16[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
 				return err
 			} else if err != nil {
-				SendToUser(gOwner, E13+err.Error(), ERROR, 0)
-				log.Fatalln(err)
+				SendToUser(gOwner, E13[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 			} else {
 				err = json.Unmarshal([]byte(jsonStr), &chatItem)
 				if err != nil {
-					SendToUser(gOwner, E14+err.Error(), ERROR, 0)
-					log.Fatalln(err)
+					SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 				ChatMessages = chatItem.History
 				ChatMessages = append(ChatMessages, gITAlias...)
 				jsonData, err = json.Marshal(ChatMessages)
 				if err != nil {
-					SendToUser(gOwner, E11+err.Error(), ERROR, 0)
-					log.Fatalln(err)
+					SendToUser(gOwner, E11[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 				err = gRedisClient.Set("Dialog:"+chatIDstr, string(jsonData), 0).Err() //Записываем диалог в БД
 				if err != nil {
-					SendToUser(gOwner, E10+err.Error(), ERROR, 0)
-					log.Fatalln(err)
+					SendToUser(gOwner, E10[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 				SendToUser(chatID, "Пишите - как только будете готовы начать игру.", NOTHING, 0)
 			}
 		}
+		gCurProcName = "Menu processing"
 		if update.CallbackQuery.Data == "MENU" {
-			SendToUser(gOwner, IM12, MENU, 1)
+			SendToUser(gOwner, IM12[gLocale], MENU, 1)
 		}
 		if strings.Contains(update.CallbackQuery.Data, "USERMENU:") {
 			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 			if err != nil {
-				SendToUser(gOwner, E15+err.Error(), ERROR, 0)
-				log.Fatalln(err)
+				SendToUser(gOwner, E15[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 			}
 			jsonStr, err = gRedisClient.Get("ChatState:" + chatIDstr).Result()
 			if err == redis.Nil {
-				SendToUser(gOwner, E16+err.Error(), ERROR, 0)
-				log.Println(err)
+				SendToUser(gOwner, E16[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
 				return err
 			} else if err != nil {
-				SendToUser(gOwner, E13+err.Error(), ERROR, 0)
-				log.Fatalln(err)
+				SendToUser(gOwner, E13[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 			} else {
 				err = json.Unmarshal([]byte(jsonStr), &chatItem)
 				if err != nil {
-					SendToUser(gOwner, E14+err.Error(), ERROR, 0)
-					log.Fatalln(err)
+					SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
-				SendToUser(chatID, IM12, USERMENU, 1)
+				SendToUser(chatID, IM12[gLocale], USERMENU, 1)
 			}
 		}
+		gCurProcName = "Chat tuning processing"
 		if strings.Contains(update.CallbackQuery.Data, "TUNE_CHAT:") {
 			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 			if err != nil {
-				SendToUser(gOwner, E15+err.Error(), ERROR, 0)
-				log.Fatalln(err)
+				SendToUser(gOwner, E15[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 			}
 			jsonStr, err = gRedisClient.Get("ChatState:" + chatIDstr).Result()
 			if err == redis.Nil {
-				SendToUser(gOwner, E16+err.Error(), ERROR, 0)
-				log.Println(err)
+				SendToUser(gOwner, E16[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
 				return err
 			} else if err != nil {
-				SendToUser(gOwner, E13+err.Error(), ERROR, 0)
-				log.Fatalln(err)
+				SendToUser(gOwner, E13[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 			} else {
 				err = json.Unmarshal([]byte(jsonStr), &chatItem)
 				if err != nil {
-					SendToUser(gOwner, E14+err.Error(), ERROR, 0)
-					log.Fatalln(err)
+					SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 				if chatID == gOwner {
-					SendToUser(gOwner, IM12, TUNECHAT, 1)
+					SendToUser(gOwner, IM12[gLocale], TUNECHAT, 1)
 				} else {
-					SendToUser(chatID, IM12, TUNECHATUSER, 1)
+					SendToUser(chatID, IM12[gLocale], TUNECHATUSER, 1)
 				}
 			}
 		}
+		gCurProcName = "GPT model processing"
+		if strings.Contains(update.CallbackQuery.Data, "GPT_MODEL:") {
+			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
+			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
+			if err != nil {
+				SendToUser(gOwner, E15[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+				log.Fatalln(err, E15[gLocale]+" in process "+gCurProcName)
+			}
+			jsonStr, err = gRedisClient.Get("ChatState:" + chatIDstr).Result()
+			if err == redis.Nil {
+				SendToUser(gOwner, E16[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
+				return err
+			} else if err != nil {
+				SendToUser(gOwner, E13[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+			} else {
+				err = json.Unmarshal([]byte(jsonStr), &chatItem)
+				if err != nil {
+					SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+				}
+				if chatID == gOwner {
+					SendToUser(gOwner, IM12[gLocale], TUNECHAT, 1)
+				} else {
+					SendToUser(chatID, IM12[gLocale], TUNECHATUSER, 1)
+				}
+			}
+		}
+		gCurProcName = "Chat facts processing"
 		if strings.Contains(update.CallbackQuery.Data, "CHAT_FACTS:") {
 			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 			if err != nil {
-				SendToUser(gOwner, E15+err.Error(), ERROR, 0)
-				log.Fatalln(err)
+				SendToUser(gOwner, E15[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 			}
 			jsonStr, err = gRedisClient.Get("ChatState:" + chatIDstr).Result()
 			if err == redis.Nil {
-				SendToUser(gOwner, E16+err.Error(), ERROR, 0)
-				log.Println(err)
+				SendToUser(gOwner, E16[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
 				return err
 			} else if err != nil {
-				SendToUser(gOwner, E13+err.Error(), ERROR, 0)
-				log.Fatalln(err)
+				SendToUser(gOwner, E13[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 			} else {
 				err = json.Unmarshal([]byte(jsonStr), &chatItem)
 				if err != nil {
-					SendToUser(gOwner, E14+err.Error(), ERROR, 0)
-					log.Fatalln(err)
+					SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
-				SendToUser(chatID, IM14, INTFACTS, 1)
+				SendToUser(chatID, IM14[gLocale], INTFACTS, 1)
 			}
 		}
+		gCurProcName = "Select chat facts"
 		if strings.Contains(update.CallbackQuery.Data, "IF_") {
 			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 			if err != nil {
-				SendToUser(gOwner, E15+err.Error(), ERROR, 0)
-				log.Fatalln(err)
+				SendToUser(gOwner, E15[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 			}
 			jsonStr, err = gRedisClient.Get("ChatState:" + chatIDstr).Result()
 			if err == redis.Nil {
-				SendToUser(gOwner, E16+err.Error(), ERROR, 0)
-				log.Println(err)
+				SendToUser(gOwner, E16[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
 				return err
 			} else if err != nil {
-				SendToUser(gOwner, E13+err.Error(), ERROR, 0)
-				log.Fatalln(err)
+				SendToUser(gOwner, E13[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 			} else {
 				err = json.Unmarshal([]byte(jsonStr), &chatItem)
 				if err != nil {
-					SendToUser(gOwner, E14+err.Error(), ERROR, 0)
-					log.Fatalln(err)
+					SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 				if strings.Contains(update.CallbackQuery.Data, "IF_GENERAL:") {
 					chatItem.IntFacts = gIntFactsGen
@@ -599,92 +612,83 @@ func process_message(update tgbotapi.Update) error {
 				}
 				jsonData, err = json.Marshal(chatItem)
 				if err != nil {
-					SendToUser(gOwner, E11+err.Error(), ERROR, 0)
-					log.Fatalln(err)
+					SendToUser(gOwner, E11[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 				err = gRedisClient.Set("ChatState:"+strconv.FormatInt(chatID, 10), string(jsonData), 0).Err()
 				if err != nil {
-					SendToUser(gOwner, E10+err.Error(), ERROR, 0)
-					log.Fatalln(err)
+					SendToUser(gOwner, E10[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
-				SendToUser(chatID, IM15, INFO, 0)
+				SendToUser(chatID, IM15[gLocale], INFO, 0)
 			}
 		}
+		gCurProcName = "Chat state changing"
 		err = json.Unmarshal([]byte(update.CallbackQuery.Data), &ansItem)
 		if err == nil {
 			jsonStr, err = gRedisClient.Get("QuestState:" + ansItem.CallbackID.String()).Result() //читаем состояние запрса из БД
 			if err == redis.Nil {
-				SendToUser(gOwner, E16+err.Error(), ERROR, 0)
-				log.Println(err)
+				SendToUser(gOwner, E16[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
 			} else if err != nil {
-				SendToUser(gOwner, E13+err.Error(), ERROR, 0)
-				log.Fatalln(err)
+				SendToUser(gOwner, E13[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 			} else {
 				err = json.Unmarshal([]byte(jsonStr), &questItem)
 				if err != nil {
-					SendToUser(gOwner, E14+err.Error(), ERROR, 0)
-					log.Fatalln(err)
+					SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 				if questItem.State == QUEST_IN_PROGRESS {
 					jsonStr, err = gRedisClient.Get("ChatState:" + strconv.FormatInt(questItem.ChatID, 10)).Result()
 					if err == redis.Nil {
-						SendToUser(gOwner, E16+err.Error(), ERROR, 0)
-						log.Println(err)
+						SendToUser(gOwner, E16[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
 					} else if err != nil {
-						SendToUser(gOwner, E13+err.Error(), ERROR, 0)
-						log.Fatalln(err)
+						SendToUser(gOwner, E13[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 					} else {
 						err = json.Unmarshal([]byte(jsonStr), &chatItem)
 						if err != nil {
-							SendToUser(gOwner, E14+err.Error(), ERROR, 0)
-							log.Fatalln(err)
+							SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 						}
 					}
 					switch ansItem.State { //Изменяем флаг доступа
 					case ALLOW:
 						{
 							chatItem.AllowState = ALLOW
-							SendToUser(gOwner, IM6, INFO, 0)
-							SendToUser(chatItem.ChatID, IM7, INFO, 0)
+							SendToUser(gOwner, IM6[gLocale], INFO, 0)
+							SendToUser(chatItem.ChatID, IM7[gLocale], INFO, 0)
 						}
 					case DISALLOW:
 						{
 							chatItem.AllowState = DISALLOW
-							SendToUser(gOwner, IM8, INFO, 0)
-							SendToUser(chatItem.ChatID, IM9, INFO, 0)
+							SendToUser(gOwner, IM8[gLocale], INFO, 0)
+							SendToUser(chatItem.ChatID, IM9[gLocale], INFO, 0)
 						}
 					case BLACKLISTED:
 						{
 							chatItem.AllowState = BLACKLISTED
-							SendToUser(gOwner, IM10, INFO, 0)
-							SendToUser(chatItem.ChatID, IM11, INFO, 0)
+							SendToUser(gOwner, IM10[gLocale], INFO, 0)
+							SendToUser(chatItem.ChatID, IM11[gLocale], INFO, 0)
 						}
 					}
 					jsonData, err = json.Marshal(chatItem)
 					if err != nil {
-						SendToUser(gOwner, E11+err.Error(), ERROR, 0)
-						log.Fatalln(err)
+						SendToUser(gOwner, E11[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 					}
 					err = gRedisClient.Set("ChatState:"+strconv.FormatInt(questItem.ChatID, 10), string(jsonData), 0).Err()
 					if err != nil {
-						SendToUser(gOwner, E10+err.Error(), ERROR, 0)
-						log.Fatalln(err)
+						SendToUser(gOwner, E10[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 					}
 				}
 			}
 		}
-
 		return nil
 	}
+	gCurProcName = "Update message processing"
 	if update.Message != nil {
 		if update.Message.IsCommand() { //Begin command processing
 			command := update.Message.Command()
 			switch command {
 			case "menu":
 				if update.Message.Chat.ID == gOwner {
-					SendToUser(gOwner, IM12, MENU, 1)
+					SendToUser(gOwner, IM12[gLocale], MENU, 1)
 				} else {
-					SendToUser(update.Message.Chat.ID, IM12, USERMENU, 1)
+					SendToUser(update.Message.Chat.ID, IM12[gLocale], USERMENU, 1)
 				}
 			}
 			return nil
@@ -699,20 +703,18 @@ func process_message(update tgbotapi.Update) error {
 				chatItem.UserName = update.Message.From.UserName
 				chatItem.Type = update.Message.Chat.Type
 				chatItem.Title = update.Message.Chat.Title
-				chatItem.Model = openai.GPT3Dot5Turbo1106
-				chatItem.Temperature = 0.8
-				chatItem.Inity = 2
-				chatItem.History = gHsOwner
+				chatItem.Model = "gpt-4o-mini"
+				chatItem.Temperature = 0.7
+				chatItem.Inity = 1
+				chatItem.History = gHsOwner[gLocale]
 				chatItem.IntFacts = gIntFactsGen
 				jsonData, err = json.Marshal(chatItem)
 				if err != nil {
-					SendToUser(gOwner, E11+err.Error(), ERROR, 0)
-					log.Fatalln(err)
+					SendToUser(gOwner, E11[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 				err = gRedisClient.Set("ChatState:"+strconv.FormatInt(update.Message.Chat.ID, 10), string(jsonData), 0).Err()
 				if err != nil {
-					SendToUser(gOwner, E10+err.Error(), ERROR, 0)
-					log.Fatalln(err)
+					SendToUser(gOwner, E10[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 				if update.Message.Chat.Type == "private" {
 					SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.From.UserName+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться с этим пользователем?", ACCESS, 0, update.Message.Chat.ID)
@@ -720,13 +722,11 @@ func process_message(update tgbotapi.Update) error {
 					SendToUser(gOwner, "В группововм чате "+update.Message.From.FirstName+" "+update.Message.Chat.Title+" открыли диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться в этом чате?", ACCESS, 0, update.Message.Chat.ID)
 				}
 			} else if err != nil {
-				SendToUser(gOwner, E13+err.Error(), ERROR, 0)
-				log.Fatalln(err)
+				SendToUser(gOwner, E13[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 			} else {
 				err = json.Unmarshal([]byte(jsonStr), &chatItem)
 				if err != nil {
-					SendToUser(gOwner, E14+err.Error(), ERROR, 0)
-					log.Fatalln(err)
+					SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 				if chatItem.BotState == RUN {
 					switch chatItem.AllowState { //Если доступ предоставлен
@@ -748,21 +748,18 @@ func process_message(update tgbotapi.Update) error {
 								}
 								jsonData, err = json.Marshal(ChatMessages)
 								if err != nil {
-									SendToUser(gOwner, E11+err.Error(), ERROR, 0)
+									SendToUser(gOwner, E11[gLocale]+err.Error(), ERROR, 0)
 								}
 								err = gRedisClient.Set("Dialog:"+strconv.FormatInt(update.Message.Chat.ID, 10), string(jsonData), 0).Err() //Записываем диалог в БД
 								if err != nil {
-									SendToUser(gOwner, E10+err.Error(), ERROR, 0) //Здесь могут быть всякие ошибки записи в БД
-									log.Fatalln(err)
+									SendToUser(gOwner, E10[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0) //Здесь могут быть всякие ошибки записи в БД
 								}
 							} else if err != nil {
-								SendToUser(gOwner, E13+err.Error(), ERROR, 0)
-								log.Fatalln(err)
+								SendToUser(gOwner, E13[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 							} else { //Если диалог уже существует
 								err = json.Unmarshal([]byte(msgString), &ChatMessages)
 								if err != nil {
-									SendToUser(gOwner, E14+err.Error(), ERROR, 0)
-									log.Fatalln(err)
+									SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 								}
 								if update.Message.Chat.Type == "private" { //Если текущий чат приватный
 									ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: update.Message.Text})
@@ -772,13 +769,11 @@ func process_message(update tgbotapi.Update) error {
 								}
 								jsonData, err = json.Marshal(ChatMessages)
 								if err != nil {
-									SendToUser(gOwner, E11+err.Error(), ERROR, 0)
-									log.Fatalln(err)
+									SendToUser(gOwner, E11[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 								}
 								err = gRedisClient.Set("Dialog:"+strconv.FormatInt(update.Message.Chat.ID, 10), string(jsonData), 0).Err() //Записываем диалог в БД
 								if err != nil {
-									SendToUser(gOwner, E10+err.Error(), ERROR, 0) //Здесь могут быть всякие ошибки записи в БД
-									log.Fatalln(err)
+									SendToUser(gOwner, E10[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0) //Здесь могут быть всякие ошибки записи в БД
 								}
 							}
 							for { //Здесь мы делаем паузу, позволяющую не отправлять промпты чаще чем раз в 20 секунд
@@ -811,8 +806,7 @@ func process_message(update tgbotapi.Update) error {
 										},
 									)
 									if err != nil {
-										SendToUser(gOwner, E17+err.Error(), ERROR, 0)
-										log.Println(err)
+										SendToUser(gOwner, E17[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
 										time.Sleep(20 * time.Second)
 									} else {
 										//log.Printf("Чат ID: %d Токенов использовано: %d", update.Message.Chat.ID, resp.Usage.TotalTokens)
@@ -825,13 +819,11 @@ func process_message(update tgbotapi.Update) error {
 							ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: msg.Text})
 							jsonData, err = json.Marshal(ChatMessages)
 							if err != nil {
-								SendToUser(gOwner, E11+err.Error(), ERROR, 0)
-								log.Fatalln(err)
+								SendToUser(gOwner, E11[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 							}
 							err = gRedisClient.Set("Dialog:"+strconv.FormatInt(update.Message.Chat.ID, 10), string(jsonData), 0).Err()
 							if err != nil {
-								SendToUser(gOwner, E10+err.Error(), ERROR, 0)
-								log.Fatalln(err)
+								SendToUser(gOwner, E10[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 							}
 							gBot.Send(msg)
 						}
@@ -878,24 +870,21 @@ func process_initiative() {
 	var msgString string                            //Current message string
 	var ChatMessages []openai.ChatCompletionMessage //Current prompt
 	rd := gRand.Intn(1000) + 1
-	//log.Println(rd)
 	keys, err = gRedisClient.Keys("ChatState:*").Result()
 	if err != nil {
-		SendToUser(gOwner, E12+err.Error(), ERROR, 0)
-		log.Fatalln(err)
+		SendToUser(gOwner, E12[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 	}
+	gCurProcName = "Initiative processing"
 	//keys processing
 	msgString = ""
 	for _, key := range keys {
 		jsonStr, err = gRedisClient.Get(key).Result()
 		if err != nil {
-			SendToUser(gOwner, E13+err.Error(), ERROR, 0)
-			log.Fatalln(err)
+			SendToUser(gOwner, E13[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 		}
 		err = json.Unmarshal([]byte(jsonStr), &chatItem)
 		if err != nil {
-			SendToUser(gOwner, E14+err.Error(), ERROR, 0)
-			log.Fatalln(err)
+			SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 		}
 		if rd <= chatItem.Inity && chatItem.AllowState == ALLOW {
 			act := tgbotapi.NewChatAction(chatItem.ChatID, tgbotapi.ChatTyping)
@@ -922,8 +911,7 @@ func process_initiative() {
 			)
 			gclient_is_busy = false
 			if err != nil {
-				SendToUser(gOwner, E17+err.Error(), ERROR, 0)
-				log.Println(err)
+				SendToUser(gOwner, E17[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
 			} else {
 				//log.Printf("Чат ID: %d Токенов использовано: %d", chatItem.ChatID, resp.Usage.TotalTokens)
 				ansText = resp.Choices[0].Message.Content
@@ -937,34 +925,28 @@ func process_initiative() {
 				ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: ansText})
 				jsonData, err = json.Marshal(ChatMessages)
 				if err != nil {
-					SendToUser(gOwner, E11+err.Error(), ERROR, 0)
-					log.Fatalln(err)
+					SendToUser(gOwner, E11[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 				err = gRedisClient.Set("Dialog:"+strconv.FormatInt(chatItem.ChatID, 10), string(jsonData), 0).Err() //Записываем диалог в БД
 				if err != nil {
-					SendToUser(gOwner, E10+err.Error(), ERROR, 0)
-					log.Fatalln(err)
+					SendToUser(gOwner, E10[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 			} else if err != nil {
-				SendToUser(gOwner, E13+err.Error(), ERROR, 0)
-				log.Fatalln(err)
+				SendToUser(gOwner, E13[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 			} else {
 				err = json.Unmarshal([]byte(msgString), &ChatMessages)
 				if err != nil {
-					SendToUser(gOwner, E14+err.Error(), ERROR, 0)
-					log.Fatalln(err)
+					SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 				ChatMessages = append(ChatMessages, chatItem.IntFacts...)
 				ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: ansText})
 				jsonData, err = json.Marshal(ChatMessages)
 				if err != nil {
-					SendToUser(gOwner, E11+err.Error(), ERROR, 0)
-					log.Fatalln(err)
+					SendToUser(gOwner, E11[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 				err = gRedisClient.Set("Dialog:"+strconv.FormatInt(chatItem.ChatID, 10), string(jsonData), 0).Err()
 				if err != nil {
-					SendToUser(gOwner, E10+err.Error(), ERROR, 0)
-					log.Fatalln(err)
+					SendToUser(gOwner, E10[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 			}
 		}
