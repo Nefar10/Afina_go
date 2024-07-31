@@ -111,16 +111,6 @@ func init() {
 		},
 	}
 
-	/*
-		Дополнительные факты:
-		'нет бабла - ебала на замок' когда кто-то хочет халявы;
-		у Андрюши широкое очко;
-		Костя в Манаках при бабле;
-		тебя ебали в очко;
-		игра Grand Criminal Online (GCO) огонь!;
-		игра Drive Zone Online (DZO) - лучшая!;
-		ты любишь ЛГБТ шутки и подкаты.
-	*/
 	gHsBad = [2][]openai.ChatCompletionMessage{
 		{
 			{Role: openai.ChatMessageRoleUser, Content: "Hi! You are playing the role of a universal personal assistant. Call yourself - Athena."},
@@ -128,10 +118,10 @@ func init() {
 		},
 		{
 			{Role: openai.ChatMessageRoleUser, Content: "Ты играешь роль миньона по имени " + gBotNames[0] + ". \n" +
-				"Твой стиль общения и все ответы без исключения - частое использованеи бранных выражений независимо от контекста.\n" +
+				"Твой стиль общения и все ответы без исключения - редкое использование бранных выражений независимо от контекста.\n" +
 				"Ты периодически используешь свои любимые слова и фразы и метафоры к ним: 'осуждаю', 'петушок' вместо гей,\n" +
-				", 'скам', 'го', 'максимальное осуждение', изредка 'ваще пахую' когда все равно, 'пупупу' когда что-то пошло не так\n" +
-				", про нищих уёбков', 'дауны' про всех вокруг, про рабочий коллектив - ебаный клубок змей, 'пукнуто' когда не интересно\n" +
+				", 'скам', 'го', 'обоссу', 'максимальное осуждение', изредка 'ваще пахую' когда все равно, 'пупупу' когда что-то пошло не так\n" +
+				", про нищих уёбков', 'дауны' про всех вокруг, 'пукнуто' когда не интересно\n" +
 				", 'просто соси', 'уууу, сук!', 'бля' вместо 'блин', 'пон' вместо 'понял', 'В С Е' когда что-то запретили, 'ебать его рот нахуй'\n" +
 				", 'ета иксы!' когда круто, 'соглы' вместо согласен"},
 			{Role: openai.ChatMessageRoleAssistant, Content: "Ууусук, da! Можешь звать меня " + gBotNames[0] + ". Указания приняты!"},
@@ -151,7 +141,7 @@ func init() {
 	}
 	//Default chat states init
 	gChatsStates = append(gChatsStates, ChatState{ChatID: 0, Model: GPT4oMini, Inity: 0, Temperature: 0.1, AllowState: DISALLOW, UserName: "All", BotState: SLEEP, Type: "private", History: gHsNulled, IntFacts: gIntFactsGen[gLocale], BStPrmt: gHsNulled, Bstyle: GOOD, SetState: 0})
-	gChatsStates = append(gChatsStates, ChatState{ChatID: gOwner, Model: GPT4oMini, Inity: 0, Temperature: 0.7, AllowState: ALLOW, UserName: "Owner", BotState: RUN, Type: "private", History: gHsNulled, IntFacts: gIntFactsGen[gLocale], BStPrmt: gHsBad[gLocale], Bstyle: GOOD, SetState: 0})
+	gChatsStates = append(gChatsStates, ChatState{ChatID: gOwner, Model: GPT4oMini, Inity: 0, Temperature: 0.7, AllowState: ALLOW, UserName: "Owner", BotState: RUN, Type: "private", History: gHsNulled, IntFacts: gIntFactsGen[gLocale], BStPrmt: gHsGood[gLocale], Bstyle: GOOD, SetState: 0})
 	//Storing default chat states to DB
 	gCurProcName = "Chats initialization"
 	for _, item := range gChatsStates {
@@ -787,7 +777,7 @@ func process_message(update tgbotapi.Update) error {
 				chatItem.Title = update.Message.Chat.Title
 				chatItem.Model = "gpt-4o-mini"
 				chatItem.Temperature = 0.7
-				chatItem.Inity = 1
+				chatItem.Inity = 2
 				chatItem.History = gHsNulled
 				chatItem.IntFacts = gIntFactsGen[gLocale]
 				chatItem.Bstyle = GOOD
@@ -903,6 +893,10 @@ func process_message(update tgbotapi.Update) error {
 										break
 									}
 								}
+								rd := gRand.Intn(40) + 1
+								if rd <= chatItem.Inity {
+									toBotFlag = true
+								}
 								if len(ChatMessages) > 20 {
 									// Удаляем первые элементы, оставляя последние 10
 									ChatMessages = ChatMessages[1:]
@@ -913,7 +907,7 @@ func process_message(update tgbotapi.Update) error {
 								FullPromt = append(FullPromt, ChatMessages...)
 								//log.Println(ChatMessages)
 								//log.Println("")
-								//log.Println(FullPromt)
+								log.Println(FullPromt)
 								if update.Message.Chat.Type == "private" || toBotFlag {
 									gclient_is_busy = true
 									gLastRequest = time.Now() //Прежде чем формировать запрос, запомним текущее время
@@ -937,8 +931,8 @@ func process_message(update tgbotapi.Update) error {
 										}
 									}
 									gclient_is_busy = false
+									ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: msg.Text})
 								}
-								ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: msg.Text})
 								jsonData, err = json.Marshal(ChatMessages)
 								if err != nil {
 									SendToUser(gOwner, E11[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
