@@ -39,16 +39,17 @@ const (
 	QUEST_IN_PROGRESS = 1 //Quest is'nt solved
 	QUEST_SOLVED      = 2 //Quest is solved
 	//Called menu types
-	NOTHING      = 0 //Do nosting
-	ACCESS       = 1 //Access query
-	MENU         = 2 //Admin's menu calling
-	USERMENU     = 3 //User's menu calling
-	SELECTCHAT   = 4 //Select chat to change options
-	TUNECHAT     = 5 //Cahnge chat options
-	ERROR        = 6 //Error's information
-	INFO         = 7 //Some informtion
-	TUNECHATUSER = 8 //same the 5
-	INTFACTS     = 9 //Edit intfacts
+	NOTHING      = 0  //Do nosting
+	ACCESS       = 1  //Access query
+	MENU         = 2  //Admin's menu calling
+	USERMENU     = 3  //User's menu calling
+	SELECTCHAT   = 4  //Select chat to change options
+	TUNECHAT     = 5  //Cahnge chat options
+	ERROR        = 6  //Error's information
+	INFO         = 7  //Some informtion
+	TUNECHATUSER = 8  //same the 5
+	INTFACTS     = 9  //Edit intfacts
+	GPTSTYLES    = 10 //Style conversations
 	//MENULEVELS
 	NO_ACCESS = 1  //No access to menu
 	DEFAULT   = 2  //Default user menu
@@ -58,6 +59,14 @@ const (
 	//LOCALES
 	RU = 1
 	EN = 0
+	//ADDED MODELS
+	GPT4oMini = "gpt-4o-mini"
+	//STYLES
+	GOOD = 0
+	BAD  = 1
+	//PARAMETERS
+	NO_ONE  = 0
+	HISTORY = 1
 )
 
 // ERRORS
@@ -93,10 +102,40 @@ var IM9 = [2]string{" I apologize, but to continue the conversation, it is neces
 var IM10 = [2]string{" Access bocked ", " Доступ заблокирован "}
 var IM11 = [2]string{" Congratulations! You have been added to the pranksters list! ", " Поздравляю! Вы были добавлены в список проказников! "}
 var IM12 = [2]string{" Please select what needs to be done. ", " Пожалуйста, выберите, что необходимо выполнить. "}
-var IM13 = [2]string{" Current version is 0.3.2", " Текущая версия 0.3.2"}
+var IM13 = [2]string{" Current version is 0.3.2 ", " Текущая версия 0.3.2 "}
 var IM14 = [2]string{" Choose a topic. ", " Выберите тему "}
 var IM15 = [2]string{" Topic has been changed. ", " Тема изменена "}
 var IM16 = [2]string{" Write - as soon as you are ready to start the game. ", " Пишите - как только будете готовы начать игру. "}
+var IM17 = [2]string{" Choose a style. ", " Выберите стиль общения "}
+var IM18 = [2]string{" The communication style has been changed to friendly. ", " Стиль общения изменен на доброжелательный. "}
+var IM19 = [2]string{" The communication style has been changed to unfriendly. ", " Стиль общения изменен на недоброжелательный. "}
+
+// Menus
+var M1 = [2]string{"Yes", "Да"}
+var M2 = [2]string{"No", "Нет"}
+var M3 = [2]string{"To block", "Блокировать"}
+var M4 = [2]string{"Allowed chats", "Разрешенные чаты"}
+var M5 = [2]string{"Prohibited chats", "Запрещенные чаты"}
+var M6 = [2]string{"Without a decision", "Без решения"}
+var M7 = [2]string{"Full reset", "Полный сброс"}
+var M8 = [2]string{"Cache clearing", "Очистка кеша"}
+var M9 = [2]string{"Reboot", "Перезагрузка"}
+var M10 = [2]string{"Change settings", "Изменить параметры"}
+var M11 = [2]string{"Clear context", "Очистить контекст"}
+var M12 = [2]string{"Play IT-Elias", "Играть в IT-Элиас"}
+var M13 = [2]string{"Select model", "Выбрать модель"}
+var M14 = [2]string{"Creativity", "Креативность"}
+var M15 = [2]string{"Context size", "Размер контекста"}
+var M16 = [2]string{"Chat history", "История чата"}
+var M17 = [2]string{"Topic of interesting facts", "Тема интересных фактов"}
+var M18 = [2]string{"Access rights", "Права доступа"}
+var M19 = [2]string{"Go back", "Вернуться назад"}
+var M20 = [2]string{"General facts", "Общие факты"}
+var M21 = [2]string{"Natural sciences", "Естественные науки"}
+var M22 = [2]string{"IT", "Ай-Ти"}
+var M23 = [2]string{"Cars and racing", "Автомобили и гонки"}
+var M24 = [2]string{"Good boy", "Паинька"}
+var M25 = [2]string{"Bad boy", "Плохиш"}
 
 // Global types
 // Chat's structure for storing options in DB and operate with them
@@ -113,6 +152,10 @@ type ChatState struct {
 	History     []openai.ChatCompletionMessage //Current chat prompts
 	IntFacts    []openai.ChatCompletionMessage //Interesting facts prompt
 	Inity       int                            //Bot's initiativity
+	Bstyle      byte                           //Conversation style
+	BStPrmt     []openai.ChatCompletionMessage //Conv style promt
+	SetState    byte                           //While change setting
+
 }
 
 // Quest operating structure
@@ -135,7 +178,18 @@ type Answer struct {
 var gHsNulled = []openai.ChatCompletionMessage{{Role: openai.ChatMessageRoleUser, Content: ""}}
 
 // Default prompt
-var gHsOwner = [2][]openai.ChatCompletionMessage{
+var gHsGood = [2][]openai.ChatCompletionMessage{
+	{
+		{Role: openai.ChatMessageRoleUser, Content: "Hi! You are playing the role of a universal personal assistant. Call yourself - Athena."},
+		{Role: openai.ChatMessageRoleAssistant, Content: "Hello! Got it, you can call me Athena. I am your universal assistant."},
+	},
+	{
+		{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль универсального персонального ассистента. Зови себя - Афина."},
+		{Role: openai.ChatMessageRoleAssistant, Content: "Здравствуйте. Поняла, можете называть меня Афина. Я Ваш универсальный ассистент."},
+	},
+}
+
+var gHsBad = [2][]openai.ChatCompletionMessage{
 	{
 		{Role: openai.ChatMessageRoleUser, Content: "Hi! You are playing the role of a universal personal assistant. Call yourself - Athena."},
 		{Role: openai.ChatMessageRoleAssistant, Content: "Hello! Got it, you can call me Athena. I am your universal assistant."},
