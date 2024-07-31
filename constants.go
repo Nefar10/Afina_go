@@ -173,6 +173,8 @@ type Answer struct {
 	State      int       //Solve
 }
 
+var gChangeSettings int64
+
 // Presetted prompts
 // Nulled prompt
 var gHsNulled = []openai.ChatCompletionMessage{{Role: openai.ChatMessageRoleUser, Content: ""}}
