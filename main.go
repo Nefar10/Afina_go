@@ -363,6 +363,7 @@ func process_message(update tgbotapi.Update) error {
 	var keys []string                               //Curent keys array
 	var msgString string                            //Current message string
 	var ChatMessages []openai.ChatCompletionMessage //Current prompt
+	var FullPromt []openai.ChatCompletionMessage    //Messages to send
 	//Has been recieved callback
 	log.Println(update.CallbackQuery)
 	if update.CallbackQuery != nil {
@@ -472,8 +473,8 @@ func process_message(update tgbotapi.Update) error {
 				if err != nil {
 					SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
-				ChatMessages = chatItem.BStPrmt
-				ChatMessages = append(ChatMessages, chatItem.History...)
+				//ChatMessages = chatItem.BStPrmt
+				//ChatMessages = append(ChatMessages, chatItem.History...)
 				jsonData, err = json.Marshal(ChatMessages)
 				if err != nil {
 					SendToUser(gOwner, E11[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
@@ -850,8 +851,6 @@ func process_message(update tgbotapi.Update) error {
 								msgString, err = gRedisClient.Get("Dialog:" + strconv.FormatInt(update.Message.Chat.ID, 10)).Result() //Пытаемся прочесть из БД диалог
 								if err == redis.Nil {                                                                                 //Если диалога в БД нет, формируем новый и записываем в БД
 									log.Println(err)
-									ChatMessages = append(ChatMessages, chatItem.BStPrmt...)
-									ChatMessages = append(ChatMessages, chatItem.History...)
 									if update.Message.Chat.Type == "private" { //Если текущий чат приватный
 										ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: update.Message.Text})
 									} else { //Если текущи чат групповой записываем первое сообщение чата дополняя его именем текущего собеседника
@@ -872,6 +871,7 @@ func process_message(update tgbotapi.Update) error {
 									if err != nil {
 										SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 									}
+
 									if update.Message.Chat.Type == "private" { //Если текущий чат приватный
 										ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: update.Message.Text})
 
@@ -903,6 +903,17 @@ func process_message(update tgbotapi.Update) error {
 										break
 									}
 								}
+								if len(ChatMessages) > 20 {
+									// Удаляем первые элементы, оставляя последние 10
+									ChatMessages = ChatMessages[1:]
+								}
+								FullPromt = nil
+								FullPromt = append(FullPromt, chatItem.BStPrmt...)
+								FullPromt = append(FullPromt, chatItem.History...)
+								FullPromt = append(FullPromt, ChatMessages...)
+								log.Println(ChatMessages)
+								log.Println("")
+								log.Println(FullPromt)
 								if update.Message.Chat.Type == "private" || toBotFlag {
 									gclient_is_busy = true
 									gLastRequest = time.Now() //Прежде чем формировать запрос, запомним текущее время
@@ -913,7 +924,7 @@ func process_message(update tgbotapi.Update) error {
 											openai.ChatCompletionRequest{
 												Model:       chatItem.Model,
 												Temperature: chatItem.Temperature,
-												Messages:    ChatMessages,
+												Messages:    FullPromt,
 											},
 										)
 										if err != nil {
