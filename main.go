@@ -911,9 +911,9 @@ func process_message(update tgbotapi.Update) error {
 								FullPromt = append(FullPromt, chatItem.BStPrmt...)
 								FullPromt = append(FullPromt, chatItem.History...)
 								FullPromt = append(FullPromt, ChatMessages...)
-								log.Println(ChatMessages)
-								log.Println("")
-								log.Println(FullPromt)
+								//log.Println(ChatMessages)
+								//log.Println("")
+								//log.Println(FullPromt)
 								if update.Message.Chat.Type == "private" || toBotFlag {
 									gclient_is_busy = true
 									gLastRequest = time.Now() //Прежде чем формировать запрос, запомним текущее время
