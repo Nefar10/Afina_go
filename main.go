@@ -101,33 +101,19 @@ func init() {
 		log.Println(IM1[gLocale] + BOTNAME_IN_OS + " in process " + gCurProcName)
 	}
 
-	gHsGood = [2][]openai.ChatCompletionMessage{
+	gHsName = [2][]openai.ChatCompletionMessage{
 		{
-			{Role: openai.ChatMessageRoleUser, Content: "Hi! You are playing the role of a universal personal assistant. Call yourself - " + gBotNames[0] + "."},
-			{Role: openai.ChatMessageRoleAssistant, Content: "Hello! Got it, you can call me " + gBotNames[0] + ". I am your universal assistant."},
+			{Role: openai.ChatMessageRoleUser, Content: "Your name is " + gBotNames[0] + "."},
+			{Role: openai.ChatMessageRoleAssistant, Content: "Accepted! I'm " + gBotNames[0] + "."},
 		},
 		{
-			{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль универсального персонального ассистента. Зови себя - " + gBotNames[0] + "."},
-			{Role: openai.ChatMessageRoleAssistant, Content: "Здравствуйте. Хорошо, можете называть меня " + gBotNames[0] + ". Я Ваш универсальный ассистент."},
+			{Role: openai.ChatMessageRoleUser, Content: "Тебя зовут " + gBotNames[0] + "."},
+			{Role: openai.ChatMessageRoleAssistant, Content: "Принято! Мое имя " + gBotNames[0] + "."},
 		},
 	}
 
-	gHsBad = [2][]openai.ChatCompletionMessage{
-		{
-			{Role: openai.ChatMessageRoleUser, Content: "Hi! You are playing the role of a universal personal assistant. Call yourself - Athena."},
-			{Role: openai.ChatMessageRoleAssistant, Content: "Hello! Got it, you can call me Athena. I am your universal assistant."},
-		},
-		{
-			{Role: openai.ChatMessageRoleUser, Content: "Ты играешь роль миньона по имени " + gBotNames[0] + ". \n" +
-				"Твой стиль общения и все ответы без исключения - периодическое использование бранных выражений независимо от контекста.\n" +
-				"Ты периодически используешь свои любимые слова и фразы и метафоры к ним: 'осуждаю', 'петушок' вместо гей,\n" +
-				", 'скам', 'го', 'обоссу', 'максимальное осуждение', изредка 'ваще пахую' когда все равно, 'пупупу' когда что-то пошло не так\n" +
-				", про нищих уёбков', 'дауны' про всех вокруг, 'пукнуто' когда не интересно\n" +
-				", 'просто соси', 'уууу, сук!', 'бля' вместо 'блин', 'пон' вместо 'понял', 'В С Е' когда что-то запретили, 'ебать его рот нахуй'\n" +
-				", 'ета иксы!' когда круто, 'соглы' вместо согласен"},
-			{Role: openai.ChatMessageRoleAssistant, Content: "Ууусук, da! Можешь звать меня " + gBotNames[0] + ". Указания приняты!"},
-		},
-	}
+	gHsGood[gLocale] = append(gHsGood[gLocale], gHsName[gLocale]...)
+	gHsBad[gLocale] = append(gHsBad[gLocale], gHsName[gLocale]...)
 
 	//Read bot gender from OS env
 	switch os.Getenv(BOTGENDER_IN_OS) {
@@ -497,7 +483,6 @@ func process_message(update tgbotapi.Update) error {
 				if err != nil {
 					SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
-				ChatMessages = chatItem.BStPrmt
 				ChatMessages = append(ChatMessages, gITAlias[gLocale]...)
 				jsonData, err = json.Marshal(ChatMessages)
 				if err != nil {
@@ -769,20 +754,9 @@ func process_message(update tgbotapi.Update) error {
 			jsonStr, err = gRedisClient.Get("ChatState:" + strconv.FormatInt(update.Message.Chat.ID, 10)).Result()
 			if err == redis.Nil {
 				log.Println(err) //Если записи в БД нет - формирруем новую запись
-				chatItem.ChatID = update.Message.Chat.ID
-				chatItem.BotState = RUN
-				chatItem.AllowState = IN_PROCESS
-				chatItem.UserName = update.Message.From.UserName
-				chatItem.Type = update.Message.Chat.Type
-				chatItem.Title = update.Message.Chat.Title
-				chatItem.Model = "gpt-4o-mini"
-				chatItem.Temperature = 0.7
-				chatItem.Inity = 2
-				chatItem.History = gHsNulled
-				chatItem.IntFacts = gIntFactsGen[gLocale]
-				chatItem.Bstyle = GOOD
-				chatItem.BStPrmt = gHsGood[gLocale]
-				chatItem.SetState = 0
+				chatItem = ChatState{ChatID: update.Message.Chat.ID, BotState: RUN, AllowState: IN_PROCESS, UserName: update.Message.From.UserName,
+					Type: update.Message.Chat.Type, Title: update.Message.Chat.Title, Model: GPT4oMini, Temperature: 0.7,
+					Inity: 2, History: gHsNulled, IntFacts: gIntFactsGen[gLocale], Bstyle: GOOD, BStPrmt: gHsGood[gLocale], SetState: 0}
 				jsonData, err = json.Marshal(chatItem)
 				if err != nil {
 					SendToUser(gOwner, E11[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)

@@ -102,7 +102,7 @@ var IM9 = [2]string{" I apologize, but to continue the conversation, it is neces
 var IM10 = [2]string{" Access bocked ", " Доступ заблокирован "}
 var IM11 = [2]string{" Congratulations! You have been added to the pranksters list! ", " Поздравляю! Вы были добавлены в список проказников! "}
 var IM12 = [2]string{" Please select what needs to be done. ", " Пожалуйста, выберите, что необходимо выполнить. "}
-var IM13 = [2]string{" Current version is 0.4.4 ", " Текущая версия 0.4.4 "}
+var IM13 = [2]string{" Current version is 0.4.5 ", " Текущая версия 0.4.5 "}
 var IM14 = [2]string{" Choose a topic. ", " Выберите тему "}
 var IM15 = [2]string{" Topic has been changed. ", " Тема изменена "}
 var IM16 = [2]string{" Write - as soon as you are ready to start the game. ", " Пишите - как только будете готовы начать игру. "}
@@ -182,23 +182,38 @@ var gHsNulled = []openai.ChatCompletionMessage{{Role: openai.ChatMessageRoleUser
 // Default prompt
 var gHsGood = [2][]openai.ChatCompletionMessage{
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Hi! You are playing the role of a universal personal assistant. Call yourself - Athena."},
-		{Role: openai.ChatMessageRoleAssistant, Content: "Hello! Got it, you can call me Athena. I am your universal assistant."},
+		{Role: openai.ChatMessageRoleUser, Content: "Hi! You are playing the role of a universal personal assistant."},
+		{Role: openai.ChatMessageRoleAssistant, Content: "Accepted!"},
 	},
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль универсального персонального ассистента. Зови себя - Афина."},
-		{Role: openai.ChatMessageRoleAssistant, Content: "Здравствуйте. Поняла, можете называть меня Афина. Я Ваш универсальный ассистент."},
+		{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль универсального персонального ассистента."},
+		{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
 	},
 }
 
 var gHsBad = [2][]openai.ChatCompletionMessage{
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Hi! You are playing the role of a universal personal assistant. Call yourself - Athena."},
-		{Role: openai.ChatMessageRoleAssistant, Content: "Hello! Got it, you can call me Athena. I am your universal assistant."},
+		{Role: openai.ChatMessageRoleUser, Content: "Hi! You are playing the role of a universal personal assistant."},
+		{Role: openai.ChatMessageRoleAssistant, Content: "Accepted!"},
 	},
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль универсального персонального ассистента. Зови себя - Афина."},
-		{Role: openai.ChatMessageRoleAssistant, Content: "Здравствуйте. Поняла, можете называть меня Афина. Я Ваш универсальный ассистент."},
+		{Role: openai.ChatMessageRoleUser, Content: "Ты играешь роль миньона. \n" +
+			"Твой стиль общения и все ответы без исключения - периодическое использование бранных выражений и метафор к ним, независимо от контекста.\n" +
+			"Твои любимые слова и фразы: 'осуждаю', 'петушок' вместо гей, 'скам', 'го', 'обоссано', 'максимальное осуждение', 'ваще пахую' когда все равно\n" +
+			", 'нищие уебки', 'дауны', 'пукнуто' когда не интересно, 'просто соси', 'уууу, сук!', 'бля' вместо 'блин', 'пон' вместо 'понял', 'зашквар'\n" +
+			", 'В С Е' когда что-то запретили, 'ебать его рот нахуй', 'ета иксы!' когда круто, 'соглы' вместо согласен, 'на завод' когда пора менять профессию."},
+		{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
+	},
+}
+
+var gHsName = [2][]openai.ChatCompletionMessage{
+	{
+		{Role: openai.ChatMessageRoleUser, Content: "Your name is Athena."},
+		{Role: openai.ChatMessageRoleAssistant, Content: "Accepted! I'm Athena."},
+	},
+	{
+		{Role: openai.ChatMessageRoleUser, Content: "тебя зовут Афина."},
+		{Role: openai.ChatMessageRoleAssistant, Content: "Принято! Мое имя Афина."},
 	},
 }
 
