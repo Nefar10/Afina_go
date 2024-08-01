@@ -229,7 +229,7 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 		{
 			var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup( //формируем меню для ответа
 				tgbotapi.NewInlineKeyboardRow(
-					//	tgbotapi.NewInlineKeyboardButtonData(M10[gLocale], "TUNE_CHAT: "+strconv.FormatInt(toChat, 10)),
+					tgbotapi.NewInlineKeyboardButtonData(M10[gLocale], "INFO: "+strconv.FormatInt(toChat, 10)),
 					tgbotapi.NewInlineKeyboardButtonData(M11[gLocale], "CLEAR_CONTEXT: "+strconv.FormatInt(toChat, 10)),
 				),
 				tgbotapi.NewInlineKeyboardRow(
@@ -259,10 +259,9 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData(M13[gLocale], "GPT_MODEL: "+strconv.FormatInt(chatID[0], 10)),
 					tgbotapi.NewInlineKeyboardButtonData(M14[gLocale], "MODEL_TEMP: "+strconv.FormatInt(chatID[0], 10)),
-					tgbotapi.NewInlineKeyboardButtonData(M15[gLocale], "CONTEXT_LEN: "+strconv.FormatInt(chatID[0], 10)),
 				),
 				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData(M16[gLocale], "CHAT_PROMPT: "+strconv.FormatInt(chatID[0], 10)),
+					tgbotapi.NewInlineKeyboardButtonData(M16[gLocale], "CHAT_HISTORY: "+strconv.FormatInt(chatID[0], 10)),
 					tgbotapi.NewInlineKeyboardButtonData(M17[gLocale], "CHAT_FACTS: "+strconv.FormatInt(chatID[0], 10)),
 				),
 				tgbotapi.NewInlineKeyboardRow(
@@ -273,25 +272,6 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 				))
 			msg.ReplyMarkup = numericKeyboard
 		}
-		/*
-			case TUNECHATUSER: //меню настройки чата
-				{
-					var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup( //формируем меню для ответа
-						tgbotapi.NewInlineKeyboardRow(
-							tgbotapi.NewInlineKeyboardButtonData(M13[gLocale], "GPT_MODEL: "+strconv.FormatInt(toChat, 10)),
-							tgbotapi.NewInlineKeyboardButtonData(M14[gLocale], "MODEL_TEMP: "+strconv.FormatInt(toChat, 10)),
-							tgbotapi.NewInlineKeyboardButtonData(M15[gLocale], "CONTEXT_LEN: "+strconv.FormatInt(toChat, 10)),
-						),
-						tgbotapi.NewInlineKeyboardRow(
-							tgbotapi.NewInlineKeyboardButtonData(M16[gLocale], "CHAT_PROMPT: "+strconv.FormatInt(toChat, 10)),
-							tgbotapi.NewInlineKeyboardButtonData(M17[gLocale], "CHAT_FACTS: "+strconv.FormatInt(toChat, 10)),
-						),
-						tgbotapi.NewInlineKeyboardRow(
-							tgbotapi.NewInlineKeyboardButtonData(M19[gLocale], "USERMENU: "+strconv.FormatInt(toChat, 10)),
-						))
-					msg.ReplyMarkup = numericKeyboard
-				}
-		*/
 	case INTFACTS: //меню настройки чата
 		{
 			var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup( //формируем меню для ответа
@@ -343,6 +323,7 @@ func process_message(update tgbotapi.Update) error {
 	var msgString string                            //Current message string
 	var ChatMessages []openai.ChatCompletionMessage //Current prompt
 	var FullPromt []openai.ChatCompletionMessage    //Messages to send
+	var temp float64
 	//Has been recieved callback
 	log.Println(update.CallbackQuery)
 	if update.CallbackQuery != nil {
@@ -587,7 +568,7 @@ func process_message(update tgbotapi.Update) error {
 			}
 		}
 		gCurProcName = "Edit history"
-		if strings.Contains(update.CallbackQuery.Data, "CHAT_PROMPT:") {
+		if strings.Contains(update.CallbackQuery.Data, "CHAT_HISTORY:") {
 			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 			if err != nil {
@@ -616,6 +597,36 @@ func process_message(update tgbotapi.Update) error {
 			}
 			SendToUser(gOwner, "Напишите историю:", INFO, 1, chatID)
 		}
+		gCurProcName = "Edit temperature"
+		if strings.Contains(update.CallbackQuery.Data, "MODEL_TEMP:") {
+			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
+			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
+			if err != nil {
+				SendToUser(gOwner, E15[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+				log.Fatalln(err, E15[gLocale]+" in process "+gCurProcName)
+			}
+			jsonStr, err = gRedisClient.Get("ChatState:" + strconv.FormatInt(chatID, 10)).Result()
+			if err != nil {
+				SendToUser(gOwner, E13[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+			} else {
+				err = json.Unmarshal([]byte(jsonStr), &chatItem)
+				if err != nil {
+					SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+				}
+			}
+			chatItem.SetState = TEMPERATURE
+			gChangeSettings = chatID
+			jsonData, err = json.Marshal(chatItem)
+			if err != nil {
+				SendToUser(gOwner, E11[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+			} else {
+				err = gRedisClient.Set("ChatState:"+strconv.FormatInt(chatID, 10), string(jsonData), 0).Err()
+				if err != nil {
+					SendToUser(gOwner, E10[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+				}
+			}
+			SendToUser(gOwner, "Укажите уровень экпрессии от 1 до 10", INFO, 1, chatID)
+		}
 		gCurProcName = "Chat facts processing"
 		if strings.Contains(update.CallbackQuery.Data, "CHAT_FACTS:") {
 			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
@@ -635,6 +646,29 @@ func process_message(update tgbotapi.Update) error {
 					SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 				SendToUser(gOwner, IM14[gLocale], INTFACTS, 1, chatID)
+			}
+		}
+		gCurProcName = "Chat info view"
+		if strings.Contains(update.CallbackQuery.Data, "INFO:") {
+			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
+			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
+			if err != nil {
+				SendToUser(gOwner, E15[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+			}
+			jsonStr, err = gRedisClient.Get("ChatState:" + chatIDstr).Result()
+			if err == redis.Nil {
+				SendToUser(gOwner, E16[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
+				return err
+			} else if err != nil {
+				SendToUser(gOwner, E13[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+			} else {
+				err = json.Unmarshal([]byte(jsonStr), &chatItem)
+				if err != nil {
+					SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+				}
+				msgString = "Название чата: " + chatItem.Title + "\nМодель поведения: " + strconv.Itoa(int(chatItem.Bstyle)) + "\n" +
+					"Экспрессия: " + strconv.FormatFloat(float64(chatItem.Temperature*100), 'f', -1, 32) + "%"
+				SendToUser(chatID, msgString, INFO, 2)
 			}
 		}
 		gCurProcName = "Select chat facts"
@@ -781,6 +815,7 @@ func process_message(update tgbotapi.Update) error {
 					switch chatItem.AllowState { //Если доступ предоставлен
 					case ALLOW:
 						{
+							//Processing settings change
 							if gChangeSettings != gOwner || chatItem.SetState != NO_ONE {
 								jsonStr, err = gRedisClient.Get("ChatState:" + strconv.FormatInt(gChangeSettings, 10)).Result()
 								if err != nil {
@@ -799,6 +834,21 @@ func process_message(update tgbotapi.Update) error {
 											{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
 										}
 									}
+								case TEMPERATURE:
+									{
+										temp, err = strconv.ParseFloat(update.Message.Text, 64)
+										if err != nil {
+											SendToUser(gOwner, E15[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+											log.Fatalln(err, E15[gLocale]+" in process "+gCurProcName)
+										} else {
+											chatItem.Temperature = float32(temp)
+										}
+										if chatItem.Temperature < 0 || chatItem.Temperature > 10 {
+											chatItem.Temperature = 0.7
+										} else {
+											chatItem.Temperature = chatItem.Temperature / 10
+										}
+									}
 								default:
 									{
 
@@ -813,7 +863,7 @@ func process_message(update tgbotapi.Update) error {
 								if err != nil {
 									SendToUser(gOwner, E10[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 								}
-								SendToUser(gOwner, "История принята", INFO, 1)
+								SendToUser(gOwner, "Принято!", INFO, 1)
 								gChangeSettings = gOwner
 
 							} else {

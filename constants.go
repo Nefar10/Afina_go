@@ -65,8 +65,9 @@ const (
 	GOOD = 0
 	BAD  = 1
 	//PARAMETERS
-	NO_ONE  = 0
-	HISTORY = 1
+	NO_ONE      = 0
+	HISTORY     = 1
+	TEMPERATURE = 2
 )
 
 // ERRORS
@@ -89,6 +90,7 @@ var E16 = [2]string{" Unknown Error ", " Неизвестная ошибка "}
 var E17 = [2]string{" ChatCompletion error: %v\n ", " Ошибка обработки запроса к нейросети: %v\n"}
 
 // INFO MESSAGES
+var ver = "0.5.0"
 var IM0 = [2]string{" Process has been stoped ", " Процесс был остановлен "}
 var IM1 = [2]string{" Bot name(s) not found or not valid in OS environment.\n Name Afina will be used. ", " Имя бота не найдено или не корректно в переменных окружения.\n Будет использовано имя Afina. "}
 var IM2 = [2]string{" Bot gender not found or not valid in OS environment.\n Neutral gender will be used. ", " Пол бота не найден или некорректен среди переменных окружения.\n Будет использован средний род. "}
@@ -102,7 +104,7 @@ var IM9 = [2]string{" I apologize, but to continue the conversation, it is neces
 var IM10 = [2]string{" Access bocked ", " Доступ заблокирован "}
 var IM11 = [2]string{" Congratulations! You have been added to the pranksters list! ", " Поздравляю! Вы были добавлены в список проказников! "}
 var IM12 = [2]string{" Please select what needs to be done. ", " Пожалуйста, выберите, что необходимо выполнить. "}
-var IM13 = [2]string{" Current version is 0.4.5 ", " Текущая версия 0.4.5 "}
+var IM13 = [2]string{" Current version is " + ver + " ", " Текущая версия " + ver + " "}
 var IM14 = [2]string{" Choose a topic. ", " Выберите тему "}
 var IM15 = [2]string{" Topic has been changed. ", " Тема изменена "}
 var IM16 = [2]string{" Write - as soon as you are ready to start the game. ", " Пишите - как только будете готовы начать игру. "}
@@ -136,6 +138,7 @@ var M22 = [2]string{"IT", "Ай-Ти"}
 var M23 = [2]string{"Cars and racing", "Автомобили и гонки"}
 var M24 = [2]string{"Good boy", "Паинька"}
 var M25 = [2]string{"Bad boy", "Плохиш"}
+var M26 = [2]string{"Information", "Информация"}
 
 // Global types
 // Chat's structure for storing options in DB and operate with them
