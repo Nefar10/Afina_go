@@ -243,7 +243,9 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 			chats := strings.Split(mesText, "\n")
 			var buttons []tgbotapi.InlineKeyboardButton
 			for _, chat := range chats {
-				buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData(chat, strings.Split(mesText, "~")[0]))
+				if chat != "" {
+					buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData(chat, strings.Split(chat, "~")[0]))
+				}
 			}
 			var rows [][]tgbotapi.InlineKeyboardButton
 			for _, button := range buttons {
