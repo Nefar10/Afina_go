@@ -94,10 +94,10 @@ func init() {
 		SendToUser(gOwner, E7[gLocale]+AI_IN_OS+" in process "+gCurProcName, ERROR, 0)
 	}
 	//Read bot names from OS env
-	gBotNames = strings.Split(strings.ToUpper(os.Getenv(BOTNAME_IN_OS)), ",")
+	gBotNames = strings.Split(os.Getenv(BOTNAME_IN_OS), ",")
 	if gBotNames[0] == "" {
 		SendToUser(gOwner, IM1[gLocale]+BOTNAME_IN_OS+" in process "+gCurProcName, INFO, 0)
-		gBotNames = []string{"AFINA", "АФИНА"}
+		gBotNames = []string{"Athena", "Афина"}
 		log.Println(IM1[gLocale] + BOTNAME_IN_OS + " in process " + gCurProcName)
 	}
 
@@ -108,7 +108,7 @@ func init() {
 		},
 		{
 			{Role: openai.ChatMessageRoleUser, Content: "Тебя зовут " + gBotNames[0] + ".\n" +
-				"Ты не равнодушен, когда твоё имя в любом виде упоминают в диалогах и всегда отвечаешь."},
+				"Ты не равнодушен, когда твоё имя упоминают в диалогах."},
 			{Role: openai.ChatMessageRoleAssistant, Content: "Принято! Мое имя " + gBotNames[0] + "."},
 		},
 	}
@@ -318,17 +318,16 @@ func isMyReaction(mesText string, Bstyle []openai.ChatCompletionMessage, History
 	var FullPromt []openai.ChatCompletionMessage
 	FullPromt = append(FullPromt, Bstyle...)
 	//FullPromt = append(FullPromt, History...)
-	FullPromt = append(FullPromt, gHsReaction[gLocale]...) // Убедитесь, что gHsReaction имеет тип []openai.ChatCompletionMessage
+	FullPromt = append(FullPromt, gHsReaction[gLocale]...)
 	FullPromt = append(FullPromt, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: mesText})
 	resp, err := gclient.CreateChatCompletion( //Формируем запрос к мозгам
 		context.Background(),
 		openai.ChatCompletionRequest{
 			Model:       GPT4oMini,
-			Temperature: 0.5,
+			Temperature: 0.1,
 			Messages:    FullPromt,
 		},
 	)
-	//log.Println(resp.Choices[0].Message.Content)
 	if err != nil {
 		SendToUser(gOwner, E17[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
 		time.Sleep(20 * time.Second)
@@ -357,7 +356,7 @@ func process_message(update tgbotapi.Update) error {
 	var FullPromt []openai.ChatCompletionMessage    //Messages to send
 	var temp float64
 	//Has been recieved callback
-	log.Println(update.CallbackQuery)
+	//log.Println(update.CallbackQuery)
 	if update.CallbackQuery != nil {
 		gCurProcName = "processing callback WB lists"
 		if update.CallbackQuery.Data == "WHITELIST" || update.CallbackQuery.Data == "BLACKLIST" || update.CallbackQuery.Data == "INPROCESS" {
@@ -976,8 +975,9 @@ func process_message(update tgbotapi.Update) error {
 								FullPromt = append(FullPromt, ChatMessages...)
 								//log.Println(ChatMessages)
 								//log.Println("")
-								//log.Println(FullPromt)
-								if update.Message.Chat.Type == "private" || toBotFlag {
+								log.Println(FullPromt)
+								//update.Message.Chat.Type == "private" ||
+								if toBotFlag {
 									gclient_is_busy = true
 									gLastRequest = time.Now() //Прежде чем формировать запрос, запомним текущее время
 									for i := 0; i < 2; i++ {
