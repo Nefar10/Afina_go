@@ -90,7 +90,7 @@ var E16 = [2]string{" Unknown Error ", " Неизвестная ошибка "}
 var E17 = [2]string{" ChatCompletion error: %v\n ", " Ошибка обработки запроса к нейросети: %v\n"}
 
 // INFO MESSAGES
-var ver = "0.5.1"
+var ver = "0.6.0"
 var IM0 = [2]string{" Process has been stoped ", " Процесс был остановлен "}
 var IM1 = [2]string{" Bot name(s) not found or not valid in OS environment.\n Name Afina will be used. ", " Имя бота не найдено или не корректно в переменных окружения.\n Будет использовано имя Afina. "}
 var IM2 = [2]string{" Bot gender not found or not valid in OS environment.\n Neutral gender will be used. ", " Пол бота не найден или некорректен среди переменных окружения.\n Будет использован средний род. "}
@@ -139,6 +139,10 @@ var M23 = [2]string{"Cars and racing", "Автомобили и гонки"}
 var M24 = [2]string{"Good boy", "Паинька"}
 var M25 = [2]string{"Bad boy", "Плохиш"}
 var M26 = [2]string{"Information", "Информация"}
+
+// for my reaction
+var R1 = [2]string{"Yes", "Да"}
+var R2 = [2]string{"No", "Нет"}
 
 // Global types
 // Chat's structure for storing options in DB and operate with them
@@ -200,7 +204,7 @@ var gHsBad = [2][]openai.ChatCompletionMessage{
 		{Role: openai.ChatMessageRoleAssistant, Content: "Accepted!"},
 	},
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Ты играешь роль миньона. \n" +
+		{Role: openai.ChatMessageRoleUser, Content: "Ты играешь роль миньона. Ты не равнодушен к упоминанию автомобилей.\n" +
 			"Твой стиль общения и все ответы без исключения - периодическое использование бранных выражений и метафор к ним, независимо от контекста.\n" +
 			"Твои любимые слова и фразы: 'осуждаю', 'петушок' вместо гей, 'скам', 'го', 'обоссано', 'максимальное осуждение', 'ваще пахую' когда все равно\n" +
 			", 'нищие уебки', 'дауны', 'пукнуто' когда не интересно, 'просто соси', 'уууу, сук!', 'бля' вместо 'блин', 'пон' вместо 'понял', 'зашквар'\n" +
@@ -217,6 +221,17 @@ var gHsName = [2][]openai.ChatCompletionMessage{
 	{
 		{Role: openai.ChatMessageRoleUser, Content: "тебя зовут Афина."},
 		{Role: openai.ChatMessageRoleAssistant, Content: "Принято! Мое имя Афина."},
+	},
+}
+
+var gHsReaction = [2][]openai.ChatCompletionMessage{
+	{
+		{Role: openai.ChatMessageRoleUser, Content: "Based on the context, determine if your response is required. If yes, reply 'Yes'; if no, reply 'No'"},
+		{Role: openai.ChatMessageRoleAssistant, Content: "Understood! Awaiting text."},
+	},
+	{
+		{Role: openai.ChatMessageRoleUser, Content: "Исходя из контекста определи - требуется ли твой ответ. Если да - ответь четко 'Да', если нет - ответь четко 'Нет'"},
+		{Role: openai.ChatMessageRoleAssistant, Content: "Принято! Ожидаю текст."},
 	},
 }
 

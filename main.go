@@ -107,7 +107,8 @@ func init() {
 			{Role: openai.ChatMessageRoleAssistant, Content: "Accepted! I'm " + gBotNames[0] + "."},
 		},
 		{
-			{Role: openai.ChatMessageRoleUser, Content: "Тебя зовут " + gBotNames[0] + "."},
+			{Role: openai.ChatMessageRoleUser, Content: "Тебя зовут " + gBotNames[0] + ".\n" +
+				"Ты не равнодушен, когда твоё имя в любом виде упоминают в диалогах и всегда отвечаешь."},
 			{Role: openai.ChatMessageRoleAssistant, Content: "Принято! Мое имя " + gBotNames[0] + "."},
 		},
 	}
@@ -311,6 +312,35 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 			gBot.Send(deleteMsgConfig)
 		}()
 	}
+}
+
+func isMyReaction(mesText string, Bstyle []openai.ChatCompletionMessage, History []openai.ChatCompletionMessage) bool {
+	var FullPromt []openai.ChatCompletionMessage
+	FullPromt = append(FullPromt, Bstyle...)
+	//FullPromt = append(FullPromt, History...)
+	FullPromt = append(FullPromt, gHsReaction[gLocale]...) // Убедитесь, что gHsReaction имеет тип []openai.ChatCompletionMessage
+	FullPromt = append(FullPromt, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: mesText})
+	resp, err := gclient.CreateChatCompletion( //Формируем запрос к мозгам
+		context.Background(),
+		openai.ChatCompletionRequest{
+			Model:       GPT4oMini,
+			Temperature: 0.5,
+			Messages:    FullPromt,
+		},
+	)
+	//log.Println(resp.Choices[0].Message.Content)
+	if err != nil {
+		SendToUser(gOwner, E17[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
+		time.Sleep(20 * time.Second)
+	} else {
+		//log.Printf("Чат ID: %d Токенов использовано: %d", update.Message.Chat.ID, resp.Usage.TotalTokens)
+		if strings.Contains(resp.Choices[0].Message.Content, R1[gLocale]) {
+			return true
+		} else {
+			return false
+		}
+	}
+	return false
 }
 
 func process_message(update tgbotapi.Update) error {
@@ -923,16 +953,19 @@ func process_message(update tgbotapi.Update) error {
 								}
 								action := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
 								toBotFlag := false
-								for _, name := range gBotNames { //Определим - есть ли в контексте последнего сообщения имя бота
-									if (strings.Contains(strings.ToUpper(update.Message.Text), name)) || (update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.ID == gBot.Self.ID) { //Если имя бота встречается
-										toBotFlag = true
-										break
-									}
-								}
-								rd := gRand.Intn(40) + 1
-								if rd <= chatItem.Inity {
+								//for _, name := range gBotNames { //Определим - есть ли в контексте последнего сообщения имя бота
+								//	if (strings.Contains(strings.ToUpper(update.Message.Text), name)) ||
+								//		 ||
+								if isMyReaction(update.Message.Text, chatItem.BStPrmt, chatItem.History) ||
+									(update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.ID == gBot.Self.ID) { //Если имя бота встречается
 									toBotFlag = true
+									//		break
 								}
+								//}
+								//rd := gRand.Intn(40) + 1
+								//if rd <= chatItem.Inity {
+								//	toBotFlag = true
+								//}
 								if len(ChatMessages) > 20 {
 									// Удаляем первые элементы, оставляя последние 10
 									ChatMessages = ChatMessages[1:]
@@ -943,7 +976,7 @@ func process_message(update tgbotapi.Update) error {
 								FullPromt = append(FullPromt, ChatMessages...)
 								//log.Println(ChatMessages)
 								//log.Println("")
-								log.Println(FullPromt)
+								//log.Println(FullPromt)
 								if update.Message.Chat.Type == "private" || toBotFlag {
 									gclient_is_busy = true
 									gLastRequest = time.Now() //Прежде чем формировать запрос, запомним текущее время
