@@ -336,7 +336,7 @@ func isMyReaction(mesText string, Bstyle []openai.ChatCompletionMessage, History
 	//FullPromt = append(FullPromt, History...)
 	FullPromt = append(FullPromt, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: mesText})
 	FullPromt = append(FullPromt, gHsReaction[gLocale]...)
-	log.Println(FullPromt)
+	//log.Println(FullPromt)
 	resp, err := gclient.CreateChatCompletion( //Формируем запрос к мозгам
 		context.Background(),
 		openai.ChatCompletionRequest{
@@ -345,7 +345,7 @@ func isMyReaction(mesText string, Bstyle []openai.ChatCompletionMessage, History
 			Messages:    FullPromt,
 		},
 	)
-	log.Println(resp.Choices[0].Message.Content)
+	//log.Println(resp.Choices[0].Message.Content)
 	if err != nil {
 		SendToUser(gOwner, E17[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
 		time.Sleep(20 * time.Second)
