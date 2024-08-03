@@ -646,7 +646,6 @@ func process_message(update tgbotapi.Update) error {
 				}
 			}
 			SendToUser(gOwner, "Текущая история:\n"+chatItem.History[0].Content+"\nНапишите историю:", INFO, 1, chatID)
-
 		}
 		gCurProcName = "Edit temperature"
 		if strings.Contains(update.CallbackQuery.Data, "MODEL_TEMP:") {
@@ -676,7 +675,7 @@ func process_message(update tgbotapi.Update) error {
 					SendToUser(gOwner, E10[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 			}
-			SendToUser(gOwner, "Текущий уровень - "+strconv.Itoa(int(chatItem.Temperature))+"\nУкажите уровень экпрессии от 1 до 10", INFO, 1, chatID)
+			SendToUser(gOwner, "Текущий уровень - "+strconv.Itoa(int(chatItem.Temperature*10))+"\nУкажите уровень экпрессии от 1 до 10", INFO, 1, chatID)
 		}
 		gCurProcName = "Edit initiative"
 		if strings.Contains(update.CallbackQuery.Data, "INITIATIVE:") {
