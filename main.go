@@ -278,9 +278,10 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData(M13[gLocale], "GPT_MODEL: "+strconv.FormatInt(chatID[0], 10)),
 					tgbotapi.NewInlineKeyboardButtonData(M14[gLocale], "MODEL_TEMP: "+strconv.FormatInt(chatID[0], 10)),
+					tgbotapi.NewInlineKeyboardButtonData(M16[gLocale], "CHAT_HISTORY: "+strconv.FormatInt(chatID[0], 10)),
 				),
 				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData(M16[gLocale], "CHAT_HISTORY: "+strconv.FormatInt(chatID[0], 10)),
+					tgbotapi.NewInlineKeyboardButtonData("Инициатива", "INITIATIVE: "+strconv.FormatInt(chatID[0], 10)),
 					tgbotapi.NewInlineKeyboardButtonData(M17[gLocale], "CHAT_FACTS: "+strconv.FormatInt(chatID[0], 10)),
 				),
 				tgbotapi.NewInlineKeyboardRow(
@@ -676,6 +677,36 @@ func process_message(update tgbotapi.Update) error {
 			}
 			SendToUser(gOwner, "Укажите уровень экпрессии от 1 до 10", INFO, 1, chatID)
 		}
+		gCurProcName = "Edit initiative"
+		if strings.Contains(update.CallbackQuery.Data, "INITIATIVE:") {
+			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
+			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
+			if err != nil {
+				SendToUser(gOwner, E15[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+				log.Fatalln(err, E15[gLocale]+" in process "+gCurProcName)
+			}
+			jsonStr, err = gRedisClient.Get("ChatState:" + strconv.FormatInt(chatID, 10)).Result()
+			if err != nil {
+				SendToUser(gOwner, E13[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+			} else {
+				err = json.Unmarshal([]byte(jsonStr), &chatItem)
+				if err != nil {
+					SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+				}
+			}
+			chatItem.SetState = INITIATIVE
+			gChangeSettings = chatID
+			jsonData, err = json.Marshal(chatItem)
+			if err != nil {
+				SendToUser(gOwner, E11[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+			} else {
+				err = gRedisClient.Set("ChatState:"+strconv.FormatInt(chatID, 10), string(jsonData), 0).Err()
+				if err != nil {
+					SendToUser(gOwner, E10[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+				}
+			}
+			SendToUser(gOwner, "Укажите степень инициативы от 0 до 10", INFO, 1, chatID)
+		}
 		gCurProcName = "Chat facts processing"
 		if strings.Contains(update.CallbackQuery.Data, "CHAT_FACTS:") {
 			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
@@ -894,6 +925,21 @@ func process_message(update tgbotapi.Update) error {
 										}
 										if chatItem.Temperature < 0 || chatItem.Temperature > 10 {
 											chatItem.Temperature = 0.7
+										} else {
+											chatItem.Temperature = chatItem.Temperature / 10
+										}
+									}
+								case INITIATIVE:
+									{
+										chatItem.Inity, err = strconv.Atoi(update.Message.Text)
+										if err != nil {
+											SendToUser(gOwner, E15[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+											log.Fatalln(err, E15[gLocale]+" in process "+gCurProcName)
+										} else {
+
+										}
+										if chatItem.Inity < 0 || chatItem.Inity > 10 {
+											chatItem.Inity = 0
 										} else {
 											chatItem.Temperature = chatItem.Temperature / 10
 										}
