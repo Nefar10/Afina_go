@@ -107,8 +107,7 @@ func init() {
 			{Role: openai.ChatMessageRoleAssistant, Content: "Accepted! I'm " + gBotNames[0] + "."},
 		},
 		{
-			{Role: openai.ChatMessageRoleUser, Content: "Тебя зовут " + gBotNames[0] + ".\n" +
-				"Ты не равнодушен, когда твоё имя упоминают в диалогах."},
+			{Role: openai.ChatMessageRoleUser, Content: "Тебя зовут " + gBotNames[0] + ""},
 			{Role: openai.ChatMessageRoleAssistant, Content: "Принято! Мое имя " + gBotNames[0] + "."},
 		},
 	}
@@ -119,13 +118,30 @@ func init() {
 	//Read bot gender from OS env
 	switch os.Getenv(BOTGENDER_IN_OS) {
 	case "Male":
-		gBotGender = MALE
+		{
+			gBotGender = MALE
+			gHsGood[gLocale] = append(gHsGood[gLocale], gHsGenderM[gLocale]...)
+			gHsBad[gLocale] = append(gHsBad[gLocale], gHsGenderM[gLocale]...)
+		}
 	case "Female":
-		gBotGender = FEMALE
+		{
+			gBotGender = FEMALE
+			gHsGood[gLocale] = append(gHsGood[gLocale], gHsGenderF[gLocale]...)
+			gHsBad[gLocale] = append(gHsBad[gLocale], gHsGenderF[gLocale]...)
+		}
+	case "Neutral":
+		{
+			gBotGender = NEUTRAL
+			gHsGood[gLocale] = append(gHsGood[gLocale], gHsGenderN[gLocale]...)
+			gHsBad[gLocale] = append(gHsBad[gLocale], gHsGenderN[gLocale]...)
+		}
 	default:
-		SendToUser(gOwner, IM2[gLocale]+BOTGENDER_IN_OS+" in process "+gCurProcName, INFO, 0)
-		gBotGender = NEUTRAL
-		log.Println(IM2[gLocale] + BOTGENDER_IN_OS + " in process " + gCurProcName)
+		{
+			SendToUser(gOwner, IM2[gLocale]+BOTGENDER_IN_OS+" in process "+gCurProcName, INFO, 0)
+			gBotGender = NEUTRAL
+			gHsGood[gLocale] = append(gHsGood[gLocale], gHsGenderN[gLocale]...)
+			gHsBad[gLocale] = append(gHsBad[gLocale], gHsGenderN[gLocale]...)
+		}
 	}
 	//Default chat states init
 	gChatsStates = append(gChatsStates, ChatState{ChatID: 0, Model: GPT4oMini, Inity: 0, Temperature: 0.1, AllowState: DISALLOW, UserName: "All", BotState: SLEEP, Type: "private", History: gHsNulled, IntFacts: gIntFactsGen[gLocale], BStPrmt: gHsNulled, Bstyle: GOOD, SetState: 0})
@@ -318,8 +334,9 @@ func isMyReaction(mesText string, Bstyle []openai.ChatCompletionMessage, History
 	var FullPromt []openai.ChatCompletionMessage
 	FullPromt = append(FullPromt, Bstyle...)
 	//FullPromt = append(FullPromt, History...)
-	FullPromt = append(FullPromt, gHsReaction[gLocale]...)
 	FullPromt = append(FullPromt, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: mesText})
+	FullPromt = append(FullPromt, gHsReaction[gLocale]...)
+	log.Println(FullPromt)
 	resp, err := gclient.CreateChatCompletion( //Формируем запрос к мозгам
 		context.Background(),
 		openai.ChatCompletionRequest{
@@ -328,6 +345,7 @@ func isMyReaction(mesText string, Bstyle []openai.ChatCompletionMessage, History
 			Messages:    FullPromt,
 		},
 	)
+	log.Println(resp.Choices[0].Message.Content)
 	if err != nil {
 		SendToUser(gOwner, E17[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
 		time.Sleep(20 * time.Second)
@@ -975,7 +993,7 @@ func process_message(update tgbotapi.Update) error {
 								FullPromt = append(FullPromt, ChatMessages...)
 								//log.Println(ChatMessages)
 								//log.Println("")
-								log.Println(FullPromt)
+								//log.Println(FullPromt)
 								//update.Message.Chat.Type == "private" ||
 								if toBotFlag {
 									gclient_is_busy = true
