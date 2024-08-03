@@ -1019,10 +1019,12 @@ func process_message(update tgbotapi.Update) error {
 								//for _, name := range gBotNames { //Определим - есть ли в контексте последнего сообщения имя бота
 								//	if (strings.Contains(strings.ToUpper(update.Message.Text), name)) ||
 								//		 ||
-								if isMyReaction(update.Message.Text, chatItem.BStPrmt, chatItem.History) ||
-									(update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.ID == gBot.Self.ID) { //Если имя бота встречается
+								if update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.ID == gBot.Self.ID { //Если имя бота встречается
 									toBotFlag = true
 									//		break
+								} else if isMyReaction(update.Message.Text, chatItem.BStPrmt, chatItem.History) {
+									toBotFlag = true
+
 								}
 								//}
 								//rd := gRand.Intn(40) + 1
