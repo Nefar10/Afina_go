@@ -334,7 +334,7 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 func isMyReaction(mesText string, Bstyle []openai.ChatCompletionMessage, History []openai.ChatCompletionMessage) bool {
 	var FullPromt []openai.ChatCompletionMessage
 	FullPromt = append(FullPromt, Bstyle...)
-	//FullPromt = append(FullPromt, History...)
+	FullPromt = append(FullPromt, History...)
 	FullPromt = append(FullPromt, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: mesText})
 	FullPromt = append(FullPromt, gHsReaction[gLocale]...)
 	//log.Println(FullPromt)
@@ -342,7 +342,7 @@ func isMyReaction(mesText string, Bstyle []openai.ChatCompletionMessage, History
 		context.Background(),
 		openai.ChatCompletionRequest{
 			Model:       GPT4oMini,
-			Temperature: 0.1,
+			Temperature: 1,
 			Messages:    FullPromt,
 		},
 	)
