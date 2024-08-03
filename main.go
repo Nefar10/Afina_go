@@ -346,7 +346,7 @@ func isMyReaction(mesText string, Bstyle []openai.ChatCompletionMessage, History
 			Messages:    FullPromt,
 		},
 	)
-	//log.Println(resp.Choices[0].Message.Content)
+	log.Println(resp.Choices[0].Message.Content)
 	if err != nil {
 		SendToUser(gOwner, E17[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
 		time.Sleep(20 * time.Second)
@@ -645,7 +645,8 @@ func process_message(update tgbotapi.Update) error {
 					SendToUser(gOwner, E10[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 			}
-			SendToUser(gOwner, "Напишите историю:", INFO, 1, chatID)
+			SendToUser(gOwner, "Текущая история:\n"+chatItem.History[0].Content+"\nНапишите историю:", INFO, 1, chatID)
+
 		}
 		gCurProcName = "Edit temperature"
 		if strings.Contains(update.CallbackQuery.Data, "MODEL_TEMP:") {
@@ -675,7 +676,7 @@ func process_message(update tgbotapi.Update) error {
 					SendToUser(gOwner, E10[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 			}
-			SendToUser(gOwner, "Укажите уровень экпрессии от 1 до 10", INFO, 1, chatID)
+			SendToUser(gOwner, "Текущий уровень - "+strconv.Itoa(int(chatItem.Temperature))+"\nУкажите уровень экпрессии от 1 до 10", INFO, 1, chatID)
 		}
 		gCurProcName = "Edit initiative"
 		if strings.Contains(update.CallbackQuery.Data, "INITIATIVE:") {
@@ -705,7 +706,7 @@ func process_message(update tgbotapi.Update) error {
 					SendToUser(gOwner, E10[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 			}
-			SendToUser(gOwner, "Укажите степень инициативы от 0 до 10", INFO, 1, chatID)
+			SendToUser(gOwner, "Текущий уровень - "+strconv.Itoa(int(chatItem.Inity))+"\nУкажите степень инициативы от 0 до 10", INFO, 1, chatID)
 		}
 		gCurProcName = "Chat facts processing"
 		if strings.Contains(update.CallbackQuery.Data, "CHAT_FACTS:") {
