@@ -331,11 +331,16 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 	}
 }
 
-func isMyReaction(mesText string, Bstyle []openai.ChatCompletionMessage, History []openai.ChatCompletionMessage) bool {
+func isMyReaction(messages []openai.ChatCompletionMessage, Bstyle []openai.ChatCompletionMessage, History []openai.ChatCompletionMessage) bool {
 	var FullPromt []openai.ChatCompletionMessage
 	FullPromt = append(FullPromt, Bstyle...)
 	FullPromt = append(FullPromt, History...)
-	FullPromt = append(FullPromt, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: mesText})
+	//FullPromt = append(FullPromt, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: mesText})
+	if len(messages) >= 3 {
+		FullPromt = append(FullPromt, messages[len(messages)-3:]...)
+	} else {
+		FullPromt = append(FullPromt, messages[len(messages)-1:]...)
+	}
 	FullPromt = append(FullPromt, gHsReaction[gLocale]...)
 	//log.Println(FullPromt)
 	resp, err := gclient.CreateChatCompletion( //Формируем запрос к мозгам
@@ -1022,7 +1027,7 @@ func process_message(update tgbotapi.Update) error {
 								if update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.ID == gBot.Self.ID { //Если имя бота встречается
 									toBotFlag = true
 									//		break
-								} else if isMyReaction(update.Message.Text, chatItem.BStPrmt, chatItem.History) {
+								} else if isMyReaction(ChatMessages, chatItem.BStPrmt, chatItem.History) {
 									toBotFlag = true
 
 								}
