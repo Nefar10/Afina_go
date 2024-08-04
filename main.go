@@ -753,10 +753,21 @@ func process_message(update tgbotapi.Update) error {
 				}
 				msgString = "Название чата: " + chatItem.Title + "\nМодель поведения: " + strconv.Itoa(int(chatItem.Bstyle)) + "\n" +
 					"Экспрессия: " + strconv.FormatFloat(float64(chatItem.Temperature*100), 'f', -1, 32) + "%\n" +
-					"Инициативность: " + strconv.Itoa(chatItem.Inity*10) + "%"
+					"Инициативность: " + strconv.Itoa(chatItem.Inity*10) + "%\n" +
+					"Текущая версия: " + ver
 				SendToUser(chatID, msgString, INFO, 2)
 			}
 		}
+		gCurProcName = "Rights change"
+		if strings.Contains(update.CallbackQuery.Data, "RIGHTS:") {
+			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
+			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
+			if err != nil {
+				SendToUser(gOwner, E15[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+			}
+			SendToUser(gOwner, "Изменить права доступа для чата "+chatIDstr, ACCESS, 2, chatID)
+		}
+
 		gCurProcName = "Select chat facts"
 		if strings.Contains(update.CallbackQuery.Data, "IF_") {
 			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
@@ -944,7 +955,7 @@ func process_message(update tgbotapi.Update) error {
 										} else {
 
 										}
-										if chatItem.Inity < 0 || chatItem.Inity > 10 {
+										if chatItem.Inity < 0 || chatItem.Inity > 1000 {
 											chatItem.Inity = 0
 										} else {
 
@@ -1160,8 +1171,8 @@ func process_initiative() {
 			ChatMessages = chatItem.IntFacts
 			FullPromt = nil
 			FullPromt = append(FullPromt, chatItem.BStPrmt...)
-			//FullPromt = append(FullPromt, ChatMessages...)
 			FullPromt = append(FullPromt, chatItem.IntFacts...)
+			log.Println(FullPromt)
 			resp, err := gclient.CreateChatCompletion( //Формируем запрос к мозгам
 				context.Background(),
 				openai.ChatCompletionRequest{
