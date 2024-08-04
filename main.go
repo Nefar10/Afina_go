@@ -1172,7 +1172,7 @@ func process_initiative() {
 			FullPromt = nil
 			FullPromt = append(FullPromt, chatItem.BStPrmt...)
 			FullPromt = append(FullPromt, chatItem.IntFacts...)
-			log.Println(FullPromt)
+			//log.Println(FullPromt)
 			resp, err := gclient.CreateChatCompletion( //Формируем запрос к мозгам
 				context.Background(),
 				openai.ChatCompletionRequest{
