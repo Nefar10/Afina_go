@@ -351,7 +351,7 @@ func isMyReaction(messages []openai.ChatCompletionMessage, Bstyle []openai.ChatC
 			Messages:    FullPromt,
 		},
 	)
-	log.Println(resp.Choices[0].Message.Content)
+	//log.Println(resp.Choices[0].Message.Content)
 	if err != nil {
 		SendToUser(gOwner, E17[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
 		time.Sleep(20 * time.Second)
@@ -752,7 +752,8 @@ func process_message(update tgbotapi.Update) error {
 					SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 				msgString = "Название чата: " + chatItem.Title + "\nМодель поведения: " + strconv.Itoa(int(chatItem.Bstyle)) + "\n" +
-					"Экспрессия: " + strconv.FormatFloat(float64(chatItem.Temperature*100), 'f', -1, 32) + "%"
+					"Экспрессия: " + strconv.FormatFloat(float64(chatItem.Temperature*100), 'f', -1, 32) + "%\n" +
+					"Инициативность: " + strconv.Itoa(chatItem.Inity*10) + "%"
 				SendToUser(chatID, msgString, INFO, 2)
 			}
 		}
@@ -946,7 +947,7 @@ func process_message(update tgbotapi.Update) error {
 										if chatItem.Inity < 0 || chatItem.Inity > 10 {
 											chatItem.Inity = 0
 										} else {
-											chatItem.Temperature = chatItem.Temperature / 10
+
 										}
 									}
 								default:
