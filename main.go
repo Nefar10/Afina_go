@@ -1160,7 +1160,7 @@ func process_initiative() {
 			ChatMessages = chatItem.IntFacts
 			FullPromt = nil
 			FullPromt = append(FullPromt, chatItem.BStPrmt...)
-			FullPromt = append(FullPromt, ChatMessages...)
+			//FullPromt = append(FullPromt, ChatMessages...)
 			FullPromt = append(FullPromt, chatItem.IntFacts...)
 			ansText := ""
 			resp, err := gclient.CreateChatCompletion( //Формируем запрос к мозгам
