@@ -913,7 +913,7 @@ func process_message(update tgbotapi.Update) error {
 					case ALLOW:
 						{
 							//Processing settings change
-							if gChangeSettings != gOwner || chatItem.SetState != NO_ONE {
+							if (gChangeSettings != gOwner || chatItem.SetState != NO_ONE) && (chatItem.ChatID == gOwner) {
 								jsonStr, err = gRedisClient.Get("ChatState:" + strconv.FormatInt(gChangeSettings, 10)).Result()
 								if err != nil {
 									SendToUser(gOwner, E13[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
