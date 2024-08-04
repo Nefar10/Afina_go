@@ -351,7 +351,7 @@ func isMyReaction(messages []openai.ChatCompletionMessage, Bstyle []openai.ChatC
 			Messages:    FullPromt,
 		},
 	)
-	//log.Println(resp.Choices[0].Message.Content)
+	log.Println(resp.Choices[0].Message.Content)
 	if err != nil {
 		SendToUser(gOwner, E17[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
 		time.Sleep(20 * time.Second)
@@ -1021,21 +1021,20 @@ func process_message(update tgbotapi.Update) error {
 								}
 								action := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
 								toBotFlag := false
-								//for _, name := range gBotNames { //Определим - есть ли в контексте последнего сообщения имя бота
-								//	if (strings.Contains(strings.ToUpper(update.Message.Text), name)) ||
-								//		 ||
+								for _, name := range gBotNames { //Определим - есть ли в контексте последнего сообщения имя бота
+									if strings.Contains(strings.ToUpper(update.Message.Text), strings.ToUpper(name)) {
+										toBotFlag = true
+									}
+								}
 								if update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.ID == gBot.Self.ID { //Если имя бота встречается
 									toBotFlag = true
 									//		break
-								} else if isMyReaction(ChatMessages, chatItem.BStPrmt, chatItem.History) {
-									toBotFlag = true
-
 								}
-								//}
-								//rd := gRand.Intn(40) + 1
-								//if rd <= chatItem.Inity {
-								//	toBotFlag = true
-								//}
+								if !toBotFlag {
+									if isMyReaction(ChatMessages, chatItem.BStPrmt, chatItem.History) {
+										toBotFlag = true
+									}
+								}
 								if len(ChatMessages) > 20 {
 									// Удаляем первые элементы, оставляя последние 10
 									ChatMessages = ChatMessages[1:]
@@ -1162,7 +1161,6 @@ func process_initiative() {
 			FullPromt = append(FullPromt, chatItem.BStPrmt...)
 			//FullPromt = append(FullPromt, ChatMessages...)
 			FullPromt = append(FullPromt, chatItem.IntFacts...)
-			ansText := ""
 			resp, err := gclient.CreateChatCompletion( //Формируем запрос к мозгам
 				context.Background(),
 				openai.ChatCompletionRequest{
@@ -1176,13 +1174,12 @@ func process_initiative() {
 				SendToUser(gOwner, E17[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
 			} else {
 				//log.Printf("Чат ID: %d Токенов использовано: %d", chatItem.ChatID, resp.Usage.TotalTokens)
-				ansText = resp.Choices[0].Message.Content
-				SendToUser(chatItem.ChatID, ansText, NOTHING, 0)
+				SendToUser(chatItem.ChatID, resp.Choices[0].Message.Content, NOTHING, 0)
 
 			}
 			msgString, err = gRedisClient.Get("Dialog:" + strconv.FormatInt(chatItem.ChatID, 10)).Result() //Пытаемся прочесть из БД диалог
 			if err == redis.Nil {                                                                          //Если диалога в БД нет, формируем новый и записываем в БД
-				ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: ansText})
+				ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content})
 				jsonData, err = json.Marshal(ChatMessages)
 				if err != nil {
 					SendToUser(gOwner, E11[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
@@ -1199,7 +1196,7 @@ func process_initiative() {
 					SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 				ChatMessages = append(ChatMessages, chatItem.IntFacts...)
-				ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: ansText})
+				ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content})
 				jsonData, err = json.Marshal(ChatMessages)
 				if err != nil {
 					SendToUser(gOwner, E11[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
