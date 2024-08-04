@@ -285,7 +285,7 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 					tgbotapi.NewInlineKeyboardButtonData(M17[gLocale], "CHAT_FACTS: "+strconv.FormatInt(chatID[0], 10)),
 				),
 				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData(M18[gLocale], "RIGHTS"),
+					tgbotapi.NewInlineKeyboardButtonData(M18[gLocale], "RIGHTS: "+strconv.FormatInt(chatID[0], 10)),
 				),
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData(M19[gLocale], "MENU"),
@@ -346,12 +346,12 @@ func isMyReaction(mesText string, Bstyle []openai.ChatCompletionMessage, History
 			Messages:    FullPromt,
 		},
 	)
-	log.Println(resp.Choices[0].Message.Content)
+	//log.Println(resp.Choices[0].Message.Content)
 	if err != nil {
 		SendToUser(gOwner, E17[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
 		time.Sleep(20 * time.Second)
 	} else {
-		//log.Printf("Чат ID: %d Токенов использовано: %d", update.Message.Chat.ID, resp.Usage.TotalTokens)
+
 		if strings.Contains(resp.Choices[0].Message.Content, R1[gLocale]) {
 			return true
 		} else {
@@ -1155,8 +1155,8 @@ func process_initiative() {
 			ChatMessages = chatItem.IntFacts
 			FullPromt = nil
 			FullPromt = append(FullPromt, chatItem.BStPrmt...)
-			FullPromt = append(FullPromt, chatItem.IntFacts...)
 			FullPromt = append(FullPromt, ChatMessages...)
+			FullPromt = append(FullPromt, chatItem.IntFacts...)
 			ansText := ""
 			resp, err := gclient.CreateChatCompletion( //Формируем запрос к мозгам
 				context.Background(),

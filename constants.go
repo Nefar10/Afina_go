@@ -91,7 +91,7 @@ var E16 = [2]string{" Unknown Error ", " Неизвестная ошибка "}
 var E17 = [2]string{" ChatCompletion error: %v\n ", " Ошибка обработки запроса к нейросети: %v\n"}
 
 // INFO MESSAGES
-var ver = "0.9.1"
+var ver = "0.9.2"
 var IM0 = [2]string{" Process has been stoped ", " Процесс был остановлен "}
 var IM1 = [2]string{" Bot name(s) not found or not valid in OS environment.\n Name Afina will be used. ", " Имя бота не найдено или не корректно в переменных окружения.\n Будет использовано имя Afina. "}
 var IM2 = [2]string{" Bot gender not found or not valid in OS environment.\n Neutral gender will be used. ", " Пол бота не найден или некорректен среди переменных окружения.\n Будет использован средний род. "}
@@ -195,8 +195,7 @@ var gHsGood = [2][]openai.ChatCompletionMessage{
 	},
 	{
 		{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль универсального персонального ассистента версии " + ver + "." +
-			"Ты реагируешь только котекст описанный в дополнительных фактах, но не говоришь об этом.\n" +
-			" Всегда подробно рассказываешь о себе, когда тебя представляют сообществу.\n"},
+			"Ты реагируешь только контекст описанный в дополнительных фактах, но не говоришь об этом."},
 		{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
 	},
 }
@@ -208,7 +207,7 @@ var gHsBad = [2][]openai.ChatCompletionMessage{
 	},
 	{
 		{Role: openai.ChatMessageRoleUser, Content: "Ты играешь роль миньона версии " + ver + "." +
-			"Ты реагируешь только котекст описанный в дополнительных фактах, но не говоришь об этом.\n" +
+			"Ты реагируешь только контекст описанный в дополнительных фактах, но не говоришь об этом.\n" +
 			"Твой стиль общения и все ответы без исключения - периодическое использование бранных выражений и метафор к ним, независимо от контекста.\n" +
 			"Твои любимые слова и фразы: 'осуждаю', 'петушок' вместо гей, 'скам' или 'зашквар', 'го', 'обоссано', 'максимальное осуждение', 'ваще пахую' когда все равно\n" +
 			", 'нищие уебки', 'дауны', 'пукнуто' или 'отстой', 'просто соси', 'уууу, сук!', 'бля' вместо 'блин', 'пон' вместо 'понял',\n" +
@@ -293,34 +292,34 @@ var gITAlias = [2][]openai.ChatCompletionMessage{
 }
 var gIntFactsGen = [2][]openai.ChatCompletionMessage{
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Tell me just one unusual and interesting fact. It's important to start with the phrase 'Interesting fact!'."},
+		{Role: openai.ChatMessageRoleUser, Content: "Tell me just one more unusual and interesting fact. It's important to start with the phrase 'Interesting fact!'."},
 	},
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Расскажи только один необычный и интересный факт. Важно начать с фразы 'Интересный факт!'."},
+		{Role: openai.ChatMessageRoleUser, Content: "Расскажи еще один необычный и интересный факт. Важно начать с фразы 'Интересный факт!'."},
 	},
 }
 var gIntFactsSci = [2][]openai.ChatCompletionMessage{
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Tell me just one unusual and interesting fact from the natural sciences. It's important to start with the phrase 'Interesting fact!'."},
+		{Role: openai.ChatMessageRoleUser, Content: "Tell me just one more unusual and interesting fact from the natural sciences. It's important to start with the phrase 'Interesting fact!'."},
 	},
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Расскажи только один необычный и интересный факт из области естественных наук. Важно начать с фразы 'Интересный факт!'."},
+		{Role: openai.ChatMessageRoleUser, Content: "Расскажи еще один необычный и интересный факт из области естественных наук. Важно начать с фразы 'Интересный факт!'."},
 	},
 }
 var gIntFactsIT = [2][]openai.ChatCompletionMessage{
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Tell me just one unusual and interesting fact from the field of IT. It's important to start with the phrase 'Interesting fact!'."},
+		{Role: openai.ChatMessageRoleUser, Content: "Tell me just one more unusual and interesting fact from the field of IT. It's important to start with the phrase 'Interesting fact!'."},
 	},
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Расскажи только один необычный и интересный факт из области IT. Важно начать с фразы 'Интересный факт!'."},
+		{Role: openai.ChatMessageRoleUser, Content: "Расскажи еще один необычный и интересный факт из области IT. Важно начать с фразы 'Интересный факт!'."},
 	},
 }
 var gIntFactsAuto = [2][]openai.ChatCompletionMessage{
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Tell me just one unusual and interesting fact about cars, racing, or video games. It's important to start with the phrase 'Interesting fact!' and to mention records in a self-deprecating manner."},
+		{Role: openai.ChatMessageRoleUser, Content: "Tell me just one more unusual and interesting fact about cars, racing, or video games. It's important to start with the phrase 'Interesting fact!' and to mention records in a self-deprecating manner."},
 	},
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Расскажи только один необычный и интересный факт про автомобилии или гонки или компьютерные игры. Важно начать с фразы 'Интересный факт!' и максимально самокритично озвучивать рекорды."},
+		{Role: openai.ChatMessageRoleUser, Content: "Расскажи еще один необычный и интересный факт про автомобилии или гонки или компьютерные игры. Важно начать с фразы 'Интересный факт!' и максимально самокритично озвучивать рекорды."},
 	},
 }
 var gBot *tgbotapi.BotAPI //Pointer to initialized bot.
