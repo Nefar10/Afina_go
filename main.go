@@ -350,7 +350,7 @@ func isMyReaction(messages []openai.ChatCompletionMessage, Bstyle []openai.ChatC
 	FullPromt = append(FullPromt, Bstyle...)
 	FullPromt = append(FullPromt, History...)
 	//FullPromt = append(FullPromt, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: mesText})
-	if len(messages) >= 3 {
+	if len(messages) >= 5 {
 		FullPromt = append(FullPromt, messages[len(messages)-3:]...)
 	} else {
 		FullPromt = append(FullPromt, messages[len(messages)-1:]...)
@@ -365,7 +365,7 @@ func isMyReaction(messages []openai.ChatCompletionMessage, Bstyle []openai.ChatC
 			Messages:    FullPromt,
 		},
 	)
-	//log.Println(resp.Choices[0].Message.Content)
+	log.Println(resp.Choices[0].Message.Content)
 	if err != nil {
 		SendToUser(gOwner, E17[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
 		time.Sleep(20 * time.Second)
@@ -1060,15 +1060,15 @@ func process_message(update tgbotapi.Update) error {
 								action := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
 								toBotFlag := false
 								for _, name := range gBotNames { //Определим - есть ли в контексте последнего сообщения имя бота
-									if strings.Contains(strings.ToUpper(update.Message.Text), strings.ToUpper(name)) {
+									if strings.Contains(strings.ToUpper(update.Message.Text), strings.ToUpper(name)) && gUpdatesQty == 0 {
 										toBotFlag = true
 									}
 								}
-								if update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.ID == gBot.Self.ID { //Если имя бота встречается
+								if update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.ID == gBot.Self.ID && gUpdatesQty == 0 { //Если имя бота встречается
 									toBotFlag = true
 									//		break
 								}
-								if !toBotFlag {
+								if !toBotFlag && gUpdatesQty == 0 {
 									if isMyReaction(ChatMessages, chatItem.BStPrmt, chatItem.History) {
 										toBotFlag = true
 									}
@@ -1251,14 +1251,32 @@ func process_initiative() {
 }
 
 func main() {
+	var updateQueue []tgbotapi.Update
+	//Telegram update channel init
+	updateConfig := tgbotapi.NewUpdate(0)
+	updateConfig.Timeout = UPDATE_CONFIG_TIMEOUT
+	updates := gBot.GetUpdatesChan(updateConfig)
+	//Beginning of message processing
 	go func() {
-		//Telegram update channel init
-		updateConfig := tgbotapi.NewUpdate(0)
-		updateConfig.Timeout = UPDATE_CONFIG_TIMEOUT
-		updates := gBot.GetUpdatesChan(updateConfig)
-		//Beginning of message processing
 		for update := range updates {
-			process_message(update)
+			updateQueue = append(updateQueue, update) // Добавляем обновление в очередь
+		}
+	}()
+	go func() {
+		for {
+			if len(updateQueue) > 0 {
+				// Получаем первое обновление из очереди
+				update := updateQueue[0]
+				updateQueue = updateQueue[1:] // Удаляем его из очереди
+				// Выводим количество оставшихся обновлений
+				gUpdatesQty = len(updateQueue)
+				//log.Println(strconv.Itoa(gUpdatesQty))
+				// Обрабатываем обновление
+				process_message(update)
+			} else {
+				// Ждем немного, чтобы избежать активного ожидания
+				time.Sleep(500 * time.Millisecond)
+			}
 		}
 	}()
 	for {

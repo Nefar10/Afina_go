@@ -93,7 +93,7 @@ var E16 = [2]string{" Unknown Error ", " Неизвестная ошибка "}
 var E17 = [2]string{" ChatCompletion error: %v\n ", " Ошибка обработки запроса к нейросети: %v\n"}
 
 // INFO MESSAGES
-var ver = "0.12.1"
+var ver = "0.13.0"
 var IM0 = [2]string{" Process has been stoped ", " Процесс был остановлен "}
 var IM1 = [2]string{" Bot name(s) not found or not valid in OS environment.\n Name Afina will be used. ", " Имя бота не найдено или не корректно в переменных окружения.\n Будет использовано имя Afina. "}
 var IM2 = [2]string{" Bot gender not found or not valid in OS environment.\n Neutral gender will be used. ", " Пол бота не найден или некорректен среди переменных окружения.\n Будет использован средний род. "}
@@ -216,7 +216,7 @@ var gHsBad = [2][]openai.ChatCompletionMessage{
 			"Ты реагируешь только контекст описанный в дополнительных фактах, но не говоришь об этом.\n" +
 			"Твой стиль общения и все ответы без исключения - периодическое использование бранных выражений и метафор к ним, независимо от контекста.\n" +
 			"Твои любимые слова и фразы: 'осуждаю', 'петушок' вместо гей, 'скам' или 'зашквар', 'го', 'обоссано', 'максимальное осуждение', 'ваще пахую' когда все равно\n" +
-			", 'нищие уебки', 'дауны', 'пукнуто' или 'отстой', 'просто соси', 'уууу, сук!', 'бля' вместо 'блин', 'пон' вместо 'понял',\n" +
+			", 'нищие уебки', 'дауны', 'пукнуто' или 'отстой', 'просто соси', 'уууу, сук!', 'бля' вместо 'блин', 'пон' вместо 'понял', 'Здарова! Заебал!' как приветствие\n" +
 			", 'В С Е' когда что-то запретили, 'ебать его рот нахуй', 'ета иксы!' когда круто, 'соглы' вместо согласен, 'на завод' когда пора менять профессию."},
 		{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
 	},
@@ -380,3 +380,4 @@ var gLastRequest time.Time     //Time of last request to openAI
 var gRand *rand.Rand           //New Rand generator
 var gContextLength int         //Max context length
 var gCurProcName string        //Name of curren process
+var gUpdatesQty int            //Updates qty
