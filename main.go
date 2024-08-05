@@ -114,6 +114,7 @@ func init() {
 
 	gHsGood[gLocale] = append(gHsGood[gLocale], gHsName[gLocale]...)
 	gHsBad[gLocale] = append(gHsBad[gLocale], gHsName[gLocale]...)
+	gHsPoppins[gLocale] = append(gHsPoppins[gLocale], gHsName[gLocale]...)
 
 	//Read bot gender from OS env
 	switch os.Getenv(BOTGENDER_IN_OS) {
@@ -122,18 +123,21 @@ func init() {
 			gBotGender = MALE
 			gHsGood[gLocale] = append(gHsGood[gLocale], gHsGenderM[gLocale]...)
 			gHsBad[gLocale] = append(gHsBad[gLocale], gHsGenderM[gLocale]...)
+			gHsPoppins[gLocale] = append(gHsPoppins[gLocale], gHsGenderM[gLocale]...)
 		}
 	case "Female":
 		{
 			gBotGender = FEMALE
 			gHsGood[gLocale] = append(gHsGood[gLocale], gHsGenderF[gLocale]...)
 			gHsBad[gLocale] = append(gHsBad[gLocale], gHsGenderF[gLocale]...)
+			gHsPoppins[gLocale] = append(gHsPoppins[gLocale], gHsGenderF[gLocale]...)
 		}
 	case "Neutral":
 		{
 			gBotGender = NEUTRAL
 			gHsGood[gLocale] = append(gHsGood[gLocale], gHsGenderN[gLocale]...)
 			gHsBad[gLocale] = append(gHsBad[gLocale], gHsGenderN[gLocale]...)
+			gHsPoppins[gLocale] = append(gHsPoppins[gLocale], gHsGenderN[gLocale]...)
 		}
 	default:
 		{
@@ -141,6 +145,7 @@ func init() {
 			gBotGender = NEUTRAL
 			gHsGood[gLocale] = append(gHsGood[gLocale], gHsGenderN[gLocale]...)
 			gHsBad[gLocale] = append(gHsBad[gLocale], gHsGenderN[gLocale]...)
+			gHsPoppins[gLocale] = append(gHsPoppins[gLocale], gHsGenderN[gLocale]...)
 		}
 	}
 	//Default chat states init
@@ -314,6 +319,7 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData(M24[gLocale], "GSGOOD: "+strconv.FormatInt(chatID[0], 10)),
 					tgbotapi.NewInlineKeyboardButtonData(M25[gLocale], "GSBAD: "+strconv.FormatInt(chatID[0], 10)),
+					tgbotapi.NewInlineKeyboardButtonData(M27[gLocale], "GSPOP: "+strconv.FormatInt(chatID[0], 10)),
 				))
 			msg.ReplyMarkup = numericKeyboard
 		}
@@ -587,7 +593,8 @@ func process_message(update tgbotapi.Update) error {
 			SendToUser(gOwner, IM12[gLocale], GPTSTYLES, 1, chatID)
 		}
 		gCurProcName = "GPT model changing"
-		if strings.Contains(update.CallbackQuery.Data, "GSGOOD:") || strings.Contains(update.CallbackQuery.Data, "GSBAD:") {
+		if strings.Contains(update.CallbackQuery.Data, "GSGOOD:") || strings.Contains(update.CallbackQuery.Data, "GSBAD:") ||
+			strings.Contains(update.CallbackQuery.Data, "GSPOP:") {
 			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 			if err != nil {
@@ -607,9 +614,15 @@ func process_message(update tgbotapi.Update) error {
 				chatItem.Bstyle = GOOD
 				chatItem.BStPrmt = gHsGood[gLocale]
 				SendToUser(gOwner, IM18[gLocale], INFO, 1)
-			} else {
+			}
+			if strings.Contains(update.CallbackQuery.Data, "GSBAD:") {
 				chatItem.Bstyle = BAD
 				chatItem.BStPrmt = gHsBad[gLocale]
+				SendToUser(gOwner, IM19[gLocale], INFO, 1)
+			}
+			if strings.Contains(update.CallbackQuery.Data, "GSPOP:") {
+				chatItem.Bstyle = POPPINS
+				chatItem.BStPrmt = gHsPoppins[gLocale]
 				SendToUser(gOwner, IM19[gLocale], INFO, 1)
 			}
 			jsonData, err = json.Marshal(chatItem)

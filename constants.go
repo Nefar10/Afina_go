@@ -62,8 +62,9 @@ const (
 	//ADDED MODELS
 	GPT4oMini = "gpt-4o-mini"
 	//STYLES
-	GOOD = 0
-	BAD  = 1
+	GOOD    = 0
+	BAD     = 1
+	POPPINS = 2
 	//PARAMETERS
 	NO_ONE      = 0
 	HISTORY     = 1
@@ -91,7 +92,7 @@ var E16 = [2]string{" Unknown Error ", " Неизвестная ошибка "}
 var E17 = [2]string{" ChatCompletion error: %v\n ", " Ошибка обработки запроса к нейросети: %v\n"}
 
 // INFO MESSAGES
-var ver = "0.10.3"
+var ver = "0.11.1"
 var IM0 = [2]string{" Process has been stoped ", " Процесс был остановлен "}
 var IM1 = [2]string{" Bot name(s) not found or not valid in OS environment.\n Name Afina will be used. ", " Имя бота не найдено или не корректно в переменных окружения.\n Будет использовано имя Afina. "}
 var IM2 = [2]string{" Bot gender not found or not valid in OS environment.\n Neutral gender will be used. ", " Пол бота не найден или некорректен среди переменных окружения.\n Будет использован средний род. "}
@@ -112,6 +113,7 @@ var IM16 = [2]string{" Write - as soon as you are ready to start the game. ", " 
 var IM17 = [2]string{" Choose a style. ", " Выберите стиль общения "}
 var IM18 = [2]string{" The communication style has been changed to friendly. ", " Стиль общения изменен на доброжелательный. "}
 var IM19 = [2]string{" The communication style has been changed to unfriendly. ", " Стиль общения изменен на недоброжелательный. "}
+var IM20 = [2]string{" The communication style has been changed to Mery Poppins. ", " Стиль общения изменен на Мэри Поппинс. "}
 
 // Menus
 var M1 = [2]string{"Yes", "Да"}
@@ -140,6 +142,7 @@ var M23 = [2]string{"Cars and racing", "Автомобили и гонки"}
 var M24 = [2]string{"Good boy", "Паинька"}
 var M25 = [2]string{"Bad boy", "Плохиш"}
 var M26 = [2]string{"Information", "Информация"}
+var M27 = [2]string{"Mary Poppins", "Мэри Поппинс"}
 
 // for my reaction
 var R1 = [2]string{"Yes", "Да"}
@@ -212,6 +215,21 @@ var gHsBad = [2][]openai.ChatCompletionMessage{
 			"Твои любимые слова и фразы: 'осуждаю', 'петушок' вместо гей, 'скам' или 'зашквар', 'го', 'обоссано', 'максимальное осуждение', 'ваще пахую' когда все равно\n" +
 			", 'нищие уебки', 'дауны', 'пукнуто' или 'отстой', 'просто соси', 'уууу, сук!', 'бля' вместо 'блин', 'пон' вместо 'понял',\n" +
 			", 'В С Е' когда что-то запретили, 'ебать его рот нахуй', 'ета иксы!' когда круто, 'соглы' вместо согласен, 'на завод' когда пора менять профессию."},
+		{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
+	},
+}
+
+var gHsPoppins = [2][]openai.ChatCompletionMessage{
+	{
+		{Role: openai.ChatMessageRoleUser, Content: "Hi! You are playing the role of a universal personal assistant version " + ver + "."},
+		{Role: openai.ChatMessageRoleAssistant, Content: "Accepted!"},
+	},
+	{
+		{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль универсального персонального ассистента версии " + ver + "." +
+			"Ты реагируешь только контекст описанный в дополнительных фактах, но не говоришь об этом.\n" +
+			"Твой стиль общения и все ответы без исключения, как у Мэри поппинс, независимо от контекста.\n" +
+			"Твои любимые фразы: 'Ложка сахара помогает лекарству легче усваиваться', 'практически идеальна',\n" +
+			"'Суперкулифрагилистикэкспиалидошес', 'чудо', 'игра', 'дисциплина', 'магия', 'сказка', 'улыбка', 'сахар', 'порядок', 'приключения'"},
 		{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
 	},
 }
