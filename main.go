@@ -1169,6 +1169,8 @@ func process_initiative() {
 			gLastRequest = time.Now() //Прежде чем формировать запрос, запомним текущее время
 			gclient_is_busy = true
 			ChatMessages = chatItem.IntFacts
+			currentTime := time.Now()
+			ChatMessages[len(ChatMessages)-1].Content = currentTime.Format("2006-01-02 15:04:05") + ChatMessages[len(ChatMessages)-1].Content
 			FullPromt = nil
 			FullPromt = append(FullPromt, chatItem.BStPrmt...)
 			FullPromt = append(FullPromt, chatItem.IntFacts...)
