@@ -1270,12 +1270,12 @@ func main() {
 				updateQueue = updateQueue[1:] // Удаляем его из очереди
 				// Выводим количество оставшихся обновлений
 				gUpdatesQty = len(updateQueue)
-				//log.Println(strconv.Itoa(gUpdatesQty))
+				log.Println(strconv.Itoa(gUpdatesQty))
 				// Обрабатываем обновление
 				process_message(update)
 			} else {
 				// Ждем немного, чтобы избежать активного ожидания
-				time.Sleep(500 * time.Millisecond)
+				time.Sleep(3000 * time.Millisecond)
 			}
 		}
 	}()
