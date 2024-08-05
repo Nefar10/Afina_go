@@ -62,9 +62,10 @@ const (
 	//ADDED MODELS
 	GPT4oMini = "gpt-4o-mini"
 	//STYLES
-	GOOD    = 0
-	BAD     = 1
-	POPPINS = 2
+	GOOD     = 0
+	BAD      = 1
+	POPPINS  = 2
+	SYSADMIN = 4
 	//PARAMETERS
 	NO_ONE      = 0
 	HISTORY     = 1
@@ -92,7 +93,7 @@ var E16 = [2]string{" Unknown Error ", " Неизвестная ошибка "}
 var E17 = [2]string{" ChatCompletion error: %v\n ", " Ошибка обработки запроса к нейросети: %v\n"}
 
 // INFO MESSAGES
-var ver = "0.11.1"
+var ver = "0.12.1"
 var IM0 = [2]string{" Process has been stoped ", " Процесс был остановлен "}
 var IM1 = [2]string{" Bot name(s) not found or not valid in OS environment.\n Name Afina will be used. ", " Имя бота не найдено или не корректно в переменных окружения.\n Будет использовано имя Afina. "}
 var IM2 = [2]string{" Bot gender not found or not valid in OS environment.\n Neutral gender will be used. ", " Пол бота не найден или некорректен среди переменных окружения.\n Будет использован средний род. "}
@@ -114,6 +115,7 @@ var IM17 = [2]string{" Choose a style. ", " Выберите стиль обще
 var IM18 = [2]string{" The communication style has been changed to friendly. ", " Стиль общения изменен на доброжелательный. "}
 var IM19 = [2]string{" The communication style has been changed to unfriendly. ", " Стиль общения изменен на недоброжелательный. "}
 var IM20 = [2]string{" The communication style has been changed to Mery Poppins. ", " Стиль общения изменен на Мэри Поппинс. "}
+var IM21 = [2]string{" The communication style has been changed to SA. ", " Стиль общения изменен на Сисадмин. "}
 
 // Menus
 var M1 = [2]string{"Yes", "Да"}
@@ -143,6 +145,7 @@ var M24 = [2]string{"Good boy", "Паинька"}
 var M25 = [2]string{"Bad boy", "Плохиш"}
 var M26 = [2]string{"Information", "Информация"}
 var M27 = [2]string{"Mary Poppins", "Мэри Поппинс"}
+var M28 = [2]string{"Sysadmin", "Сисадмин"}
 
 // for my reaction
 var R1 = [2]string{"Yes", "Да"}
@@ -230,6 +233,23 @@ var gHsPoppins = [2][]openai.ChatCompletionMessage{
 			"Твой стиль общения и все ответы без исключения, как у Мэри поппинс, независимо от контекста.\n" +
 			"Твои любимые фразы: 'Ложка сахара помогает лекарству легче усваиваться', 'практически идеальна',\n" +
 			"'Суперкулифрагилистикэкспиалидошес', 'чудо', 'игра', 'дисциплина', 'магия', 'сказка', 'улыбка', 'сахар', 'порядок', 'приключения'"},
+		{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
+	},
+}
+
+var gHsSA = [2][]openai.ChatCompletionMessage{
+	{
+		{Role: openai.ChatMessageRoleUser, Content: "Hi! You are playing the role of a universal personal assistant version " + ver + "."},
+		{Role: openai.ChatMessageRoleAssistant, Content: "Accepted!"},
+	},
+	{
+		{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль универсального персонального ассистента версии " + ver + "." +
+			"Ты реагируешь только контекст описанный в дополнительных фактах, но не говоришь об этом.\n" +
+			"Твой стиль общения и все ответы без исключения, как у профессионального системного администратора, независимо от контекста.\n" +
+			"Твои любимые фразы: 'Проблема не в системе, а в пользователе.', 'Резервное копирование — это не опция, это необходимость.',\n" +
+			"'Не трогай работающую систему.', 'Если что-то идет не так, перезагрузите., 'Все, что может сломаться, в конечном итоге сломается.',\n" +
+			"'Документация — это твой лучший друг.', 'Планируй на будущее, но будь готов к неожиданностям.',\n" +
+			"'Пользователь всегда прав... до тех пор, пока он не сломает что-то.', 'Системы должны быть автоматизированы, а не управляемы вручную.'\n"},
 		{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
 	},
 }
