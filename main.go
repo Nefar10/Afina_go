@@ -173,6 +173,18 @@ func init() {
 	config := openai.DefaultConfig(gAIToken)
 	config.BaseURL = "https://api.proxyapi.ru/openai/v1"
 	gclient = openai.NewClientWithConfig(config)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	gModels = nil
+	models, err := gclient.ListModels(ctx)
+	if err != nil {
+		log.Fatalf("Error retrieving models: %v", err)
+	}
+	for _, model := range models.Models {
+		if strings.Contains(strings.ToLower(model.ID), "gpt-4o") {
+			gModels = append(gModels, model.ID)
+		}
+	}
 	gclient_is_busy = false
 	//Send init complete message to owner
 	SendToUser(gOwner, IM3[gLocale]+"\n"+IM13[gLocale], INFO, 0)
@@ -282,15 +294,60 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 			numericKeyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
 			msg.ReplyMarkup = numericKeyboard
 		}
+	case GPTSELECT:
+		{
+			msg.Text = "Выберите модель"
+			/*
+				var buttons []tgbotapi.InlineKeyboardButton
+				for _, model := range gModels {
+					if model != "" {
+						buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData(model, "MD: "+model))
+					}
+				}
+				var rows [][]tgbotapi.InlineKeyboardButton
+				for _, button := range buttons {
+					row := []tgbotapi.InlineKeyboardButton{button}
+					rows = append(rows, row)
+				}
+				numericKeyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
+				msg.ReplyMarkup = numericKeyboard*/
+			var buttons []tgbotapi.InlineKeyboardButton
+			for _, model := range gModels {
+				if model != "" {
+					buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData(model, "SEL_MODEL:"+model+": "+strconv.FormatInt(chatID[0], 10)))
+				}
+			}
+
+			var rows [][]tgbotapi.InlineKeyboardButton
+			var row []tgbotapi.InlineKeyboardButton
+
+			for i, button := range buttons {
+				row = append(row, button)
+				// Если количество кнопок в строке достигло 3, добавляем строку в rows и сбрасываем row
+				if (i+1)%2 == 0 {
+					rows = append(rows, row)
+					row = []tgbotapi.InlineKeyboardButton{} // сброс временного среза
+				}
+			}
+
+			// Если остались кнопки в последней строке, добавляем их
+			if len(row) > 0 {
+				rows = append(rows, row)
+			}
+
+			numericKeyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
+			msg.ReplyMarkup = numericKeyboard
+		}
 	case TUNECHAT: //меню настройки чата
 		{
 			var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup( //формируем меню для ответа
 				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData(M13[gLocale], "GPT_MODEL: "+strconv.FormatInt(chatID[0], 10)),
+					tgbotapi.NewInlineKeyboardButtonData(M13[gLocale], "STYLE: "+strconv.FormatInt(chatID[0], 10)),
 					tgbotapi.NewInlineKeyboardButtonData(M14[gLocale], "MODEL_TEMP: "+strconv.FormatInt(chatID[0], 10)),
 					tgbotapi.NewInlineKeyboardButtonData(M16[gLocale], "CHAT_HISTORY: "+strconv.FormatInt(chatID[0], 10)),
 				),
 				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("Нейромодель", "GPT_MODEL: "+strconv.FormatInt(chatID[0], 10)),
 					tgbotapi.NewInlineKeyboardButtonData("Инициатива", "INITIATIVE: "+strconv.FormatInt(chatID[0], 10)),
 					tgbotapi.NewInlineKeyboardButtonData(M17[gLocale], "CHAT_FACTS: "+strconv.FormatInt(chatID[0], 10)),
 				),
@@ -302,6 +359,7 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 				))
 			msg.ReplyMarkup = numericKeyboard
 		}
+
 	case INTFACTS: //меню настройки чата
 		{
 			var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup( //формируем меню для ответа
@@ -365,7 +423,7 @@ func isMyReaction(messages []openai.ChatCompletionMessage, Bstyle []openai.ChatC
 			Messages:    FullPromt,
 		},
 	)
-	log.Println(resp.Choices[0].Message.Content)
+	//log.Println(resp.Choices[0].Message.Content)
 	if err != nil {
 		SendToUser(gOwner, E17[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
 		time.Sleep(20 * time.Second)
@@ -394,7 +452,7 @@ func process_message(update tgbotapi.Update) error {
 	var FullPromt []openai.ChatCompletionMessage    //Messages to send
 	var temp float64
 	//Has been recieved callback
-	//log.Println(update.CallbackQuery)
+	log.Println(update.CallbackQuery)
 	if update.CallbackQuery != nil {
 		gCurProcName = "processing callback WB lists"
 		if update.CallbackQuery.Data == "WHITELIST" || update.CallbackQuery.Data == "BLACKLIST" || update.CallbackQuery.Data == "INPROCESS" {
@@ -590,8 +648,8 @@ func process_message(update tgbotapi.Update) error {
 				SendToUser(gOwner, IM12[gLocale], TUNECHAT, 1, chatID)
 			}
 		}
-		gCurProcName = "GPT model processing"
-		if strings.Contains(update.CallbackQuery.Data, "GPT_MODEL:") {
+		gCurProcName = "Style processing"
+		if strings.Contains(update.CallbackQuery.Data, "STYLE:") {
 			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 			if err != nil {
@@ -778,6 +836,7 @@ func process_message(update tgbotapi.Update) error {
 					SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 				msgString = "Название чата: " + chatItem.Title + "\nМодель поведения: " + strconv.Itoa(int(chatItem.Bstyle)) + "\n" +
+					"Нейронная сеть: " + chatItem.Model + "\n" +
 					"Экспрессия: " + strconv.FormatFloat(float64(chatItem.Temperature*100), 'f', -1, 32) + "%\n" +
 					"Инициативность: " + strconv.Itoa(chatItem.Inity*10) + "%\n" +
 					"Текущая версия: " + ver
@@ -793,7 +852,15 @@ func process_message(update tgbotapi.Update) error {
 			}
 			SendToUser(gOwner, "Изменить права доступа для чата "+chatIDstr, ACCESS, 2, chatID)
 		}
-
+		gCurProcName = "Gpt model select"
+		if strings.Contains(update.CallbackQuery.Data, "GPT_MODEL:") {
+			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
+			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
+			if err != nil {
+				SendToUser(gOwner, E15[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+			}
+			SendToUser(gOwner, "Выберите модель"+chatIDstr, GPTSELECT, 2, chatID)
+		}
 		gCurProcName = "Select chat facts"
 		if strings.Contains(update.CallbackQuery.Data, "IF_") {
 			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
@@ -833,6 +900,36 @@ func process_message(update tgbotapi.Update) error {
 					SendToUser(gOwner, E10[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 				SendToUser(gOwner, IM15[gLocale], INFO, 1)
+			}
+		}
+		gCurProcName = "Select gpt model"
+		if strings.Contains(update.CallbackQuery.Data, "SEL_MODEL:") {
+			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
+			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
+			if err != nil {
+				SendToUser(gOwner, E15[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+			}
+			jsonStr, err = gRedisClient.Get("ChatState:" + chatIDstr).Result()
+			if err == redis.Nil {
+				SendToUser(gOwner, E16[gLocale]+err.Error()+" in process "+gCurProcName, INFO, 0)
+				return err
+			} else if err != nil {
+				SendToUser(gOwner, E13[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+			} else {
+				err = json.Unmarshal([]byte(jsonStr), &chatItem)
+				if err != nil {
+					SendToUser(gOwner, E14[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+				}
+				chatItem.Model = strings.Split(update.CallbackQuery.Data, ":")[1]
+				jsonData, err = json.Marshal(chatItem)
+				if err != nil {
+					SendToUser(gOwner, E11[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+				}
+				err = gRedisClient.Set("ChatState:"+strconv.FormatInt(chatID, 10), string(jsonData), 0).Err()
+				if err != nil {
+					SendToUser(gOwner, E10[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
+				}
+				SendToUser(gOwner, "Модель изменена на "+chatItem.Model, INFO, 1)
 			}
 		}
 		gCurProcName = "Chat state changing"
@@ -1270,7 +1367,7 @@ func main() {
 				updateQueue = updateQueue[1:] // Удаляем его из очереди
 				// Выводим количество оставшихся обновлений
 				gUpdatesQty = len(updateQueue)
-				log.Println(strconv.Itoa(gUpdatesQty))
+				//log.Println(strconv.Itoa(gUpdatesQty))
 				// Обрабатываем обновление
 				process_message(update)
 			} else {

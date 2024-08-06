@@ -50,6 +50,7 @@ const (
 	TUNECHATUSER = 8  //same the 5
 	INTFACTS     = 9  //Edit intfacts
 	GPTSTYLES    = 10 //Style conversations
+	GPTSELECT    = 11 //gpt model change
 	//MENULEVELS
 	NO_ACCESS = 1  //No access to menu
 	DEFAULT   = 2  //Default user menu
@@ -59,7 +60,7 @@ const (
 	//LOCALES
 	RU = 1
 	EN = 0
-	//ADDED MODELS
+	//BASE MODEL
 	GPT4oMini = "gpt-4o-mini"
 	//STYLES
 	GOOD     = 0
@@ -93,7 +94,7 @@ var E16 = [2]string{" Unknown Error ", " Неизвестная ошибка "}
 var E17 = [2]string{" ChatCompletion error: %v\n ", " Ошибка обработки запроса к нейросети: %v\n"}
 
 // INFO MESSAGES
-var ver = "0.13.1"
+var ver = "0.14.0"
 var IM0 = [2]string{" Process has been stoped ", " Процесс был остановлен "}
 var IM1 = [2]string{" Bot name(s) not found or not valid in OS environment.\n Name Afina will be used. ", " Имя бота не найдено или не корректно в переменных окружения.\n Будет использовано имя Afina. "}
 var IM2 = [2]string{" Bot gender not found or not valid in OS environment.\n Neutral gender will be used. ", " Пол бота не найден или некорректен среди переменных окружения.\n Будет использован средний род. "}
@@ -381,3 +382,4 @@ var gRand *rand.Rand           //New Rand generator
 var gContextLength int         //Max context length
 var gCurProcName string        //Name of curren process
 var gUpdatesQty int            //Updates qty
+var gModels []string           //Reached models
