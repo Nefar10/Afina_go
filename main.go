@@ -24,7 +24,7 @@ func init() {
 	var db int
 	var jsonData []byte
 	gRand = rand.New(rand.NewSource(time.Now().UnixNano()))
-	//Read bot API key from OS env
+	//Read localization setting from OS env
 	gCurProcName = "Environment initialization"
 	switch os.Getenv(AFINA_LOCALE_IN_OS) {
 	case "Ru":
@@ -34,6 +34,7 @@ func init() {
 	default:
 		gLocale = 0
 	}
+	//Read bot API key from OS env
 	gToken = os.Getenv(TOKEN_NAME_IN_OS)
 	if gToken == "" {
 		log.Fatalln(E1[gLocale] + TOKEN_NAME_IN_OS + " in process " + gCurProcName)
@@ -154,8 +155,8 @@ func init() {
 		}
 	}
 	//Default chat states init
-	gChatsStates = append(gChatsStates, ChatState{ChatID: 0, Model: GPT4oMini, Inity: 0, Temperature: 0.1, AllowState: DISALLOW, UserName: "All", BotState: SLEEP, Type: "private", History: gHsNulled, IntFacts: gIntFactsGen[gLocale], BStPrmt: gHsNulled, Bstyle: GOOD, SetState: 0})
-	gChatsStates = append(gChatsStates, ChatState{ChatID: gOwner, Model: GPT4oMini, Inity: 0, Temperature: 0.7, AllowState: ALLOW, UserName: "Owner", BotState: RUN, Type: "private", History: gHsNulled, IntFacts: gIntFactsGen[gLocale], BStPrmt: gHsGood[gLocale], Bstyle: GOOD, SetState: 0})
+	gChatsStates = append(gChatsStates, ChatState{ChatID: 0, Model: BASEGPTMODEL, Inity: 0, Temperature: 0.1, AllowState: DISALLOW, UserName: "All", BotState: SLEEP, Type: "private", History: gHsNulled[gLocale], IntFacts: gIntFactsGen[gLocale], BStPrmt: gHsNulled[gLocale], Bstyle: GOOD, SetState: 0})
+	gChatsStates = append(gChatsStates, ChatState{ChatID: gOwner, Model: BASEGPTMODEL, Inity: 0, Temperature: 0.7, AllowState: ALLOW, UserName: "Owner", BotState: RUN, Type: "private", History: gHsNulled[gLocale], IntFacts: gIntFactsGen[gLocale], BStPrmt: gHsGood[gLocale], Bstyle: GOOD, SetState: 0})
 	//Storing default chat states to DB
 	gCurProcName = "Chats initialization"
 	for _, item := range gChatsStates {
@@ -405,20 +406,20 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 
 func isMyReaction(messages []openai.ChatCompletionMessage, Bstyle []openai.ChatCompletionMessage, History []openai.ChatCompletionMessage) bool {
 	var FullPromt []openai.ChatCompletionMessage
-	FullPromt = append(FullPromt, Bstyle...)
+	//FullPromt = append(FullPromt, Bstyle...)
 	FullPromt = append(FullPromt, History...)
 	//FullPromt = append(FullPromt, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: mesText})
-	if len(messages) >= 5 {
+	if len(messages) >= 3 {
 		FullPromt = append(FullPromt, messages[len(messages)-3:]...)
 	} else {
-		FullPromt = append(FullPromt, messages[len(messages)-1:]...)
+		FullPromt = append(FullPromt, messages...)
 	}
 	FullPromt = append(FullPromt, gHsReaction[gLocale]...)
 	//log.Println(FullPromt)
 	resp, err := gclient.CreateChatCompletion( //Формируем запрос к мозгам
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model:       GPT4oMini,
+			Model:       BASEGPTMODEL,
 			Temperature: 1,
 			Messages:    FullPromt,
 		},
@@ -452,7 +453,7 @@ func process_message(update tgbotapi.Update) error {
 	var FullPromt []openai.ChatCompletionMessage    //Messages to send
 	var temp float64
 	//Has been recieved callback
-	log.Println(update.CallbackQuery)
+	//log.Println(update.CallbackQuery)
 	if update.CallbackQuery != nil {
 		gCurProcName = "processing callback WB lists"
 		if update.CallbackQuery.Data == "WHITELIST" || update.CallbackQuery.Data == "BLACKLIST" || update.CallbackQuery.Data == "INPROCESS" {
@@ -734,7 +735,7 @@ func process_message(update tgbotapi.Update) error {
 					SendToUser(gOwner, E10[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
 				}
 			}
-			SendToUser(gOwner, "Текущая история:\n"+chatItem.History[0].Content+"\nНапишите историю:", INFO, 1, chatID)
+			SendToUser(gOwner, "**Текущая история базовая:**\n"+chatItem.History[0].Content+"\n**Дополнитиельные факты:**\n"+chatItem.History[1].Content+"\nНапишите историю:", INFO, 1, chatID)
 		}
 		gCurProcName = "Edit temperature"
 		if strings.Contains(update.CallbackQuery.Data, "MODEL_TEMP:") {
@@ -1009,8 +1010,8 @@ func process_message(update tgbotapi.Update) error {
 			if err == redis.Nil {
 				log.Println(err) //Если записи в БД нет - формирруем новую запись
 				chatItem = ChatState{ChatID: update.Message.Chat.ID, BotState: RUN, AllowState: IN_PROCESS, UserName: update.Message.From.UserName,
-					Type: update.Message.Chat.Type, Title: update.Message.Chat.Title, Model: GPT4oMini, Temperature: 0.7,
-					Inity: 2, History: gHsNulled, IntFacts: gIntFactsGen[gLocale], Bstyle: GOOD, BStPrmt: gHsGood[gLocale], SetState: 0}
+					Type: update.Message.Chat.Type, Title: update.Message.Chat.Title, Model: BASEGPTMODEL, Temperature: 0.7,
+					Inity: 2, History: gHsNulled[gLocale], IntFacts: gIntFactsGen[gLocale], Bstyle: GOOD, BStPrmt: gHsGood[gLocale], SetState: 0}
 				jsonData, err = json.Marshal(chatItem)
 				if err != nil {
 					SendToUser(gOwner, E11[gLocale]+err.Error()+" in process "+gCurProcName, ERROR, 0)
@@ -1049,10 +1050,10 @@ func process_message(update tgbotapi.Update) error {
 								switch chatItem.SetState {
 								case HISTORY:
 									{
-										chatItem.History = []openai.ChatCompletionMessage{
+										chatItem.History = gHsNulled[gLocale]
+										chatItem.History = append(chatItem.History, []openai.ChatCompletionMessage{
 											{Role: openai.ChatMessageRoleUser, Content: update.Message.Text},
-											{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
-										}
+											{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"}}...)
 									}
 								case TEMPERATURE:
 									{

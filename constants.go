@@ -61,7 +61,7 @@ const (
 	RU = 1
 	EN = 0
 	//BASE MODEL
-	GPT4oMini = "gpt-4o-mini"
+	BASEGPTMODEL = "gpt-4o-mini"
 	//STYLES
 	GOOD     = 0
 	BAD      = 1
@@ -94,7 +94,7 @@ var E16 = [2]string{" Unknown Error ", " Неизвестная ошибка "}
 var E17 = [2]string{" ChatCompletion error: %v\n ", " Ошибка обработки запроса к нейросети: %v\n"}
 
 // INFO MESSAGES
-var ver = "0.14.0"
+var ver = "0.14.3"
 var IM0 = [2]string{" Process has been stoped ", " Процесс был остановлен "}
 var IM1 = [2]string{" Bot name(s) not found or not valid in OS environment.\n Name Afina will be used. ", " Имя бота не найдено или не корректно в переменных окружения.\n Будет использовано имя Afina. "}
 var IM2 = [2]string{" Bot gender not found or not valid in OS environment.\n Neutral gender will be used. ", " Пол бота не найден или некорректен среди переменных окружения.\n Будет использован средний род. "}
@@ -192,7 +192,17 @@ var gChangeSettings int64
 
 // Presetted prompts
 // Nulled prompt
-var gHsNulled = []openai.ChatCompletionMessage{{Role: openai.ChatMessageRoleUser, Content: ""}}
+var gHsNulled = [2][]openai.ChatCompletionMessage{
+	{
+		{Role: openai.ChatMessageRoleUser, Content: ""},
+	},
+	{
+		{Role: openai.ChatMessageRoleUser, Content: "Ты всегда рассказываешь о себе, когда тебя представляют группе.\n" +
+			"Ты всегда отвечаешь, если в сообщении упоминается именно твоё имя.\n" +
+			"Ты не вмешиваешься в разговор других участников между собой.\n" +
+			"Ты стараешься нейтрализовать конфликт в спорах между участниками.\n"},
+	},
+}
 
 // Default prompt
 var gHsGood = [2][]openai.ChatCompletionMessage{
