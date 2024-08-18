@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"strconv"
+	"time"
 
 	"github.com/go-redis/redis"
 	"github.com/sashabaranov/go-openai"
@@ -50,14 +51,15 @@ func GetChatStateDB(key string) ChatState {
 func SetChatStateDB(item ChatState) {
 	var jsonData []byte
 	var err error
+	//Checks
+	if item.CharType < 1 {
+		item.CharType = ESFJ
+	}
 	jsonData, err = json.Marshal(item)
 	if err != nil {
 		SendToUser(gOwner, E11[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
 	} else {
-		err = gRedisClient.Set("ChatState:"+strconv.FormatInt(item.ChatID, 10), string(jsonData), 0).Err()
-		if err != nil {
-			SendToUser(gOwner, E10[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
-		}
+		DBWrite("ChatState:"+strconv.FormatInt(item.ChatID, 10), string(jsonData), 0)
 	}
 }
 
@@ -68,10 +70,7 @@ func RenewDialog(chatIDstr string, ChatMessages []openai.ChatCompletionMessage) 
 	if err != nil {
 		SendToUser(gOwner, E11[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
 	}
-	err = gRedisClient.Set("Dialog:"+chatIDstr, string(jsonData), 0).Err()
-	if err != nil {
-		SendToUser(gOwner, E10[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
-	}
+	DBWrite("Dialog:"+chatIDstr, string(jsonData), 0)
 }
 
 func GetChatMessages(key string) []openai.ChatCompletionMessage {
@@ -92,4 +91,12 @@ func GetChatMessages(key string) []openai.ChatCompletionMessage {
 		}
 		return ChatMessages
 	}
+}
+
+func DBWrite(key string, value string, expiration time.Duration) error {
+	var err = gRedisClient.Set(key, value, expiration).Err()
+	if err != nil {
+		SendToUser(gOwner, E10[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+	}
+	return err
 }

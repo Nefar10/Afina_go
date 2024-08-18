@@ -39,18 +39,20 @@ const (
 	QUEST_IN_PROGRESS = 1 //Quest is'nt solved
 	QUEST_SOLVED      = 2 //Quest is solved
 	//Called menu types
-	NOTHING      = 0  //Do nosting
-	ACCESS       = 1  //Access query
-	MENU         = 2  //Admin's menu calling
-	USERMENU     = 3  //User's menu calling
-	SELECTCHAT   = 4  //Select chat to change options
-	TUNECHAT     = 5  //Cahnge chat options
-	ERROR        = 6  //Error's information
-	INFO         = 7  //Some informtion
-	TUNECHATUSER = 8  //same the 5
-	INTFACTS     = 9  //Edit intfacts
-	GPTSTYLES    = 10 //Style conversations
-	GPTSELECT    = 11 //gpt model change
+	NOTHING         = 0  //Do nosting
+	ACCESS          = 1  //Access query
+	MENU            = 2  //Admin's menu calling
+	USERMENU        = 3  //User's menu calling
+	SELECTCHAT      = 4  //Select chat to change options
+	TUNECHAT        = 5  //Cahnge chat options
+	ERROR           = 6  //Error's information
+	INFO            = 7  //Some informtion
+	TUNECHATUSER    = 8  //same the 5
+	INTFACTS        = 9  //Edit intfacts
+	GPTSTYLES       = 10 //Style conversations
+	GPTSELECT       = 11 //gpt model change
+	CHARACTER       = 12 //Bot charakter type
+	SELECTCHARACTER = 13 //Select bot character
 	//MENULEVELS
 	NO_ACCESS = 1  //No access to menu
 	DEFAULT   = 2  //Default user menu
@@ -68,17 +70,62 @@ const (
 	POPPINS  = 2
 	SYSADMIN = 4
 	//PARAMETERS
-	NO_ONE      = 0
-	HISTORY     = 1
-	TEMPERATURE = 2
-	INITIATIVE  = 4
+	NO_ONE        = 0
+	HISTORY       = 1
+	TEMPERATURE   = 2
+	INITIATIVE    = 4
+	BOT_CHARACTER = 5
 	//ERRORLEVELS
 	NOERR = 0
 	ERR   = 1
 	CRIT  = 2
 	//VERSION
-	VER = "0.14.4"
+	VER = "0.15.0"
+	//CHARAKTER TYPES
+	ISTJ = 1  // (Инспектор): Ответственный, организованный, практичный.
+	ISFJ = 2  // (Защитник): Заботливый, внимательный, преданный.
+	INFJ = 3  // (Советчик): Интуитивный, идеалистичный, глубоко чувствующий.
+	INTJ = 4  // (Стратег): Аналитичный, независимый, целеустремленный.
+	ISTP = 5  // (Мастер): Практичный, гибкий, решающий проблемы.
+	ISFP = 6  // (Артист): Творческий, чувствительный, ценящий красоту.
+	INFP = 7  // (Мечтатель): Идеалистичный, эмоциональный, ищущий смысл.
+	INTP = 8  // (Мыслитель): Логичный, независимый, теоретический.
+	ESTP = 9  // (Динамик): Энергичный, практичный, любящий приключения.
+	ESFP = 10 // (Исполнитель): Общительный, веселый, любящий жизнь.
+	ENFP = 11 // (Вдохновитель): Творческий, энтузиаст, ищущий новые возможности.
+	ENTP = 12 // (Новатор): Инноватор, любящий обсуждения и новые идеи.
+	ESTJ = 13 // (Руководитель): Организованный, практичный, ориентированный на результат.
+	ESFJ = 14 // (Помощник): Заботливый, общительный, стремящийся помочь другим.
+	ENFJ = 15 // (Наставник): Вдохновляющий, заботливый, умеющий вести за собой.
+	ENTJ = 16 // (Командир): Решительный, стратегический, лидер по натуре.
+
 )
+
+var gCT = [16]string{"ISTJ", "ISFJ", "INFJ", "INTJ", "ISTP", "ISFP", "INFP", "INTP", "ESTP", "ESFP", "ENFP", "ENTP", "ESTJ", "ESFJ", "ENFJ", "ENTJ"}
+
+var gCTDescr = [2][16]string{
+	{
+		"1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "1", "2", "3", "4", "5", "6",
+	},
+	{
+		"(Инспектор): Ответственный, организованный, практичный.",
+		"(Защитник): Заботливый, внимательный, преданный.",
+		"(Советчик): Интуитивный, идеалистичный, глубоко чувствующий.",
+		"(Стратег): Аналитичный, независимый, целеустремленный.",
+		"(Мастер): Практичный, гибкий, решающий проблемы.",
+		"(Артист): Творческий, чувствительный, ценящий красоту.",
+		"(Мечтатель): Идеалистичный, эмоциональный, ищущий смысл.",
+		"(Мыслитель): Логичный, независимый, теоретический.",
+		"(Динамик): Энергичный, практичный, любящий приключения.",
+		"(Исполнитель): Общительный, веселый, любящий жизнь.",
+		"(Вдохновитель): Творческий, энтузиаст, ищущий новые возможности.",
+		"(Новатор): Инноватор, любящий обсуждения и новые идеи.",
+		"(Руководитель): Организованный, практичный, ориентированный на результат.",
+		"(Помощник): Заботливый, общительный, стремящийся помочь другим.",
+		"(Наставник): Вдохновляющий, заботливый, умеющий вести за собой.",
+		"(Командир): Решительный, стратегический, лидер по натуре.",
+	},
+}
 
 // ERRORS
 var E1 = [2]string{" Telegram bot API key not forund in OS environment ", " Не найден API ключ телеграмм бота в переменных окружения "}
@@ -190,6 +237,7 @@ type ChatState struct {
 	Bstyle      byte                           //Conversation style
 	BStPrmt     []openai.ChatCompletionMessage //Conv style promt
 	SetState    byte                           //While change setting
+	CharType    byte                           //Character type ny myers-Briggs
 
 }
 
@@ -393,6 +441,7 @@ var gIntFactsAuto = [2][]openai.ChatCompletionMessage{
 		{Role: openai.ChatMessageRoleUser, Content: "Расскажи один реальный факт про автомобилии или гонки или компьютерные игры. Важно начать с фразы 'Интересный факт!' и подойти к процессу максимально самокритично."},
 	},
 }
+
 var gBot *tgbotapi.BotAPI //Pointer to initialized bot.
 // OpenAI client init
 var gclient *openai.Client

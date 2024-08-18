@@ -118,6 +118,7 @@ func init() {
 		gBotNames = gDefBotNames
 		SendToUser(gOwner, IM1[gLocale]+BOTNAME_IN_OS+IM29[gLocale]+gCurProcName, INFO, 0)
 	}
+
 	//Bot naming prompt
 	gHsName = [2][]openai.ChatCompletionMessage{
 		{
@@ -187,7 +188,8 @@ func init() {
 		IntFacts:    gIntFactsGen[gLocale],
 		BStPrmt:     gHsNulled[gLocale],
 		Bstyle:      GOOD,
-		SetState:    NO_ONE})
+		SetState:    NO_ONE,
+		CharType:    ISTJ})
 	gChatsStates = append(gChatsStates, ChatState{
 		ChatID:      gOwner,
 		Model:       BASEGPTMODEL,
@@ -201,7 +203,8 @@ func init() {
 		IntFacts:    gIntFactsGen[gLocale],
 		BStPrmt:     gHsGood[gLocale],
 		Bstyle:      GOOD,
-		SetState:    NO_ONE})
+		SetState:    NO_ONE,
+		CharType:    ESFJ})
 
 	//Storing default chat states to DB
 	SetCurOperation(IM31[gLocale])
@@ -237,7 +240,6 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 	var jsonDataAllow []byte                    //Для формирования uuid ответа ДА
 	var jsonDataDeny []byte                     //Для формирования uuid ответа НЕТ
 	var jsonDataBlock []byte                    //Для формирования uuid ответа Блок
-	var err error                               //Временное хранение ошибок
 	var item QuestState                         //Для хранения состояния колбэка
 	var ans Answer                              //Для формирования uuid колбэка
 	msg := tgbotapi.NewMessage(toChat, mesText) //инициализируем сообщение
@@ -257,17 +259,14 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 		}
 	case ACCESS: //В случае, если стоит вопрос доступа формируем меню запроса
 		{
-			callbackID := uuid.New()                                                             //создаем уникальный идентификатор запроса
-			item.ChatID = chatID[0]                                                              //указываем ID чата источника
-			item.Question = quest                                                                //указывам тип запроса
-			item.CallbackID = callbackID                                                         //запоминаем уникальнй ID
-			item.State = QUEST_IN_PROGRESS                                                       //соотояние обработки, которое запишем в БД
-			item.Time = time.Now()                                                               //запомним текущее время
-			jsonData, _ = json.Marshal(item)                                                     //конвертируем структуру в json
-			err = gRedisClient.Set("QuestState:"+callbackID.String(), string(jsonData), 0).Err() //Делаем запись в БД
-			if err != nil {                                                                      //Тут могут быть ошибки записи в БД
-				log.Fatalln(err, E10[gLocale]+IM29[gLocale]+gCurProcName)
-			}
+			callbackID := uuid.New()         //создаем уникальный идентификатор запроса
+			item.ChatID = chatID[0]          //указываем ID чата источника
+			item.Question = quest            //указывам тип запроса
+			item.CallbackID = callbackID     //запоминаем уникальнй ID
+			item.State = QUEST_IN_PROGRESS   //соотояние обработки, которое запишем в БД
+			item.Time = time.Now()           //запомним текущее время
+			jsonData, _ = json.Marshal(item) //конвертируем структуру в json
+			DBWrite("QuestState:"+callbackID.String(), string(jsonData), 0)
 			ans.CallbackID = item.CallbackID //Генерируем вариант ответа "разрешить" для callback
 			ans.State = ALLOW
 			jsonDataAllow, _ = json.Marshal(ans) //генерируем вариант ответа "запретить" для callback
@@ -338,23 +337,24 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 			numericKeyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
 			msg.ReplyMarkup = numericKeyboard
 		}
+	case SELECTCHARACTER:
+		{
+			msg.Text = mesText
+			var buttons []tgbotapi.InlineKeyboardButton
+			for i := 0; i <= 15; i++ {
+				buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData(gCT[i]+" "+gCTDescr[gLocale][i], strconv.Itoa(i+1)+"_CT: "+strconv.FormatInt(chatID[0], 10)))
+			}
+			var rows [][]tgbotapi.InlineKeyboardButton
+			for _, button := range buttons {
+				row := []tgbotapi.InlineKeyboardButton{button}
+				rows = append(rows, row)
+			}
+			numericKeyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
+			msg.ReplyMarkup = numericKeyboard
+		}
 	case GPTSELECT:
 		{
 			msg.Text = "Выберите модель"
-			/*
-				var buttons []tgbotapi.InlineKeyboardButton
-				for _, model := range gModels {
-					if model != "" {
-						buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData(model, "MD: "+model))
-					}
-				}
-				var rows [][]tgbotapi.InlineKeyboardButton
-				for _, button := range buttons {
-					row := []tgbotapi.InlineKeyboardButton{button}
-					rows = append(rows, row)
-				}
-				numericKeyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
-				msg.ReplyMarkup = numericKeyboard*/
 			var buttons []tgbotapi.InlineKeyboardButton
 			for _, model := range gModels {
 				if model != "" {
@@ -388,12 +388,15 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData(M13[gLocale], "STYLE: "+strconv.FormatInt(chatID[0], 10)),
 					tgbotapi.NewInlineKeyboardButtonData(M14[gLocale], "MODEL_TEMP: "+strconv.FormatInt(chatID[0], 10)),
-					tgbotapi.NewInlineKeyboardButtonData(M16[gLocale], "CHAT_HISTORY: "+strconv.FormatInt(chatID[0], 10)),
+					tgbotapi.NewInlineKeyboardButtonData("Нейромодель", "GPT_MODEL: "+strconv.FormatInt(chatID[0], 10)),
 				),
 				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData("Нейромодель", "GPT_MODEL: "+strconv.FormatInt(chatID[0], 10)),
 					tgbotapi.NewInlineKeyboardButtonData("Инициатива", "INITIATIVE: "+strconv.FormatInt(chatID[0], 10)),
 					tgbotapi.NewInlineKeyboardButtonData(M17[gLocale], "CHAT_FACTS: "+strconv.FormatInt(chatID[0], 10)),
+					tgbotapi.NewInlineKeyboardButtonData("Тип характера", "CHAT_CHARACTER: "+strconv.FormatInt(chatID[0], 10)),
+				),
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData(M16[gLocale], "CHAT_HISTORY: "+strconv.FormatInt(chatID[0], 10)),
 				),
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData(M18[gLocale], "RIGHTS: "+strconv.FormatInt(chatID[0], 10)),
@@ -403,7 +406,6 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 				))
 			msg.ReplyMarkup = numericKeyboard
 		}
-
 	case INTFACTS: //меню настройки чата
 		{
 			var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup( //формируем меню для ответа
@@ -467,7 +469,7 @@ func isMyReaction(messages []openai.ChatCompletionMessage, Bstyle []openai.ChatC
 			Messages:    FullPromt,
 		},
 	)
-	log.Println(resp.Choices[0].Message.Content)
+	//log.Println(resp.Choices[0].Message.Content)
 	if err != nil {
 		SendToUser(gOwner, E17[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, INFO, 0)
 		time.Sleep(20 * time.Second)
@@ -484,9 +486,8 @@ func isMyReaction(messages []openai.ChatCompletionMessage, Bstyle []openai.ChatC
 
 func process_message(update tgbotapi.Update) error {
 	//Temporary variables
-	var err error      //Some errors
-	var jsonStr string //Current json string
-	//var jsonData []byte                             //Current json bytecode
+	var err error                                   //Some errors
+	var jsonStr string                              //Current json string
 	var chatItem ChatState                          //Current ChatState item
 	var questItem QuestState                        //Current QuestState item
 	var ansItem Answer                              //Curent Answer intem
@@ -640,7 +641,7 @@ func process_message(update tgbotapi.Update) error {
 			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 			if err != nil {
 				SendToUser(gOwner, E15[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
-				log.Fatalln(err, E15[gLocale]+IM29[gLocale]+gCurProcName)
+				//log.Fatalln(err, E15[gLocale]+IM29[gLocale]+gCurProcName)
 			}
 			SendToUser(gOwner, IM12[gLocale], GPTSTYLES, 1, chatID)
 		}
@@ -671,6 +672,31 @@ func process_message(update tgbotapi.Update) error {
 					SendToUser(gOwner, IM21[gLocale], INFO, 1)
 				}
 				SetChatStateDB(chatItem)
+			}
+		}
+		SetCurOperation("Character type")
+		if strings.Contains(update.CallbackQuery.Data, "CHAT_CHARACTER:") {
+			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
+			chatItem = GetChatStateDB("ChatState:" + chatIDstr)
+			if chatItem.ChatID != 0 {
+				SetChatStateDB(chatItem)
+				SendToUser(gOwner, "**Текущий Характер:**\n"+gCT[chatItem.CharType-1], SELECTCHARACTER, 1, chatItem.ChatID)
+			}
+		}
+		SetCurOperation("Select character type")
+		if strings.Contains(update.CallbackQuery.Data, "_CT:") {
+			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
+			charValue := strings.Split(update.CallbackQuery.Data, "_")[0]
+			chatItem = GetChatStateDB("ChatState:" + chatIDstr)
+			if chatItem.ChatID != 0 {
+				intVal, err := strconv.Atoi(charValue)
+				if err != nil {
+					SendToUser(gOwner, E15[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+					//log.Fatalln(err, E15[gLocale]+IM29[gLocale]+gCurProcName)
+				}
+				chatItem.CharType = byte(intVal)
+				SetChatStateDB(chatItem)
+				SendToUser(gOwner, "Выбран тип характера "+gCTDescr[gLocale][chatItem.CharType-1], INFO, 1, chatItem.ChatID)
 			}
 		}
 		gCurProcName = "Edit history"
@@ -723,6 +749,7 @@ func process_message(update tgbotapi.Update) error {
 					"Нейронная сеть: " + chatItem.Model + "\n" +
 					"Экспрессия: " + strconv.FormatFloat(float64(chatItem.Temperature*100), 'f', -1, 32) + "%\n" +
 					"Инициативность: " + strconv.Itoa(chatItem.Inity*10) + "%\n" +
+					"Тип характера: " + gCTDescr[gLocale][chatItem.CharType-1] + "\n" +
 					"Текущая версия: " + VER
 				SendToUser(chatItem.ChatID, msgString, INFO, 2)
 			}
@@ -859,7 +886,7 @@ func process_message(update tgbotapi.Update) error {
 											temp, err = strconv.ParseFloat(update.Message.Text, 64)
 											if err != nil {
 												SendToUser(gOwner, E15[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
-												log.Fatalln(err, E15[gLocale]+IM29[gLocale]+gCurProcName)
+												//log.Fatalln(err, E15[gLocale]+IM29[gLocale]+gCurProcName)
 											} else {
 												chatItem.Temperature = float32(temp)
 											}
@@ -874,7 +901,7 @@ func process_message(update tgbotapi.Update) error {
 											chatItem.Inity, err = strconv.Atoi(update.Message.Text)
 											if err != nil {
 												SendToUser(gOwner, E15[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
-												log.Fatalln(err, E15[gLocale]+IM29[gLocale]+gCurProcName)
+												//log.Fatalln(err, E15[gLocale]+IM29[gLocale]+gCurProcName)
 											}
 											if chatItem.Inity < 0 || chatItem.Inity > 1000 {
 												chatItem.Inity = 0
@@ -927,8 +954,20 @@ func process_message(update tgbotapi.Update) error {
 									// Удаляем первые элементы, оставляя последние 10
 									ChatMessages = ChatMessages[1:]
 								}
+								CharPrmt := [2][]openai.ChatCompletionMessage{
+									{
+										{Role: openai.ChatMessageRoleUser, Content: ""},
+										{Role: openai.ChatMessageRoleAssistant, Content: ""},
+									},
+									{
+										{Role: openai.ChatMessageRoleUser, Content: "Важно! Твой типа характера - " + gCT[chatItem.CharType-1]},
+										{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
+									},
+								}
+
 								FullPromt = nil
 								FullPromt = append(FullPromt, chatItem.BStPrmt...)
+								FullPromt = append(FullPromt, CharPrmt[gLocale]...)
 								FullPromt = append(FullPromt, chatItem.History...)
 								FullPromt = append(FullPromt, ChatMessages...)
 								//log.Println(ChatMessages)
@@ -1007,7 +1046,8 @@ func process_message(update tgbotapi.Update) error {
 					IntFacts:    gIntFactsGen[gLocale],
 					Bstyle:      GOOD,
 					BStPrmt:     gHsGood[gLocale],
-					SetState:    NO_ONE}
+					SetState:    NO_ONE,
+					CharType:    ESTJ}
 				SetChatStateDB(chatItem)
 				if update.Message.Chat.Type == "private" {
 					SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.From.UserName+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться с этим пользователем?", ACCESS, 0, update.Message.Chat.ID)
