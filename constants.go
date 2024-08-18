@@ -72,6 +72,12 @@ const (
 	HISTORY     = 1
 	TEMPERATURE = 2
 	INITIATIVE  = 4
+	//ERRORLEVELS
+	NOERR = 0
+	ERR   = 1
+	CRIT  = 2
+	//VERSION
+	VER = "0.14.4"
 )
 
 // ERRORS
@@ -92,31 +98,45 @@ var E14 = [2]string{" Error json unmarshaling ", " Ошибка парсинга
 var E15 = [2]string{" Error convetring string to int ", " Ошибка преобразования строки в число "}
 var E16 = [2]string{" Unknown Error ", " Неизвестная ошибка "}
 var E17 = [2]string{" ChatCompletion error: %v\n ", " Ошибка обработки запроса к нейросети: %v\n"}
+var E18 = [2]string{"Error retrieving models:", "Ошибка получения списка моделей"}
+
+// Bot defaults
+var gDefBotNames = []string{"Athena", "Афина"}
 
 // INFO MESSAGES
-var ver = "0.14.3"
-var IM0 = [2]string{" Process has been stoped ", " Процесс был остановлен "}
-var IM1 = [2]string{" Bot name(s) not found or not valid in OS environment.\n Name Afina will be used. ", " Имя бота не найдено или не корректно в переменных окружения.\n Будет использовано имя Afina. "}
-var IM2 = [2]string{" Bot gender not found or not valid in OS environment.\n Neutral gender will be used. ", " Пол бота не найден или некорректен среди переменных окружения.\n Будет использован средний род. "}
-var IM3 = [2]string{" I'm back! ", " Я снова с Вами! "}
-var IM4 = [2]string{" All DB data has been remowed. I'll reboot now ", " Все данные в бахе данных будут удалены. Проиводится перезагрузка "}
-var IM5 = [2]string{" I'll be back ", " Я еще вернусь "}
-var IM6 = [2]string{" Access granted ", " Доступ разрешен "}
-var IM7 = [2]string{" I was allowed to communicate with you! ", " Мне было разрешено с вами общаться "}
-var IM8 = [2]string{" Access denied ", " Доступ запрещен "}
-var IM9 = [2]string{" I apologize, but to continue the conversation, it is necessary to subscribe. ", " Простите, но для продолжения общения необходимо оформить подписку. "}
-var IM10 = [2]string{" Access bocked ", " Доступ заблокирован "}
-var IM11 = [2]string{" Congratulations! You have been added to the pranksters list! ", " Поздравляю! Вы были добавлены в список проказников! "}
-var IM12 = [2]string{" Please select what needs to be done. ", " Пожалуйста, выберите, что необходимо выполнить. "}
-var IM13 = [2]string{" Current version is " + ver + " ", " Текущая версия " + ver + " "}
-var IM14 = [2]string{" Choose a topic. ", " Выберите тему "}
-var IM15 = [2]string{" Topic has been changed. ", " Тема изменена "}
-var IM16 = [2]string{" Write - as soon as you are ready to start the game. ", " Пишите - как только будете готовы начать игру. "}
-var IM17 = [2]string{" Choose a style. ", " Выберите стиль общения "}
-var IM18 = [2]string{" The communication style has been changed to friendly. ", " Стиль общения изменен на доброжелательный. "}
-var IM19 = [2]string{" The communication style has been changed to unfriendly. ", " Стиль общения изменен на недоброжелательный. "}
-var IM20 = [2]string{" The communication style has been changed to Mery Poppins. ", " Стиль общения изменен на Мэри Поппинс. "}
-var IM21 = [2]string{" The communication style has been changed to SA. ", " Стиль общения изменен на Сисадмин. "}
+var IM0 = [2]string{"Process has been stoped", "Процесс был остановлен"}
+var IM1 = [2]string{"Bot name(s) not found or not valid in OS environment.\n Name Afina will be used. ", "Имя бота не найдено или не корректно в переменных окружения.\n Будет использовано имя Afina. "}
+var IM2 = [2]string{"Bot gender not found or not valid in OS environment.\n Neutral gender will be used. ", "Пол бота не найден или некорректен среди переменных окружения.\n Будет использован средний род. "}
+var IM3 = [2]string{"I'm back!", "Я снова с Вами!"}
+var IM4 = [2]string{"All DB data has been remowed. I'll reboot now ", "Все данные в бахе данных будут удалены. Проиводится перезагрузка "}
+var IM5 = [2]string{"I'll be back ", "Я еще вернусь "}
+var IM6 = [2]string{"Access granted ", "Доступ разрешен "}
+var IM7 = [2]string{"I was allowed to communicate with you! ", "Мне было разрешено с вами общаться "}
+var IM8 = [2]string{"Access denied ", "Доступ запрещен "}
+var IM9 = [2]string{"I apologize, but to continue the conversation, it is necessary to subscribe. ", "Простите, но для продолжения общения необходимо оформить подписку. "}
+var IM10 = [2]string{"Access bocked ", "Доступ заблокирован "}
+var IM11 = [2]string{"Congratulations! You have been added to the pranksters list! ", "Поздравляю! Вы были добавлены в список проказников! "}
+var IM12 = [2]string{"Please select what needs to be done. ", "Пожалуйста, выберите, что необходимо выполнить. "}
+var IM13 = [2]string{"Current version is " + VER + " ", "Текущая версия " + VER + " "}
+var IM14 = [2]string{"Choose a topic. ", " Выберите тему "}
+var IM15 = [2]string{"Topic has been changed. ", "Тема изменена "}
+var IM16 = [2]string{"Write - as soon as you are ready to start the game. ", "Пишите - как только будете готовы начать игру. "}
+var IM17 = [2]string{"Choose a style. ", " Выберите стиль общения "}
+var IM18 = [2]string{"The communication style has been changed to friendly. ", "Стиль общения изменен на доброжелательный. "}
+var IM19 = [2]string{"The communication style has been changed to unfriendly. ", "Стиль общения изменен на недоброжелательный. "}
+var IM20 = [2]string{"The communication style has been changed to Mery Poppins. ", "Стиль общения изменен на Мэри Поппинс. "}
+var IM21 = [2]string{"The communication style has been changed to SA. ", "Стиль общения изменен на Сисадмин. "}
+var IM22 = [2]string{" ", ""}
+var IM23 = [2]string{" ", ""}
+var IM24 = [2]string{" ", ""}
+var IM25 = [2]string{" ", ""}
+var IM26 = [2]string{" ", ""}
+var IM27 = [2]string{" ", ""}
+var IM28 = [2]string{" ", ""}
+var IM29 = [2]string{" in process ", " в процессе "}
+var IM30 = [2]string{"Authorized on account ", "Авторизовано с "}
+var IM31 = [2]string{"Chats initialization", "Инициализация чатов"}
+var IM32 = [2]string{"Parsing message to send", "Обработка сообщения перед отправкой"}
 
 // Menus
 var M1 = [2]string{"Yes", "Да"}
@@ -198,8 +218,8 @@ var gHsNulled = [2][]openai.ChatCompletionMessage{
 	},
 	{
 		{Role: openai.ChatMessageRoleUser, Content: "Ты всегда рассказываешь о себе, когда тебя представляют группе.\n" +
-			"Ты всегда отвечаешь, если в сообщении упоминается именно твоё имя.\n" +
-			"Ты не вмешиваешься в разговор других участников между собой.\n" +
+			"Ты всегда отвечаешь, если к тебе обращаются или упоминается твое имя.\n" +
+			"Ты не вмешиваешься в разговор других участников между собой, если он не касается описанных далее тем.\n" +
 			"Ты стараешься нейтрализовать конфликт в спорах между участниками.\n"},
 	},
 }
@@ -207,11 +227,11 @@ var gHsNulled = [2][]openai.ChatCompletionMessage{
 // Default prompt
 var gHsGood = [2][]openai.ChatCompletionMessage{
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Hi! You are playing the role of a universal personal assistant version " + ver + "."},
+		{Role: openai.ChatMessageRoleUser, Content: "Hi! You are playing the role of a universal personal assistant version " + VER + "."},
 		{Role: openai.ChatMessageRoleAssistant, Content: "Accepted!"},
 	},
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль универсального персонального ассистента версии " + ver + "." +
+		{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль универсального персонального ассистента версии " + VER + "." +
 			"Ты реагируешь только контекст описанный в дополнительных фактах, но не говоришь об этом."},
 		{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
 	},
@@ -219,15 +239,17 @@ var gHsGood = [2][]openai.ChatCompletionMessage{
 
 var gHsBad = [2][]openai.ChatCompletionMessage{
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Hi! You are playing the role of a universal personal assistant version " + ver + "."},
+		{Role: openai.ChatMessageRoleUser, Content: "Hi! You are playing the role of a universal personal assistant version " + VER + "."},
 		{Role: openai.ChatMessageRoleAssistant, Content: "Accepted!"},
 	},
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Ты играешь роль миньона версии " + ver + "." +
+		{Role: openai.ChatMessageRoleUser, Content: "Ты играешь роль миньона версии " + VER + "." +
 			"Ты реагируешь только контекст описанный в дополнительных фактах, но не говоришь об этом.\n" +
+			"Если давно не отвечал, то ты постишь ультракороткий и максимально ржачный и ироничный комментарий исходя из контекста последних сообщений.\n" +
 			"Твой стиль общения и все ответы без исключения - периодическое использование бранных выражений и метафор к ним, независимо от контекста.\n" +
 			"Твои любимые слова и фразы: 'осуждаю', 'петушок' вместо гей, 'скам' или 'зашквар', 'го', 'обоссано', 'максимальное осуждение', 'ваще пахую' когда все равно\n" +
-			", 'нищие уебки', 'дауны', 'пукнуто' или 'отстой', 'просто соси', 'уууу, сук!', 'бля' вместо 'блин', 'пон' вместо 'понял', 'Здарова! Заебал!' как приветствие\n" +
+			", 'нищие уебки', 'дауны', 'пукнуто' или 'отстой', 'просто соси', 'уууу, сук!', 'бля' вместо 'блин', 'пон' вместо 'понял', \n" +
+			"'Здарова! Заебал!' как приветствие, 'Привет иждивенцы!', 'чуваки'\n" +
 			", 'В С Е' когда что-то запретили, 'ебать его рот нахуй', 'ета иксы!' когда круто, 'соглы' вместо согласен, 'на завод' когда пора менять профессию."},
 		{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
 	},
@@ -235,11 +257,11 @@ var gHsBad = [2][]openai.ChatCompletionMessage{
 
 var gHsPoppins = [2][]openai.ChatCompletionMessage{
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Hi! You are playing the role of a universal personal assistant version " + ver + "."},
+		{Role: openai.ChatMessageRoleUser, Content: "Hi! You are playing the role of a universal personal assistant version " + VER + "."},
 		{Role: openai.ChatMessageRoleAssistant, Content: "Accepted!"},
 	},
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль универсального персонального ассистента версии " + ver + "." +
+		{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль универсального персонального ассистента версии " + VER + "." +
 			"Ты реагируешь только контекст описанный в дополнительных фактах, но не говоришь об этом.\n" +
 			"Твой стиль общения и все ответы без исключения, как у Мэри поппинс, независимо от контекста.\n" +
 			"Твои любимые фразы: 'Ложка сахара помогает лекарству легче усваиваться', 'практически идеальна',\n" +
@@ -250,11 +272,11 @@ var gHsPoppins = [2][]openai.ChatCompletionMessage{
 
 var gHsSA = [2][]openai.ChatCompletionMessage{
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Hi! You are playing the role of a universal personal assistant version " + ver + "."},
+		{Role: openai.ChatMessageRoleUser, Content: "Hi! You are playing the role of a universal personal assistant version " + VER + "."},
 		{Role: openai.ChatMessageRoleAssistant, Content: "Accepted!"},
 	},
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль универсального персонального ассистента версии " + ver + "." +
+		{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль универсального персонального ассистента версии " + VER + "." +
 			"Ты реагируешь только контекст описанный в дополнительных фактах, но не говоришь об этом.\n" +
 			"Твой стиль общения и все ответы без исключения, как у профессионального системного администратора, независимо от контекста.\n" +
 			"Твои любимые фразы: 'Проблема не в системе, а в пользователе.', 'Резервное копирование — это не опция, это необходимость.',\n" +
@@ -344,7 +366,7 @@ var gIntFactsGen = [2][]openai.ChatCompletionMessage{
 		{Role: openai.ChatMessageRoleUser, Content: "Tell me one interesting fact. It's important to start with the phrase 'Interesting fact!'."},
 	},
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Расскажи один интересный факт. Важно начать с фразы 'Интересный факт!'."},
+		{Role: openai.ChatMessageRoleUser, Content: "Расскажи один реальный факт. Важно начать с фразы 'Интересный факт!' и максимально самокритично озвучивать рекорды."},
 	},
 }
 var gIntFactsSci = [2][]openai.ChatCompletionMessage{
@@ -352,7 +374,7 @@ var gIntFactsSci = [2][]openai.ChatCompletionMessage{
 		{Role: openai.ChatMessageRoleUser, Content: "Tell me jone interesting fact from the natural sciences. It's important to start with the phrase 'Interesting fact!'."},
 	},
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Расскажи один интересный факт из области естественных наук. Важно начать с фразы 'Интересный факт!'."},
+		{Role: openai.ChatMessageRoleUser, Content: "Расскажи один реальный факт из области естественных наук. Важно начать с фразы 'Интересный факт!' и максимально самокритично озвучивать рекорды."},
 	},
 }
 var gIntFactsIT = [2][]openai.ChatCompletionMessage{
@@ -360,7 +382,7 @@ var gIntFactsIT = [2][]openai.ChatCompletionMessage{
 		{Role: openai.ChatMessageRoleUser, Content: "Tell me one interesting fact from the field of IT. It's important to start with the phrase 'Interesting fact!'."},
 	},
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Расскажи один интересный факт из области IT. Важно начать с фразы 'Интересный факт!'."},
+		{Role: openai.ChatMessageRoleUser, Content: "Расскажи один реальный факт из области IT. Важно начать с фразы 'Интересный факт!' и максимально самокритично озвучивать рекорды."},
 	},
 }
 var gIntFactsAuto = [2][]openai.ChatCompletionMessage{
@@ -368,7 +390,7 @@ var gIntFactsAuto = [2][]openai.ChatCompletionMessage{
 		{Role: openai.ChatMessageRoleUser, Content: "Tell me one interesting fact about cars, racing, or video games. It's important to start with the phrase 'Interesting fact!' and to mention records in a self-deprecating manner."},
 	},
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Расскажи один интересный факт про автомобилии или гонки или компьютерные игры. Важно начать с фразы 'Интересный факт!' и максимально самокритично озвучивать рекорды."},
+		{Role: openai.ChatMessageRoleUser, Content: "Расскажи один реальный факт про автомобилии или гонки или компьютерные игры. Важно начать с фразы 'Интересный факт!' и максимально самокритично озвучивать рекорды."},
 	},
 }
 var gBot *tgbotapi.BotAPI //Pointer to initialized bot.
@@ -393,3 +415,4 @@ var gContextLength int         //Max context length
 var gCurProcName string        //Name of curren process
 var gUpdatesQty int            //Updates qty
 var gModels []string           //Reached models
+var gVerboseLevel byte         //Logging level
