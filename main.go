@@ -1094,19 +1094,8 @@ func process_initiative() {
 				ChatMessages = chatItem.IntFacts
 				currentTime := time.Now()
 				ChatMessages[len(ChatMessages)-1].Content = currentTime.Format("2006-01-02 15:04:05") + " " + ChatMessages[len(ChatMessages)-1].Content
-				CharPrmt := [2][]openai.ChatCompletionMessage{
-					{
-						{Role: openai.ChatMessageRoleUser, Content: ""},
-						{Role: openai.ChatMessageRoleAssistant, Content: ""},
-					},
-					{
-						{Role: openai.ChatMessageRoleUser, Content: "Важно! Твой типа характера - " + gCT[chatItem.CharType-1]},
-						{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
-					},
-				}
 				FullPromt = nil
 				FullPromt = append(FullPromt, chatItem.BStPrmt...)
-				FullPromt = append(FullPromt, CharPrmt[gLocale]...)
 				FullPromt = append(FullPromt, chatItem.IntFacts...)
 				//log.Println(FullPromt)
 				resp, err := gclient.CreateChatCompletion( //Формируем запрос к мозгам
