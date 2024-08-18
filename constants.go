@@ -366,7 +366,7 @@ var gIntFactsGen = [2][]openai.ChatCompletionMessage{
 		{Role: openai.ChatMessageRoleUser, Content: "Tell me one interesting fact. It's important to start with the phrase 'Interesting fact!'."},
 	},
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Расскажи один реальный факт. Важно начать с фразы 'Интересный факт!' и максимально самокритично озвучивать рекорды."},
+		{Role: openai.ChatMessageRoleUser, Content: "Расскажи один реальный факт. Важно начать с фразы 'Интересный факт!' и подойти к процессу максимально самокритично."},
 	},
 }
 var gIntFactsSci = [2][]openai.ChatCompletionMessage{
@@ -374,7 +374,7 @@ var gIntFactsSci = [2][]openai.ChatCompletionMessage{
 		{Role: openai.ChatMessageRoleUser, Content: "Tell me jone interesting fact from the natural sciences. It's important to start with the phrase 'Interesting fact!'."},
 	},
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Расскажи один реальный факт из области естественных наук. Важно начать с фразы 'Интересный факт!' и максимально самокритично озвучивать рекорды."},
+		{Role: openai.ChatMessageRoleUser, Content: "Расскажи один реальный факт из области естественных наук. Важно начать с фразы 'Интересный факт!' и подойти к процессу максимально самокритично."},
 	},
 }
 var gIntFactsIT = [2][]openai.ChatCompletionMessage{
@@ -382,7 +382,7 @@ var gIntFactsIT = [2][]openai.ChatCompletionMessage{
 		{Role: openai.ChatMessageRoleUser, Content: "Tell me one interesting fact from the field of IT. It's important to start with the phrase 'Interesting fact!'."},
 	},
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Расскажи один реальный факт из области IT. Важно начать с фразы 'Интересный факт!' и максимально самокритично озвучивать рекорды."},
+		{Role: openai.ChatMessageRoleUser, Content: "Расскажи один реальный факт из области IT. Важно начать с фразы 'Интересный факт!' и подойти к процессу максимально самокритично."},
 	},
 }
 var gIntFactsAuto = [2][]openai.ChatCompletionMessage{
@@ -390,7 +390,7 @@ var gIntFactsAuto = [2][]openai.ChatCompletionMessage{
 		{Role: openai.ChatMessageRoleUser, Content: "Tell me one interesting fact about cars, racing, or video games. It's important to start with the phrase 'Interesting fact!' and to mention records in a self-deprecating manner."},
 	},
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Расскажи один реальный факт про автомобилии или гонки или компьютерные игры. Важно начать с фразы 'Интересный факт!' и максимально самокритично озвучивать рекорды."},
+		{Role: openai.ChatMessageRoleUser, Content: "Расскажи один реальный факт про автомобилии или гонки или компьютерные игры. Важно начать с фразы 'Интересный факт!' и подойти к процессу максимально самокритично."},
 	},
 }
 var gBot *tgbotapi.BotAPI //Pointer to initialized bot.
