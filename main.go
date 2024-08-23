@@ -707,7 +707,11 @@ func process_message(update tgbotapi.Update) error {
 				chatItem.SetState = HISTORY
 				gChangeSettings = chatItem.ChatID
 				SetChatStateDB(chatItem)
-				SendToUser(gOwner, "**Текущая история базовая:**\n"+chatItem.History[0].Content+"\n**Дополнитиельные факты:**\n"+chatItem.History[1].Content+"\nНапишите историю:", INFO, 1, chatItem.ChatID)
+				if len(chatItem.History) != 1 {
+					SendToUser(gOwner, "**Текущая история базовая:**\n"+chatItem.History[0].Content+"\n**Дополнитиельные факты:**\n"+chatItem.History[1].Content+"\nНапишите историю:", INFO, 1, chatItem.ChatID)
+				} else {
+					SendToUser(gOwner, "**Текущая история базовая:**\n"+"\n**Дополнитиельные факты:**\n"+chatItem.History[0].Content+"\nНапишите историю:", INFO, 1, chatItem.ChatID)
+				}
 			}
 		}
 		gCurProcName = "Edit temperature"
@@ -960,7 +964,7 @@ func process_message(update tgbotapi.Update) error {
 										{Role: openai.ChatMessageRoleAssistant, Content: ""},
 									},
 									{
-										{Role: openai.ChatMessageRoleUser, Content: "Важно! Твой типа характера - " + gCT[chatItem.CharType-1]},
+										{Role: openai.ChatMessageRoleUser, Content: "Важно! Твой тип характера - " + gCT[chatItem.CharType-1]},
 										{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
 									},
 								}
