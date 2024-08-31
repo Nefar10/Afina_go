@@ -236,7 +236,12 @@ func ProcessMessages(update tgbotapi.Update) {
 	case update.CallbackQuery != nil:
 		ProcessCallbacks(update)
 	case update.Message != nil:
-		ProcessMessage(update)
+		switch {
+		case update.Message.IsCommand():
+			ProcessCommand(update)
+		default:
+			ProcessMessage(update)
+		}
 	}
 }
 

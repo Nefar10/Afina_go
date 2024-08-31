@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/go-redis/redis"
 )
@@ -51,4 +52,12 @@ func FlushCache() {
 	} else {
 		SendToUser(gOwner, "Очищать нечего.", INFO, 1)
 	}
+}
+
+func DBWrite(key string, value string, expiration time.Duration) error {
+	var err = gRedisClient.Set(key, value, expiration).Err()
+	if err != nil {
+		SendToUser(gOwner, E10[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+	}
+	return err
 }
