@@ -113,10 +113,11 @@ func ShowChatInfo(update tgbotapi.Update) {
 	if chatItem.ChatID != 0 {
 		msgString = "Название чата: " + chatItem.Title + "\n" +
 			"Модель поведения: " + gConversationStyle[chatItem.Bstyle].Name + "\n" +
+			"Тип характера: " + gCTDescr[gLocale][chatItem.CharType-1] + "\n" +
 			"Нейронная сеть: " + chatItem.Model + "\n" +
 			"Экспрессия: " + strconv.FormatFloat(float64(chatItem.Temperature*100), 'f', -1, 32) + "%\n" +
 			"Инициативность: " + strconv.Itoa(chatItem.Inity*10) + "%\n" +
-			"Тип характера: " + gCTDescr[gLocale][chatItem.CharType-1] + "\n" +
+			"Тема интересных фактов" + gIntFacts[chatItem.InterFacts].Name + "\n" +
 			"Текущая версия: " + VER
 		SendToUser(chatItem.ChatID, msgString, INFO, 2)
 	}
