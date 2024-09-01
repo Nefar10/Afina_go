@@ -81,7 +81,7 @@ func isMyReaction(messages []openai.ChatCompletionMessage, Bstyle int, History [
 	} else {
 		FullPromt = append(FullPromt, messages...)
 	}
-	FullPromt = append(FullPromt, gHsReaction[gLocale]...)
+	FullPromt = append(FullPromt, gHsReaction[0].Prompt[gLocale]...)
 	resp, err := gclient.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{

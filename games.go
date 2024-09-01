@@ -19,7 +19,7 @@ func GameAlias(update tgbotapi.Update) {
 	}
 	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
 	if chatItem.ChatID != 0 {
-		ChatMessages = append(ChatMessages, gITAlias[gLocale]...)
+		ChatMessages = append(ChatMessages, gHsGame[0].Prompt[gLocale]...)
 		RenewDialog(chatIDstr, ChatMessages)
 		SendToUser(chatID, IM16[gLocale], NOTHING, 0)
 	}

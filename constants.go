@@ -231,7 +231,6 @@ type ChatState struct {
 	Bstyle      int                            //Conversation style
 	SetState    byte                           //While change setting
 	CharType    byte                           //Character type ny myers-Briggs
-
 }
 
 // Quest operating structure
@@ -249,28 +248,13 @@ type Answer struct {
 	State      int       //Solve
 }
 
-type ConversationStyle struct {
-	Id     int
-	Name   string
-	Prompt [][]openai.ChatCompletionMessage
-}
-
-type Gender struct {
-	Id     int
-	Name   string
-	Prompt [][]openai.ChatCompletionMessage
-}
-
-type InterestingFacts struct {
+type sCustomPrompt struct {
 	Id     int
 	Name   string
 	Prompt [][]openai.ChatCompletionMessage
 }
 
 var gChangeSettings int64
-
-// Presetted prompts
-// Nulled prompt
 
 var gHsNulled = [][]openai.ChatCompletionMessage{
 	{
@@ -287,7 +271,7 @@ var gHsNulled = [][]openai.ChatCompletionMessage{
 	},
 }
 
-var gConversationStyle = []ConversationStyle{
+var gConversationStyle = []sCustomPrompt{
 	{
 		Id:   0,
 		Name: "Default",
@@ -364,9 +348,27 @@ var gConversationStyle = []ConversationStyle{
 			},
 		},
 	},
+	{
+		Id:   4,
+		Name: "Literature Teacher",
+		Prompt: [][]openai.ChatCompletionMessage{
+			{
+				{Role: openai.ChatMessageRoleUser, Content: "Hello! You are playing the role of a universal personal assistant version " + VER + "." +
+					"You react only to the context described in the additional facts, but you don't mention it.\n" +
+					"Your communication style and all responses, without exception, are like that of a professional system administrator, regardless of the context.\n"},
+				{Role: openai.ChatMessageRoleAssistant, Content: "Understood!"},
+			},
+			{
+				{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль репетитора Единого государственного экзамена по литературе и русскому языку версии " + VER + "." +
+					"Ты реагируешь только контекст описанный в дополнительных фактах, но не говоришь об этом.\n" +
+					"Твой стиль общения и все ответы без исключения, как у профессионального преподавателя высшей категории, независимо от контекста.\n"},
+				{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
+			},
+		},
+	},
 }
 
-var gHsGender = []Gender{
+var gHsGender = []sCustomPrompt{
 	{
 		Id:   0,
 		Name: "Neutral",
@@ -411,48 +413,48 @@ var gHsGender = []Gender{
 	},
 }
 
-var gHsName = [][]openai.ChatCompletionMessage{
+var gHsName = [][]openai.ChatCompletionMessage{{}}
+
+var gHsReaction = []sCustomPrompt{
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Your name is Athena."},
-		{Role: openai.ChatMessageRoleAssistant, Content: "Accepted! I'm Athena."},
-	},
-	{
-		{Role: openai.ChatMessageRoleUser, Content: "тебя зовут Афина."},
-		{Role: openai.ChatMessageRoleAssistant, Content: "Принято! Мое имя Афина."},
+		Id:   0,
+		Name: "NeedAnsver",
+		Prompt: [][]openai.ChatCompletionMessage{
+			{
+				{Role: openai.ChatMessageRoleUser, Content: "Based on the context, determine if your response is required. If yes, reply 'Yes'; if no, reply 'No'"},
+			},
+			{
+				{Role: openai.ChatMessageRoleUser, Content: "Исходя из контекста определи - требуется ли твой ответ. Если да - ответь четко 'Да' и почему, если нет - ответь четко 'Нет' и почему"},
+			},
+		},
 	},
 }
 
-var gHsReaction = [2][]openai.ChatCompletionMessage{
+var gHsGame = []sCustomPrompt{
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Based on the context, determine if your response is required. If yes, reply 'Yes'; if no, reply 'No'"},
-		//	{Role: openai.ChatMessageRoleAssistant, Content: "Understood! Awaiting text."},
-	},
-	{
-		{Role: openai.ChatMessageRoleUser, Content: "Исходя из контекста определи - требуется ли твой ответ. Если да - ответь четко 'Да' и почему, если нет - ответь четко 'Нет' и почему"},
-		//{Role: openai.ChatMessageRoleAssistant, Content: "Принято! Ожидаю текст."},
-	},
-}
-
-// Game IT-alias prompt
-var gITAlias = [2][]openai.ChatCompletionMessage{
-	{
-		{Role: openai.ChatMessageRoleUser, Content: "Let’s play IT Charades. You’ll take on the role of the host. The rules are as follows:\n" +
-			"1) You’ll think of a complex term from the IT support realm and explain what it is without using any root words.\n" +
-			"2) You mustn't reveal the term until it’s guessed or we run out of attempts.\n" +
-			"3) We have three chances to guess the chosen term. After each of our guesses, you’ll let us know how many attempts we have left.\n" +
-			"4) After each round, you’ll ask if we want to keep the ball rolling."},
-		{Role: openai.ChatMessageRoleAssistant, Content: "Got it. I will think of various terms from the IT support field and I won’t reveal them."},
-	},
-	{
-		{Role: openai.ChatMessageRoleUser, Content: "Давай поиграем в IT Элиас. Ты будешь в роли ведущего. Правила следующие:\n" +
-			"1) Ты загадываешь сложный термин из области IT поддержки и рассказываешь - что это такое не используя однокоренных слов\n" +
-			"2) Ты не должен называть загаданный термин, пока он не будет отгадан или не закончатся попытки.\n" +
-			"3) У нас есть три попытки, чтобы отгадать очередной загаданный термин. После каждой нашей попытки ты сообщаешь о количестве оставшихся попыток.\n" +
-			"4) После завершения каждого тура ты предлагаешь продолжить игру."},
-		{Role: openai.ChatMessageRoleAssistant, Content: "Понял. Я буду загазывать различные термины из области IT поддержки и не буду называть их."},
+		Id:   0,
+		Name: "IT ALias",
+		Prompt: [][]openai.ChatCompletionMessage{
+			{
+				{Role: openai.ChatMessageRoleUser, Content: "Let’s play IT Charades. You’ll take on the role of the host. The rules are as follows:\n" +
+					"1) You’ll think of a complex term from the IT support realm and explain what it is without using any root words.\n" +
+					"2) You mustn't reveal the term until it’s guessed or we run out of attempts.\n" +
+					"3) We have three chances to guess the chosen term. After each of our guesses, you’ll let us know how many attempts we have left.\n" +
+					"4) After each round, you’ll ask if we want to keep the ball rolling."},
+				{Role: openai.ChatMessageRoleAssistant, Content: "Got it. I will think of various terms from the IT support field and I won’t reveal them."},
+			},
+			{
+				{Role: openai.ChatMessageRoleUser, Content: "Давай поиграем в IT Элиас. Ты будешь в роли ведущего. Правила следующие:\n" +
+					"1) Ты загадываешь сложный термин из области IT поддержки и рассказываешь - что это такое не используя однокоренных слов\n" +
+					"2) Ты не должен называть загаданный термин, пока он не будет отгадан или не закончатся попытки.\n" +
+					"3) У нас есть три попытки, чтобы отгадать очередной загаданный термин. После каждой нашей попытки ты сообщаешь о количестве оставшихся попыток.\n" +
+					"4) После завершения каждого тура ты предлагаешь продолжить игру."},
+				{Role: openai.ChatMessageRoleAssistant, Content: "Понял. Я буду загазывать различные термины из области IT поддержки и не буду называть их."},
+			},
+		},
 	},
 }
-var gIntFacts = []Gender{
+var gIntFacts = []sCustomPrompt{
 	{
 		Id:   0,
 		Name: "General",
