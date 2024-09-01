@@ -112,7 +112,7 @@ func ShowChatInfo(update tgbotapi.Update) {
 	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
 	if chatItem.ChatID != 0 {
 		msgString = "Название чата: " + chatItem.Title + "\n" +
-			"Модель поведения: " + strconv.Itoa(int(chatItem.Bstyle)) + "\n" +
+			"Модель поведения: " + gConversationStyle[chatItem.Bstyle].Name + "\n" +
 			"Нейронная сеть: " + chatItem.Model + "\n" +
 			"Экспрессия: " + strconv.FormatFloat(float64(chatItem.Temperature*100), 'f', -1, 32) + "%\n" +
 			"Инициативность: " + strconv.Itoa(chatItem.Inity*10) + "%\n" +
