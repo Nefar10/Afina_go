@@ -37,7 +37,7 @@ func ProcessCallbacks(update tgbotapi.Update) {
 		SetTuneChat(update)
 	case strings.Contains(cbData, "STYLE:"):
 		SelectBotStyle(update)
-	case strings.Contains(cbData, "GSGOOD:") || strings.Contains(cbData, "GSBAD:") || strings.Contains(cbData, "GSPOP:") || strings.Contains(cbData, "GSSA:"):
+	case strings.Contains(cbData, "_ST:"):
 		SetBotStyle(update)
 	case strings.Contains(update.CallbackQuery.Data, "CHAT_CHARACTER:"):
 		SelectBotCharacter(update)
@@ -60,7 +60,7 @@ func ProcessCallbacks(update tgbotapi.Update) {
 		SelectBotModel(update)
 	case strings.Contains(update.CallbackQuery.Data, "SEL_MODEL:"):
 		SetBotModel(update)
-	case strings.Contains(update.CallbackQuery.Data, "IF_"):
+	case strings.Contains(update.CallbackQuery.Data, "_IF:"):
 		SetChatFacts(update)
 	default:
 		CheckChatRights(update)
@@ -80,204 +80,167 @@ func ProcessCommand(update tgbotapi.Update) {
 }
 
 func ProcessMessage(update tgbotapi.Update) {
-	var err error                                   //Some errors
 	var chatItem ChatState                          //Current ChatState item
 	var ChatMessages []openai.ChatCompletionMessage //Current prompt
 	var FullPromt []openai.ChatCompletionMessage    //Messages to send
-	var temp float64
 	SetCurOperation("Update message processing")
-	if update.Message.Text != "" { //Begin message processing
-		chatItem = GetChatStateDB("ChatState:" + strconv.FormatInt(update.Message.Chat.ID, 10))
-		if chatItem.ChatID != 0 {
-			if chatItem.BotState == RUN {
-				switch chatItem.AllowState { //Если доступ предоставлен
-				case ALLOW:
-					{
-						//Processing settings change
-						if (gChangeSettings != gOwner || chatItem.SetState != NO_ONE) && (chatItem.ChatID == gOwner) {
-							chatItem = GetChatStateDB("ChatState:" + strconv.FormatInt(gChangeSettings, 10))
-							if chatItem.ChatID != 0 {
-								switch chatItem.SetState {
-								case HISTORY:
-									{
-										chatItem.History = gHsNulled[gLocale]
-										chatItem.History = append(chatItem.History, []openai.ChatCompletionMessage{
-											{Role: openai.ChatMessageRoleUser, Content: update.Message.Text},
-											{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"}}...)
-									}
-								case TEMPERATURE:
-									{
-										temp, err = strconv.ParseFloat(update.Message.Text, 64)
-										if err != nil {
-											SendToUser(gOwner, E15[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
-											//log.Fatalln(err, E15[gLocale]+IM29[gLocale]+gCurProcName)
-										} else {
-											chatItem.Temperature = float32(temp)
-										}
-										if chatItem.Temperature < 0 || chatItem.Temperature > 10 {
-											chatItem.Temperature = 0.7
-										} else {
-											chatItem.Temperature = chatItem.Temperature / 10
-										}
-									}
-								case INITIATIVE:
-									{
-										chatItem.Inity, err = strconv.Atoi(update.Message.Text)
-										if err != nil {
-											SendToUser(gOwner, E15[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
-											//log.Fatalln(err, E15[gLocale]+IM29[gLocale]+gCurProcName)
-										}
-										if chatItem.Inity < 0 || chatItem.Inity > 1000 {
-											chatItem.Inity = 0
-										}
-									}
-								}
-								chatItem.SetState = NO_ONE
-								SetChatStateDB(chatItem)
-								SendToUser(gOwner, "Принято!", INFO, 1)
-								gChangeSettings = gOwner
-							}
-						} else {
-							ChatMessages = nil                                     //Формируем новый диалог
-							msg := tgbotapi.NewMessage(update.Message.Chat.ID, "") //Формирум новый ответ
-							if update.Message.Chat.Type != "private" {             //Если чат не приватный, то ставим отметку - на какое соощение отвечаем
-								msg.ReplyToMessageID = update.Message.MessageID
-							}
-							ChatMessages = GetChatMessages("Dialog:" + strconv.FormatInt(update.Message.Chat.ID, 10))
-							if update.Message.Chat.Type == "private" { //Если текущий чат приватный
-								ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: update.Message.Text})
-							} else { //Если текущи чат групповой записываем первое сообщение чата дополняя его именем текущего собеседника
-								ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: update.Message.From.FirstName + ": " + update.Message.Text})
-							}
-							RenewDialog(strconv.FormatInt(update.Message.Chat.ID, 10), ChatMessages)
-							for { //Здесь мы делаем паузу, позволяющую не отправлять промпты чаще чем раз в 20 секунд
-								currentTime := time.Now()
-								elapsedTime := currentTime.Sub(gLastRequest)
-								time.Sleep(time.Second)
-								if elapsedTime >= 20*time.Second && !gclient_is_busy {
-									break
-								}
-							}
-							action := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
-							toBotFlag := false
-							for _, name := range gBotNames { //Определим - есть ли в контексте последнего сообщения имя бота
-								if strings.Contains(strings.ToUpper(update.Message.Text), strings.ToUpper(name)) && gUpdatesQty == 0 {
-									toBotFlag = true
-								}
-							}
-							if update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.ID == gBot.Self.ID && gUpdatesQty == 0 { //Если имя бота встречается
-								toBotFlag = true
-								//		break
-							}
-							if !toBotFlag && gUpdatesQty == 0 {
-								if isMyReaction(ChatMessages, chatItem.BStPrmt, chatItem.History) {
-									toBotFlag = true
-								}
-							}
-							if len(ChatMessages) > 20 {
-								// Удаляем первые элементы, оставляя последние 10
-								ChatMessages = ChatMessages[1:]
-							}
-							CharPrmt := [2][]openai.ChatCompletionMessage{
-								{
-									{Role: openai.ChatMessageRoleUser, Content: ""},
-									{Role: openai.ChatMessageRoleAssistant, Content: ""},
-								},
-								{
-									{Role: openai.ChatMessageRoleUser, Content: "Важно! Твой тип характера - " + gCT[chatItem.CharType-1]},
-									{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
-								},
-							}
+	chatItem = GetChatStateDB("ChatState:" + strconv.FormatInt(update.Message.Chat.ID, 10))
+	if chatItem.ChatID != 0 && chatItem.BotState == RUN {
+		switch chatItem.AllowState { //Если доступ предоставлен
+		case ALLOW:
+			{
+				//Processing settings change
+				if (gChangeSettings != gOwner || chatItem.SetState != NO_ONE) && (chatItem.ChatID == gOwner) {
 
-							FullPromt = nil
-							FullPromt = append(FullPromt, chatItem.BStPrmt...)
-							FullPromt = append(FullPromt, CharPrmt[gLocale]...)
-							FullPromt = append(FullPromt, chatItem.History...)
-							FullPromt = append(FullPromt, ChatMessages...)
-							//log.Println(ChatMessages)
-							//log.Println("")
-							//log.Println(FullPromt)
-							//update.Message.Chat.Type == "private" ||
-							if toBotFlag {
-								gclient_is_busy = true
-								gLastRequest = time.Now() //Прежде чем формировать запрос, запомним текущее время
-								for i := 0; i < 2; i++ {
-									gBot.Send(action)                          //Здесь мы продолжаем делать вид, что бот отреагировал на новое сообщение
-									resp, err := gclient.CreateChatCompletion( //Формируем запрос к мозгам
-										context.Background(),
-										openai.ChatCompletionRequest{
-											Model:       chatItem.Model,
-											Temperature: chatItem.Temperature,
-											Messages:    FullPromt,
-										},
-									)
-									if err != nil {
-										SendToUser(gOwner, E17[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, INFO, 0)
-										time.Sleep(20 * time.Second)
-									} else {
-										//log.Printf("Чат ID: %d Токенов использовано: %d", update.Message.Chat.ID, resp.Usage.TotalTokens)
-										msg.Text = resp.Choices[0].Message.Content //Записываем ответ в сообщение
-										break
-									}
-								}
-								gclient_is_busy = false
-								ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: msg.Text})
-							}
-							RenewDialog(strconv.FormatInt(update.Message.Chat.ID, 10), ChatMessages)
-							gBot.Send(msg)
+					chatItem = GetChatStateDB("ChatState:" + strconv.FormatInt(gChangeSettings, 10))
+					SetChatSettings(chatItem, update)
+				} else {
+					ChatMessages = nil                                     //Формируем новый диалог
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "") //Формирум новый ответ
+					if update.Message.Chat.Type != "private" {             //Если чат не приватный, то ставим отметку - на какое соощение отвечаем
+						msg.ReplyToMessageID = update.Message.MessageID
+					}
+					ChatMessages = GetChatMessages("Dialog:" + strconv.FormatInt(update.Message.Chat.ID, 10))
+					if update.Message.Chat.Type == "private" { //Если текущий чат приватный
+						ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: update.Message.Text})
+					} else { //Если текущи чат групповой записываем первое сообщение чата дополняя его именем текущего собеседника
+						ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: update.Message.From.FirstName + ": " + update.Message.Text})
+					}
+					RenewDialog(strconv.FormatInt(update.Message.Chat.ID, 10), ChatMessages)
+					for { //Здесь мы делаем паузу, позволяющую не отправлять промпты чаще чем раз в 20 секунд
+						currentTime := time.Now()
+						elapsedTime := currentTime.Sub(gLastRequest)
+						time.Sleep(time.Second)
+						if elapsedTime >= 20*time.Second && !gclient_is_busy {
+							break
 						}
 					}
-				case DISALLOW:
-					{
-						if update.Message.Chat.Type == "private" {
-							SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.From.UserName+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться с этим пользователем?", ACCESS, 0, update.Message.Chat.ID)
-						} else {
-							SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.Chat.Title+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться в этом чате?", ACCESS, 0, update.Message.Chat.ID)
+					action := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
+					toBotFlag := false
+					for _, name := range gBotNames { //Определим - есть ли в контексте последнего сообщения имя бота
+						if strings.Contains(strings.ToUpper(update.Message.Text), strings.ToUpper(name)) && gUpdatesQty == 0 {
+							toBotFlag = true
+						}
+					}
+					if update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.ID == gBot.Self.ID && gUpdatesQty == 0 { //Если имя бота встречается
+						toBotFlag = true
+						//		break
+					}
+					if !toBotFlag && gUpdatesQty == 0 {
+						if isMyReaction(ChatMessages, chatItem.Bstyle, chatItem.History) {
+							toBotFlag = true
+						}
+					}
+					if len(ChatMessages) > 20 {
+						// Удаляем первые элементы, оставляя последние 10
+						ChatMessages = ChatMessages[1:]
+					}
+					CharPrmt := [2][]openai.ChatCompletionMessage{
+						{
+							{Role: openai.ChatMessageRoleUser, Content: "Important! Your personality type is " + gCT[chatItem.CharType-1]},
+							{Role: openai.ChatMessageRoleAssistant, Content: "Understood!"},
+						},
+						{
+							{Role: openai.ChatMessageRoleUser, Content: "Важно! Твой тип характера - " + gCT[chatItem.CharType-1]},
+							{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
+						},
+					}
 
+					FullPromt = nil
+					FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...)
+					FullPromt = append(FullPromt, gHsGender[gBotGender].Prompt[gLocale]...)
+					FullPromt = append(FullPromt, CharPrmt[gLocale]...)
+					FullPromt = append(FullPromt, chatItem.History...)
+					FullPromt = append(FullPromt, ChatMessages...)
+					//log.Println(ChatMessages)
+					//log.Println("")
+					//log.Println(FullPromt)
+					//update.Message.Chat.Type == "private" ||
+					if toBotFlag {
+						gclient_is_busy = true
+						gLastRequest = time.Now() //Прежде чем формировать запрос, запомним текущее время
+						for i := 0; i < 2; i++ {
+							gBot.Send(action)                          //Здесь мы продолжаем делать вид, что бот отреагировал на новое сообщение
+							resp, err := gclient.CreateChatCompletion( //Формируем запрос к мозгам
+								context.Background(),
+								openai.ChatCompletionRequest{
+									Model:       chatItem.Model,
+									Temperature: chatItem.Temperature,
+									Messages:    FullPromt,
+								},
+							)
+							if err != nil {
+								SendToUser(gOwner, E17[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, INFO, 0)
+								time.Sleep(20 * time.Second)
+							} else {
+								//log.Printf("Чат ID: %d Токенов использовано: %d", update.Message.Chat.ID, resp.Usage.TotalTokens)
+								msg.Text = resp.Choices[0].Message.Content //Записываем ответ в сообщение
+								break
+							}
 						}
+						gclient_is_busy = false
+						ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: msg.Text})
 					}
-				case BLACKLISTED:
-					{
-						if update.Message.Chat.Type == "private" {
-							log.Println("Запрос заблокированного диалога от " + update.Message.From.FirstName + " " + update.Message.From.UserName + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
-						} else {
-							log.Println("Запрос заблокированного диалога от " + update.Message.From.FirstName + " " + update.Message.Chat.Title + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
-						}
-					}
-				case IN_PROCESS:
-					{
-						if update.Message.Chat.Type == "private" {
-							log.Println("Запрос диалога от " + update.Message.From.FirstName + " " + update.Message.From.UserName + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
-						} else {
-							log.Println("Запрос диалога от " + update.Message.From.FirstName + " " + update.Message.Chat.Title + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
-						}
-					}
+					RenewDialog(strconv.FormatInt(update.Message.Chat.ID, 10), ChatMessages)
+					gBot.Send(msg)
 				}
 			}
-		} else {
-			log.Println(err) //Если записи в БД нет - формирруем новую запись
-			chatItem = ChatState{
-				ChatID:      update.Message.Chat.ID,
-				BotState:    RUN,
-				AllowState:  IN_PROCESS,
-				UserName:    update.Message.From.UserName,
-				Type:        update.Message.Chat.Type,
-				Title:       update.Message.Chat.Title,
-				Model:       BASEGPTMODEL,
-				Temperature: 0.5,
-				Inity:       0,
-				History:     gHsNulled[gLocale],
-				IntFacts:    gIntFactsGen[gLocale],
-				Bstyle:      GOOD,
-				BStPrmt:     gHsGood[gLocale],
-				SetState:    NO_ONE,
-				CharType:    ESTJ}
-			SetChatStateDB(chatItem)
+		case DISALLOW:
+			{
+				if update.Message.Chat.Type == "private" {
+					SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.From.UserName+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться с этим пользователем?", ACCESS, 0, update.Message.Chat.ID)
+				} else {
+					SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.Chat.Title+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться в этом чате?", ACCESS, 0, update.Message.Chat.ID)
+
+				}
+			}
+		case BLACKLISTED:
 			if update.Message.Chat.Type == "private" {
-				SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.From.UserName+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться с этим пользователем?", ACCESS, 0, update.Message.Chat.ID)
+				log.Println("Запрос заблокированного диалога от " + update.Message.From.FirstName + " " + update.Message.From.UserName + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
 			} else {
-				SendToUser(gOwner, "В группововм чате "+update.Message.From.FirstName+" "+update.Message.Chat.Title+" открыли диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться в этом чате?", ACCESS, 0, update.Message.Chat.ID)
+				log.Println("Запрос заблокированного диалога от " + update.Message.From.FirstName + " " + update.Message.Chat.Title + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
+			}
+
+		case IN_PROCESS:
+			{
+				if update.Message.Chat.Type == "private" {
+					SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.From.UserName+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться с этим пользователем?", ACCESS, 0, update.Message.Chat.ID)
+					log.Println("Запрос диалога от " + update.Message.From.FirstName + " " + update.Message.From.UserName + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
+				} else {
+					SendToUser(gOwner, "В группововм чате "+update.Message.From.FirstName+" "+update.Message.Chat.Title+" открыли диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться в этом чате?", ACCESS, 0, update.Message.Chat.ID)
+					log.Println("Запрос диалога от " + update.Message.From.FirstName + " " + update.Message.Chat.Title + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
+				}
 			}
 		}
+	}
+}
+
+func ProcessMember(update tgbotapi.Update) {
+	var chatItem ChatState
+	SetCurOperation("Chat member processing")
+	if update.MyChatMember.NewChatMember.Status == "member" || update.MyChatMember.NewChatMember.Status == "administrator" {
+		SetCurOperation("Chat initialization")
+		chatItem = ChatState{
+			ChatID:      update.MyChatMember.Chat.ID,
+			BotState:    RUN,
+			AllowState:  IN_PROCESS,
+			UserName:    update.MyChatMember.From.UserName,
+			Type:        update.MyChatMember.Chat.Type,
+			Title:       update.MyChatMember.Chat.Title,
+			Model:       BASEGPTMODEL,
+			Temperature: 0.5,
+			Inity:       0,
+			History: append(gHsNulled[gLocale],
+				openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "."},
+				openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"}),
+			InterFacts: 0,
+			Bstyle:     0,
+			SetState:   NO_ONE,
+			CharType:   ESTJ,
+		}
+		SetChatStateDB(chatItem)
+	} else if update.MyChatMember.NewChatMember.Status == "left" {
+		DestroyChat(strconv.FormatInt(update.MyChatMember.Chat.ID, 10))
+		SendToUser(gOwner, "Чат был закрыт, информация о нем удалена из БД", INFO, 1)
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	openai "github.com/sashabaranov/go-openai"
 )
 
 func SetChatStateDB(item ChatState) {
@@ -40,30 +41,11 @@ func SetTuneChat(update tgbotapi.Update) {
 func SetBotStyle(update tgbotapi.Update) {
 	var chatItem ChatState
 	SetCurOperation("GPT model changing")
-
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
 	if chatItem.ChatID != 0 {
-		if strings.Contains(update.CallbackQuery.Data, "GSGOOD:") {
-			chatItem.Bstyle = GOOD
-			chatItem.BStPrmt = gHsGood[gLocale]
-			SendToUser(gOwner, IM18[gLocale], INFO, 1)
-		}
-		if strings.Contains(update.CallbackQuery.Data, "GSBAD:") {
-			chatItem.Bstyle = BAD
-			chatItem.BStPrmt = gHsBad[gLocale]
-			SendToUser(gOwner, IM19[gLocale], INFO, 1)
-		}
-		if strings.Contains(update.CallbackQuery.Data, "GSPOP:") {
-			chatItem.Bstyle = POPPINS
-			chatItem.BStPrmt = gHsPoppins[gLocale]
-			SendToUser(gOwner, IM20[gLocale], INFO, 1)
-		}
-		if strings.Contains(update.CallbackQuery.Data, "GSSA:") {
-			chatItem.Bstyle = SYSADMIN
-			chatItem.BStPrmt = gHsSA[gLocale]
-			SendToUser(gOwner, IM21[gLocale], INFO, 1)
-		}
+		chatItem.Bstyle, _ = strconv.Atoi(strings.Split(update.CallbackQuery.Data, "_ST:")[0])
+		SendToUser(gOwner, "Выбран стиль общения "+gConversationStyle[chatItem.Bstyle].Name, INFO, 1)
 		SetChatStateDB(chatItem)
 	}
 }
@@ -137,18 +119,8 @@ func SetChatFacts(update tgbotapi.Update) {
 	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
 	//log.Println(chatItem.IntFacts)
 	if chatItem.ChatID != 0 {
-		if strings.Contains(update.CallbackQuery.Data, "IF_GENERAL:") {
-			chatItem.IntFacts = gIntFactsGen[gLocale]
-		}
-		if strings.Contains(update.CallbackQuery.Data, "IF_SCIENSE:") {
-			chatItem.IntFacts = gIntFactsSci[gLocale]
-		}
-		if strings.Contains(update.CallbackQuery.Data, "IF_IT:") {
-			chatItem.IntFacts = gIntFactsIT[gLocale]
-		}
-		if strings.Contains(update.CallbackQuery.Data, "IF_AUTO:") {
-			chatItem.IntFacts = gIntFactsAuto[gLocale]
-		}
+		chatItem.InterFacts, _ = strconv.Atoi(strings.Split(update.CallbackQuery.Data, "_IF:")[0])
+		SendToUser(gOwner, "Выбрана тема интересных фактов: "+gIntFacts[chatItem.InterFacts].Name, INFO, 1)
 		SetChatStateDB(chatItem)
 		//log.Println(chatItem.IntFacts)
 		SendToUser(gOwner, IM15[gLocale]+" "+chatIDstr, INFO, 1)
@@ -164,5 +136,51 @@ func SetBotModel(update tgbotapi.Update) {
 		chatItem.Model = strings.Split(update.CallbackQuery.Data, ":")[1]
 		SetChatStateDB(chatItem)
 		SendToUser(gOwner, "Модель изменена на "+chatItem.Model, INFO, 1)
+	}
+}
+
+func SetChatSettings(chatItem ChatState, update tgbotapi.Update) {
+	var temp float64
+	var err error
+	if chatItem.ChatID != 0 {
+		switch chatItem.SetState {
+		case HISTORY:
+			{
+				chatItem.History = gHsNulled[gLocale]
+				chatItem.History = append(chatItem.History, []openai.ChatCompletionMessage{
+					{Role: openai.ChatMessageRoleUser, Content: update.Message.Text},
+					{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"}}...)
+			}
+		case TEMPERATURE:
+			{
+				temp, err = strconv.ParseFloat(update.Message.Text, 64)
+				if err != nil {
+					SendToUser(gOwner, E15[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+					//log.Fatalln(err, E15[gLocale]+IM29[gLocale]+gCurProcName)
+				} else {
+					chatItem.Temperature = float32(temp)
+				}
+				if chatItem.Temperature < 0 || chatItem.Temperature > 10 {
+					chatItem.Temperature = 0.7
+				} else {
+					chatItem.Temperature = chatItem.Temperature / 10
+				}
+			}
+		case INITIATIVE:
+			{
+				chatItem.Inity, err = strconv.Atoi(update.Message.Text)
+				if err != nil {
+					SendToUser(gOwner, E15[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+					//log.Fatalln(err, E15[gLocale]+IM29[gLocale]+gCurProcName)
+				}
+				if chatItem.Inity < 0 || chatItem.Inity > 1000 {
+					chatItem.Inity = 0
+				}
+			}
+		}
+		chatItem.SetState = NO_ONE
+		SetChatStateDB(chatItem)
+		SendToUser(gOwner, "Принято!", INFO, 1)
+		gChangeSettings = gOwner
 	}
 }

@@ -41,12 +41,13 @@ func ProcessInitiative() {
 				}
 				gLastRequest = time.Now() //Прежде чем формировать запрос, запомним текущее время
 				gclient_is_busy = true
-				ChatMessages = chatItem.IntFacts
-				currentTime := time.Now()
-				ChatMessages[len(ChatMessages)-1].Content = currentTime.Format("2006-01-02 15:04:05") + " " + ChatMessages[len(ChatMessages)-1].Content
+				//ChatMessages = gIntFacts[chatItem.InterFacts].Prompt[gLocale]
+				//currentTime := time.Now()
+				//ChatMessages[len(ChatMessages)-1].Content = currentTime.Format("2006-01-02 15:04:05") + " " + ChatMessages[len(ChatMessages)-1].Content
 				FullPromt = nil
-				FullPromt = append(FullPromt, chatItem.BStPrmt...)
-				FullPromt = append(FullPromt, chatItem.IntFacts...)
+				FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...)
+				FullPromt = append(FullPromt, gHsGender[gBotGender].Prompt[gLocale]...)
+				FullPromt = append(FullPromt, gIntFacts[chatItem.InterFacts].Prompt[gLocale]...)
 				//log.Println(FullPromt)
 				resp, err := gclient.CreateChatCompletion( //Формируем запрос к мозгам
 					context.Background(),
@@ -64,11 +65,7 @@ func ProcessInitiative() {
 					SendToUser(chatItem.ChatID, resp.Choices[0].Message.Content, NOTHING, 0)
 				}
 				ChatMessages = GetChatMessages("Dialog:" + strconv.FormatInt(chatItem.ChatID, 10))
-				if len(ChatMessages) == 0 {
-					ChatMessages = chatItem.IntFacts
-				} else {
-					ChatMessages = append(ChatMessages, chatItem.IntFacts...)
-				}
+				ChatMessages = append(ChatMessages, gIntFacts[chatItem.InterFacts].Prompt[gLocale]...)
 				ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content})
 				RenewDialog(strconv.FormatInt(chatItem.ChatID, 10), ChatMessages)
 			}
@@ -76,19 +73,16 @@ func ProcessInitiative() {
 	}
 }
 
-func isMyReaction(messages []openai.ChatCompletionMessage, Bstyle []openai.ChatCompletionMessage, History []openai.ChatCompletionMessage) bool {
+func isMyReaction(messages []openai.ChatCompletionMessage, Bstyle int, History []openai.ChatCompletionMessage) bool {
 	var FullPromt []openai.ChatCompletionMessage
-	//FullPromt = append(FullPromt, Bstyle...)
 	FullPromt = append(FullPromt, History...)
-	//FullPromt = append(FullPromt, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: mesText})
 	if len(messages) >= 3 {
 		FullPromt = append(FullPromt, messages[len(messages)-3:]...)
 	} else {
 		FullPromt = append(FullPromt, messages...)
 	}
 	FullPromt = append(FullPromt, gHsReaction[gLocale]...)
-	//log.Println(FullPromt)
-	resp, err := gclient.CreateChatCompletion( //Формируем запрос к мозгам
+	resp, err := gclient.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
 			Model:       BASEGPTMODEL,
@@ -96,7 +90,6 @@ func isMyReaction(messages []openai.ChatCompletionMessage, Bstyle []openai.ChatC
 			Messages:    FullPromt,
 		},
 	)
-	//log.Println(resp.Choices[0].Message.Content)
 	if err != nil {
 		SendToUser(gOwner, E17[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, INFO, 0)
 		time.Sleep(20 * time.Second)

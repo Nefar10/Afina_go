@@ -116,7 +116,7 @@ func init() {
 	}
 
 	//Bot naming prompt
-	gHsName = [2][]openai.ChatCompletionMessage{
+	gHsName = [][]openai.ChatCompletionMessage{
 		{
 			{Role: openai.ChatMessageRoleUser, Content: "Your name is " + gBotNames[0] + "."},
 			{Role: openai.ChatMessageRoleAssistant, Content: "Accepted! I'm " + gBotNames[0] + "."},
@@ -127,47 +127,17 @@ func init() {
 		},
 	}
 
-	//Characters completion with names
-	gHsGood[gLocale] = append(gHsGood[gLocale], gHsName[gLocale]...)
-	gHsBad[gLocale] = append(gHsBad[gLocale], gHsName[gLocale]...)
-	gHsPoppins[gLocale] = append(gHsPoppins[gLocale], gHsName[gLocale]...)
-	gHsSA[gLocale] = append(gHsSA[gLocale], gHsName[gLocale]...)
-
 	//Read bot gender from OS env adn character comletion with gender information
 	switch os.Getenv(BOTGENDER_IN_OS) {
 	case "Male":
-		{
-			gBotGender = MALE
-			gHsGood[gLocale] = append(gHsGood[gLocale], gHsGenderM[gLocale]...)
-			gHsBad[gLocale] = append(gHsBad[gLocale], gHsGenderM[gLocale]...)
-			gHsPoppins[gLocale] = append(gHsPoppins[gLocale], gHsGenderM[gLocale]...)
-			gHsSA[gLocale] = append(gHsSA[gLocale], gHsGenderM[gLocale]...)
-		}
+		gBotGender = MALE
 	case "Female":
-		{
-			gBotGender = FEMALE
-			gHsGood[gLocale] = append(gHsGood[gLocale], gHsGenderF[gLocale]...)
-			gHsBad[gLocale] = append(gHsBad[gLocale], gHsGenderF[gLocale]...)
-			gHsPoppins[gLocale] = append(gHsPoppins[gLocale], gHsGenderF[gLocale]...)
-			gHsSA[gLocale] = append(gHsSA[gLocale], gHsGenderF[gLocale]...)
-		}
+		gBotGender = FEMALE
+
 	case "Neutral":
-		{
-			gBotGender = NEUTRAL
-			gHsGood[gLocale] = append(gHsGood[gLocale], gHsGenderN[gLocale]...)
-			gHsBad[gLocale] = append(gHsBad[gLocale], gHsGenderN[gLocale]...)
-			gHsPoppins[gLocale] = append(gHsPoppins[gLocale], gHsGenderN[gLocale]...)
-			gHsSA[gLocale] = append(gHsSA[gLocale], gHsGenderN[gLocale]...)
-		}
+		gBotGender = NEUTRAL
 	default:
-		{
-			SendToUser(gOwner, IM2[gLocale]+BOTGENDER_IN_OS+IM29[gLocale]+gCurProcName, INFO, 0)
-			gBotGender = NEUTRAL
-			gHsGood[gLocale] = append(gHsGood[gLocale], gHsGenderN[gLocale]...)
-			gHsBad[gLocale] = append(gHsBad[gLocale], gHsGenderN[gLocale]...)
-			gHsPoppins[gLocale] = append(gHsPoppins[gLocale], gHsGenderN[gLocale]...)
-			gHsSA[gLocale] = append(gHsSA[gLocale], gHsGenderN[gLocale]...)
-		}
+		gBotGender = FEMALE
 	}
 
 	//Default chat states init
@@ -181,9 +151,8 @@ func init() {
 		BotState:    SLEEP,
 		Type:        "private",
 		History:     gHsNulled[gLocale],
-		IntFacts:    gIntFactsGen[gLocale],
-		BStPrmt:     gHsNulled[gLocale],
-		Bstyle:      GOOD,
+		InterFacts:  0,
+		Bstyle:      0,
 		SetState:    NO_ONE,
 		CharType:    ISTJ})
 	gChatsStates = append(gChatsStates, ChatState{
@@ -196,9 +165,8 @@ func init() {
 		BotState:    RUN,
 		Type:        "private",
 		History:     gHsNulled[gLocale],
-		IntFacts:    gIntFactsGen[gLocale],
-		BStPrmt:     gHsGood[gLocale],
-		Bstyle:      GOOD,
+		InterFacts:  0,
+		Bstyle:      0,
 		SetState:    NO_ONE,
 		CharType:    ESFJ})
 
@@ -233,6 +201,8 @@ func init() {
 
 func ProcessMessages(update tgbotapi.Update) {
 	switch {
+	case update.MyChatMember != nil:
+		ProcessMember(update)
 	case update.CallbackQuery != nil:
 		ProcessCallbacks(update)
 	case update.Message != nil:
@@ -261,7 +231,7 @@ func main() {
 				update := updateQueue[0]
 				updateQueue = updateQueue[1:]
 				gUpdatesQty = len(updateQueue)
-				ProcessMessage(update)
+				ProcessMessages(update)
 			} else {
 				time.Sleep(3000 * time.Millisecond)
 			}

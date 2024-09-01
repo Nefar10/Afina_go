@@ -183,31 +183,32 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 		}
 	case INTFACTS: //меню настройки чата
 		{
-			var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup( //формируем меню для ответа
-				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData(M20[gLocale], "IF_GENERAL: "+strconv.FormatInt(chatID[0], 10)),
-					tgbotapi.NewInlineKeyboardButtonData(M21[gLocale], "IF_SCIENSE: "+strconv.FormatInt(chatID[0], 10)),
-				),
-				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData(M22[gLocale], "IF_IT: "+strconv.FormatInt(chatID[0], 10)),
-					tgbotapi.NewInlineKeyboardButtonData(M23[gLocale], "IF_AUTO: "+strconv.FormatInt(chatID[0], 10)),
-				),
-				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData(M19[gLocale], "MENU"),
-				))
+			msg.Text = mesText
+			var buttons []tgbotapi.InlineKeyboardButton
+			for _, facts := range gIntFacts {
+				buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData(facts.Name, strconv.Itoa(int(facts.Id))+"_IF: "+strconv.FormatInt(chatID[0], 10)))
+			}
+			var rows [][]tgbotapi.InlineKeyboardButton
+			for _, button := range buttons {
+				row := []tgbotapi.InlineKeyboardButton{button}
+				rows = append(rows, row)
+			}
+			numericKeyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
 			msg.ReplyMarkup = numericKeyboard
 		}
 	case GPTSTYLES:
 		{
-			var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup( //формируем меню для ответа
-				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData(M24[gLocale], "GSGOOD: "+strconv.FormatInt(chatID[0], 10)),
-					tgbotapi.NewInlineKeyboardButtonData(M25[gLocale], "GSBAD: "+strconv.FormatInt(chatID[0], 10)),
-				),
-				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData(M27[gLocale], "GSPOP: "+strconv.FormatInt(chatID[0], 10)),
-					tgbotapi.NewInlineKeyboardButtonData(M28[gLocale], "GSSA: "+strconv.FormatInt(chatID[0], 10)),
-				))
+			msg.Text = mesText
+			var buttons []tgbotapi.InlineKeyboardButton
+			for _, style := range gConversationStyle {
+				buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData(style.Name, strconv.Itoa(int(style.Id))+"_ST: "+strconv.FormatInt(chatID[0], 10)))
+			}
+			var rows [][]tgbotapi.InlineKeyboardButton
+			for _, button := range buttons {
+				row := []tgbotapi.InlineKeyboardButton{button}
+				rows = append(rows, row)
+			}
+			numericKeyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
 			msg.ReplyMarkup = numericKeyboard
 		}
 	}

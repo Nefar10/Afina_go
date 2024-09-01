@@ -36,11 +36,9 @@ func GetChatStateDB(key string) ChatState {
 	var chatItem ChatState
 	SetCurOperation("Get chat state")
 	jsonStr, err = gRedisClient.Get(key).Result()
-	if err == redis.Nil {
-		SendToUser(gOwner, E16[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, INFO, 0)
-		return ChatState{}
-	} else if err != nil {
-		SendToUser(gOwner, E13[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+	if err != nil {
+		Log("Ошибка", ERR, err)
+		//SendToUser(gOwner, E13[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
 		return ChatState{}
 	} else {
 		err = json.Unmarshal([]byte(jsonStr), &chatItem)
