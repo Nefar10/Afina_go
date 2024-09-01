@@ -117,7 +117,7 @@ func ShowChatInfo(update tgbotapi.Update) {
 			"Нейронная сеть: " + chatItem.Model + "\n" +
 			"Экспрессия: " + strconv.FormatFloat(float64(chatItem.Temperature*100), 'f', -1, 32) + "%\n" +
 			"Инициативность: " + strconv.Itoa(chatItem.Inity*10) + "%\n" +
-			"Тема интересных фактов" + gIntFacts[chatItem.InterFacts].Name + "\n" +
+			"Тема интересных фактов: " + gIntFacts[chatItem.InterFacts].Name + "\n" +
 			"Текущая версия: " + VER
 		SendToUser(chatItem.ChatID, msgString, INFO, 2)
 	}
