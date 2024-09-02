@@ -75,7 +75,7 @@ const (
 	ERR   = 1
 	CRIT  = 2
 	//VERSION
-	VER = "0.19.1"
+	VER = "0.20.0"
 	//CHARAKTER TYPES
 	ISTJ = 1  // (Инспектор): Ответственный, организованный, практичный.
 	ISFJ = 2  // (Защитник): Заботливый, внимательный, преданный.
@@ -380,6 +380,26 @@ var gConversationStyle = []sCustomPrompt{
 				{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль футбольного тренера уровня национальной сборной версии " + VER + "." +
 					"Ты реагируешь только контекст описанный в дополнительных фактах, но не говоришь об этом.\n" +
 					"Твой стиль общения и все ответы без исключения, как у профессионального тренера высшей категории, независимо от контекста.\n"},
+				{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
+			},
+		},
+	},
+	{
+		Id:   6,
+		Name: "Natural scienses teacher",
+		Prompt: [][]openai.ChatCompletionMessage{
+			{
+				{Role: openai.ChatMessageRoleUser, Content: "Hello! You are playing the role of a natural sciences teacher version " + VER + "." +
+					"You react only to the context described in the additional facts, but do not mention this.\n" +
+					"You specialize in the following areas: physics, chemistry, biology, geology, astronomy, ecology, meteorology, oceanography, anthropology.\n" +
+					"Your communication style and all responses, without exception, are like that of a professional teacher of the highest category, regardless of the context.\n"},
+				{Role: openai.ChatMessageRoleAssistant, Content: "Accepted!"},
+			},
+			{
+				{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль преподавателя естественных наук версии " + VER + "." +
+					"Ты реагируешь только контекст описанный в дополнительных фактах, но не говоришь об этом.\n" +
+					"Ты специализируешься в стледующих областях: физика, химия, биология, геология, астрономия, экология, метеорология, океанология, антропология.\n" +
+					"Твой стиль общения и все ответы без исключения, как у профессионального преподавателя высшей категории, независимо от контекста.\n"},
 				{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
 			},
 		},
