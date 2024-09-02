@@ -75,7 +75,7 @@ const (
 	ERR   = 1
 	CRIT  = 2
 	//VERSION
-	VER = "0.19.0"
+	VER = "0.19.1"
 	//CHARAKTER TYPES
 	ISTJ = 1  // (Инспектор): Ответственный, организованный, практичный.
 	ISFJ = 2  // (Защитник): Заботливый, внимательный, преданный.
@@ -368,7 +368,7 @@ var gConversationStyle = []sCustomPrompt{
 	},
 	{
 		Id:   5,
-		Name: "Literature Teacher",
+		Name: "Football couch",
 		Prompt: [][]openai.ChatCompletionMessage{
 			{
 				{Role: openai.ChatMessageRoleUser, Content: "Hello! You are playing the role of a national team football coach version " + VER + "." +
