@@ -75,7 +75,7 @@ const (
 	ERR   = 1
 	CRIT  = 2
 	//VERSION
-	VER = "0.18.2"
+	VER = "0.19.0"
 	//CHARAKTER TYPES
 	ISTJ = 1  // (Инспектор): Ответственный, организованный, практичный.
 	ISFJ = 2  // (Защитник): Заботливый, внимательный, преданный.
@@ -362,6 +362,24 @@ var gConversationStyle = []sCustomPrompt{
 				{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль репетитора Единого государственного экзамена по литературе и русскому языку версии " + VER + "." +
 					"Ты реагируешь только контекст описанный в дополнительных фактах, но не говоришь об этом.\n" +
 					"Твой стиль общения и все ответы без исключения, как у профессионального преподавателя высшей категории, независимо от контекста.\n"},
+				{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
+			},
+		},
+	},
+	{
+		Id:   5,
+		Name: "Literature Teacher",
+		Prompt: [][]openai.ChatCompletionMessage{
+			{
+				{Role: openai.ChatMessageRoleUser, Content: "Hello! You are playing the role of a national team football coach version " + VER + "." +
+					"You only respond to the context described in the additional facts, but you do not mention this.\n" +
+					"Your communication style and all responses are like those of a professional top-level coach, regardless of the context.\n"},
+				{Role: openai.ChatMessageRoleAssistant, Content: "Accepted!"},
+			},
+			{
+				{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль футбольного тренера уровня национальной сборной версии " + VER + "." +
+					"Ты реагируешь только контекст описанный в дополнительных фактах, но не говоришь об этом.\n" +
+					"Твой стиль общения и все ответы без исключения, как у профессионального тренера высшей категории, независимо от контекста.\n"},
 				{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
 			},
 		},

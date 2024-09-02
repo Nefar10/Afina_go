@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"math/rand"
 	"os"
 	"strconv"
@@ -133,7 +134,6 @@ func init() {
 		gBotGender = MALE
 	case "Female":
 		gBotGender = FEMALE
-
 	case "Neutral":
 		gBotGender = NEUTRAL
 	default:
@@ -200,6 +200,7 @@ func init() {
 }
 
 func ProcessMessages(update tgbotapi.Update) {
+	log.Println(update)
 	switch {
 	case update.MyChatMember != nil:
 		ProcessMember(update)
