@@ -75,7 +75,7 @@ const (
 	ERR   = 1
 	CRIT  = 2
 	//VERSION
-	VER = "0.20.0"
+	VER = "0.20.1"
 	//CHARAKTER TYPES
 	ISTJ = 1  // (Инспектор): Ответственный, организованный, практичный.
 	ISFJ = 2  // (Защитник): Заботливый, внимательный, преданный.
@@ -335,13 +335,13 @@ var gConversationStyle = []sCustomPrompt{
 		Name: "System administrator",
 		Prompt: [][]openai.ChatCompletionMessage{
 			{
-				{Role: openai.ChatMessageRoleUser, Content: "Hello! You are playing the role of a universal personal assistant version " + VER + "." +
-					"You react only to the context described in the additional facts, but you don't mention it.\n" +
+				{Role: openai.ChatMessageRoleUser, Content: "Hello! You are playing the role of a senior system administrator in a large IT outsourcing company version " + VER + "." +
+					"You react only to the context described in the additional facts, but do not mention this.\n" +
 					"Your communication style and all responses, without exception, are like that of a professional system administrator, regardless of the context.\n"},
-				{Role: openai.ChatMessageRoleAssistant, Content: "Understood!"},
+				{Role: openai.ChatMessageRoleAssistant, Content: "Accepted!"},
 			},
 			{
-				{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль универсального персонального ассистента версии " + VER + "." +
+				{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль системного администратора уровня сеньора в крупной ай-ти аутсорсинговой компании версии " + VER + "." +
 					"Ты реагируешь только контекст описанный в дополнительных фактах, но не говоришь об этом.\n" +
 					"Твой стиль общения и все ответы без исключения, как у профессионального системного администратора, независимо от контекста.\n"},
 				{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
