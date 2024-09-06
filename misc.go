@@ -52,7 +52,7 @@ func GetChatStateDB(key string) ChatState {
 func RenewDialog(chatIDstr string, ChatMessages []openai.ChatCompletionMessage) {
 	var jsonData []byte
 	var err error
-	SetCurOperation("Update dialog")
+	SetCurOperation("Update dialog", 0)
 	jsonData, err = json.Marshal(ChatMessages)
 	if err != nil {
 		SendToUser(gOwner, E11[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
@@ -90,7 +90,7 @@ func Restart() {
 func ClearContext(update tgbotapi.Update) {
 	var chatItem ChatState
 	var ChatMessages []openai.ChatCompletionMessage
-	SetCurOperation("Context cleaning")
+	SetCurOperation("Context cleaning", 0)
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 	if err != nil {
@@ -129,7 +129,7 @@ func CheckChatRights(update tgbotapi.Update) {
 	var questItem QuestState //Current QuestState item
 	var ansItem Answer       //Curent Answer intem
 	var chatItem ChatState
-	SetCurOperation("Chat state changing")
+	SetCurOperation("Chat state changing", 0)
 	err = json.Unmarshal([]byte(update.CallbackQuery.Data), &ansItem)
 	if err == nil {
 		jsonStr, err = gRedisClient.Get("QuestState:" + ansItem.CallbackID.String()).Result() //читаем состояние запрса из БД
