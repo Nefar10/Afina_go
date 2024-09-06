@@ -27,7 +27,7 @@ func init() {
 	gRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	//Read localization setting from OS env
-	SetCurOperation("Environment initialization")
+	SetCurOperation("Environment initialization", 0)
 	switch os.Getenv(AFINA_LOCALE_IN_OS) {
 	case "Ru":
 		gLocale = 1
@@ -171,7 +171,7 @@ func init() {
 		CharType:    ESFJ})
 
 	//Storing default chat states to DB
-	SetCurOperation(IM31[gLocale])
+	SetCurOperation(IM31[gLocale], 0)
 	for _, item := range gChatsStates {
 		SetChatStateDB(item)
 	}
@@ -179,11 +179,11 @@ func init() {
 	//OpenAI client init
 	config := openai.DefaultConfig(gAIToken)
 	config.BaseURL = "https://api.proxyapi.ru/openai/v1"
-	gclient = openai.NewClientWithConfig(config)
+	gClient = openai.NewClientWithConfig(config)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	gModels = nil
-	models, err := gclient.ListModels(ctx)
+	models, err := gClient.ListModels(ctx)
 	if err != nil {
 		SendToUser(gOwner, E18[gLocale], INFO, 1)
 	} else {
@@ -193,7 +193,7 @@ func init() {
 			}
 		}
 	}
-	gclient_is_busy = false
+	gClient_is_busy = false
 
 	//Send init complete message to owner
 	SendToUser(gOwner, IM3[gLocale]+" "+IM13[gLocale], INFO, 0)

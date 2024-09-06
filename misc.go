@@ -12,9 +12,9 @@ import (
 	"github.com/sashabaranov/go-openai"
 )
 
-func SetCurOperation(msg string) {
+func SetCurOperation(msg string, log_level byte) {
 	gCurProcName = msg
-	if gVerboseLevel > 0 {
+	if gVerboseLevel > log_level {
 		log.Println(msg)
 	}
 }
@@ -34,7 +34,7 @@ func GetChatStateDB(key string) ChatState {
 	var err error
 	var jsonStr string
 	var chatItem ChatState
-	SetCurOperation("Get chat state")
+	SetCurOperation("Get chat state", 1)
 	jsonStr, err = gRedisClient.Get(key).Result()
 	if err != nil {
 		Log("Ошибка", ERR, err)
@@ -64,7 +64,7 @@ func GetChatMessages(key string) []openai.ChatCompletionMessage {
 	var msgString string
 	var err error
 	var ChatMessages []openai.ChatCompletionMessage
-	SetCurOperation("Dialog reading from DB")
+	SetCurOperation("Dialog reading from DB", 0)
 	msgString, err = gRedisClient.Get(key).Result() //Пытаемся прочесть из БД диалог
 	if err == redis.Nil {                           //Если диалога в БД нет, формируем новый и записываем в БД
 		Log("Ошибка", ERR, err)
@@ -82,7 +82,7 @@ func GetChatMessages(key string) []openai.ChatCompletionMessage {
 }
 
 func Restart() {
-	SetCurOperation("Restarting")
+	SetCurOperation("Restarting", 0)
 	SendToUser(gOwner, IM5[gLocale], INFO, 1)
 	os.Exit(0)
 }
@@ -107,7 +107,7 @@ func ClearContext(update tgbotapi.Update) {
 func ShowChatInfo(update tgbotapi.Update) {
 	var msgString string
 	var chatItem ChatState
-	SetCurOperation("Chat info view")
+	SetCurOperation("Chat info view", 0)
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
 	if chatItem.ChatID != 0 {

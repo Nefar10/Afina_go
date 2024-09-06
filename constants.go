@@ -249,9 +249,10 @@ type Answer struct {
 }
 
 type sCustomPrompt struct {
-	Id     int
-	Name   string
-	Prompt [][]openai.ChatCompletionMessage
+	Id       int
+	Category string
+	Name     string
+	Prompt   [][]openai.ChatCompletionMessage
 }
 
 var gChangeSettings int64
@@ -273,8 +274,9 @@ var gHsNulled = [][]openai.ChatCompletionMessage{
 
 var gConversationStyle = []sCustomPrompt{
 	{
-		Id:   0,
-		Name: "Default",
+		Id:       0,
+		Category: "Common",
+		Name:     "Default",
 		Prompt: [][]openai.ChatCompletionMessage{
 			{
 				{Role: openai.ChatMessageRoleUser, Content: "Hi! You are playing the role of a universal personal assistant version " + VER + "."},
@@ -285,8 +287,9 @@ var gConversationStyle = []sCustomPrompt{
 		},
 	},
 	{
-		Id:   1,
-		Name: "Bad",
+		Id:       1,
+		Category: "Fun",
+		Name:     "Bad",
 		Prompt: [][]openai.ChatCompletionMessage{
 			{
 				{Role: openai.ChatMessageRoleUser, Content: "You are playing the role of a minion version " + VER + "." +
@@ -311,8 +314,9 @@ var gConversationStyle = []sCustomPrompt{
 		},
 	},
 	{
-		Id:   2,
-		Name: "Mary Poppins",
+		Id:       2,
+		Category: "Fun",
+		Name:     "Mary Poppins",
 		Prompt: [][]openai.ChatCompletionMessage{
 			{
 				{Role: openai.ChatMessageRoleUser, Content: "Hello! You are playing the role of a universal personal assistant version " + VER + "." +
@@ -331,8 +335,9 @@ var gConversationStyle = []sCustomPrompt{
 		},
 	},
 	{
-		Id:   3,
-		Name: "System administrator",
+		Id:       3,
+		Category: "Profession",
+		Name:     "System administrator",
 		Prompt: [][]openai.ChatCompletionMessage{
 			{
 				{Role: openai.ChatMessageRoleUser, Content: "Hello! You are playing the role of a senior system administrator in a large IT outsourcing company version " + VER + "." +
@@ -349,8 +354,9 @@ var gConversationStyle = []sCustomPrompt{
 		},
 	},
 	{
-		Id:   4,
-		Name: "Literature Teacher",
+		Id:       4,
+		Category: "Education",
+		Name:     "Literature teacher",
 		Prompt: [][]openai.ChatCompletionMessage{
 			{
 				{Role: openai.ChatMessageRoleUser, Content: "Hello! You are playing the role of a universal personal assistant version " + VER + "." +
@@ -367,8 +373,9 @@ var gConversationStyle = []sCustomPrompt{
 		},
 	},
 	{
-		Id:   5,
-		Name: "Football couch",
+		Id:       5,
+		Category: "Profession",
+		Name:     "Football couch",
 		Prompt: [][]openai.ChatCompletionMessage{
 			{
 				{Role: openai.ChatMessageRoleUser, Content: "Hello! You are playing the role of a national team football coach version " + VER + "." +
@@ -385,8 +392,9 @@ var gConversationStyle = []sCustomPrompt{
 		},
 	},
 	{
-		Id:   6,
-		Name: "Natural scienses teacher",
+		Id:       6,
+		Category: "Education",
+		Name:     "Natural scienses teacher",
 		Prompt: [][]openai.ChatCompletionMessage{
 			{
 				{Role: openai.ChatMessageRoleUser, Content: "Hello! You are playing the role of a natural sciences teacher version " + VER + "." +
@@ -408,8 +416,9 @@ var gConversationStyle = []sCustomPrompt{
 
 var gHsGender = []sCustomPrompt{
 	{
-		Id:   0,
-		Name: "Neutral",
+		Id:       0,
+		Category: "",
+		Name:     "Neutral",
 		Prompt: [][]openai.ChatCompletionMessage{
 			{
 				{Role: openai.ChatMessageRoleUser, Content: "You are no gender creature."},
@@ -422,8 +431,9 @@ var gHsGender = []sCustomPrompt{
 		},
 	},
 	{
-		Id:   1,
-		Name: "Male",
+		Id:       1,
+		Category: "",
+		Name:     "Male",
 		Prompt: [][]openai.ChatCompletionMessage{
 			{
 				{Role: openai.ChatMessageRoleUser, Content: "You position yourself as a male."},
@@ -436,8 +446,9 @@ var gHsGender = []sCustomPrompt{
 		},
 	},
 	{
-		Id:   2,
-		Name: "Female",
+		Id:       2,
+		Category: "",
+		Name:     "Female",
 		Prompt: [][]openai.ChatCompletionMessage{
 			{
 				{Role: openai.ChatMessageRoleUser, Content: "You position yourself as a female."},
@@ -451,12 +462,11 @@ var gHsGender = []sCustomPrompt{
 	},
 }
 
-var gHsName = [][]openai.ChatCompletionMessage{{}}
-
 var gHsReaction = []sCustomPrompt{
 	{
-		Id:   0,
-		Name: "NeedAnsver",
+		Id:       0,
+		Category: "Reaction",
+		Name:     "NeedAnsver",
 		Prompt: [][]openai.ChatCompletionMessage{
 			{
 				{Role: openai.ChatMessageRoleUser, Content: "Based on the context, determine if your response is required. If yes, reply 'Yes'; if no, reply 'No'"},
@@ -470,8 +480,9 @@ var gHsReaction = []sCustomPrompt{
 
 var gHsGame = []sCustomPrompt{
 	{
-		Id:   0,
-		Name: "IT ALias",
+		Id:       0,
+		Category: "Game",
+		Name:     "IT ALias",
 		Prompt: [][]openai.ChatCompletionMessage{
 			{
 				{Role: openai.ChatMessageRoleUser, Content: "Let’s play IT Charades. You’ll take on the role of the host. The rules are as follows:\n" +
@@ -492,10 +503,12 @@ var gHsGame = []sCustomPrompt{
 		},
 	},
 }
+
 var gIntFacts = []sCustomPrompt{
 	{
-		Id:   0,
-		Name: "General",
+		Id:       0,
+		Category: "Facts",
+		Name:     "General",
 		Prompt: [][]openai.ChatCompletionMessage{
 			{
 				{Role: openai.ChatMessageRoleUser, Content: "Tell me one interesting fact. It's important to start with the phrase 'Interesting fact!'."},
@@ -506,8 +519,9 @@ var gIntFacts = []sCustomPrompt{
 		},
 	},
 	{
-		Id:   1,
-		Name: "Natural scienses",
+		Id:       1,
+		Category: "Facts",
+		Name:     "Natural scienses",
 		Prompt: [][]openai.ChatCompletionMessage{
 			{
 				{Role: openai.ChatMessageRoleUser, Content: "Tell me jone interesting fact from the natural sciences. It's important to start with the phrase 'Interesting fact!'."},
@@ -518,8 +532,9 @@ var gIntFacts = []sCustomPrompt{
 		},
 	},
 	{
-		Id:   2,
-		Name: "Information technologies",
+		Id:       2,
+		Category: "Facts",
+		Name:     "Information technologies",
 		Prompt: [][]openai.ChatCompletionMessage{
 			{
 				{Role: openai.ChatMessageRoleUser, Content: "Tell me one interesting fact from the field of IT. It's important to start with the phrase 'Interesting fact!'."},
@@ -530,8 +545,9 @@ var gIntFacts = []sCustomPrompt{
 		},
 	},
 	{
-		Id:   3,
-		Name: "Cars and games",
+		Id:       3,
+		Category: "Facts",
+		Name:     "Cars and games",
 		Prompt: [][]openai.ChatCompletionMessage{
 			{
 				{Role: openai.ChatMessageRoleUser, Content: "Tell me one interesting fact about cars, racing, or video games. It's important to start with the phrase 'Interesting fact!' and to mention records in a self-deprecating manner."},
@@ -543,26 +559,26 @@ var gIntFacts = []sCustomPrompt{
 	},
 }
 
-var gBot *tgbotapi.BotAPI //Pointer to initialized bot.
-// OpenAI client init
-var gclient *openai.Client
-var gclient_is_busy bool       //Request to API is active
-var gLocale byte               //Localization
-var gToken string              //Bot API token
-var gOwner int64               //Bot's owner chat ID for send confirmations
-var gBotNames []string         //Bot names for calling he in group chats
-var gBotGender int             //Bot's gender
-var gChatsStates []ChatState   //Default chat states initialization
-var gRedisIP string            //DB server address and port
-var gRedisDB int               //DB number in redis
-var gAIToken string            //OpenAI API key
-var gRedisPass string          //Password for redis connect
-var gRedisClient *redis.Client //Pointer for redis client
-var gDir string                //Current dir in OS
-var gLastRequest time.Time     //Time of last request to openAI
-var gRand *rand.Rand           //New Rand generator
-var gContextLength int         //Max context length
-var gCurProcName string        //Name of curren process
-var gUpdatesQty int            //Updates qty
-var gModels []string           //Reached models
-var gVerboseLevel byte         //Logging level
+var gBot *tgbotapi.BotAPI                          //Pointer to initialized bot.
+var gClient *openai.Client                         //OpenAI client init
+var gClient_is_busy bool                           //Request to API is active
+var gLocale byte                                   //Localization
+var gToken string                                  //Bot API token
+var gOwner int64                                   //Bot's owner chat ID for send confirmations
+var gBotNames []string                             //Bot names for calling he in group chats
+var gBotGender int                                 //Bot's gender
+var gChatsStates []ChatState                       //Default chat states initialization
+var gRedisIP string                                //DB server address and port
+var gRedisDB int                                   //DB number in redis
+var gAIToken string                                //OpenAI API key
+var gRedisPass string                              //Password for redis connect
+var gRedisClient *redis.Client                     //Pointer for redis client
+var gDir string                                    //Current dir in OS
+var gLastRequest time.Time                         //Time of last request to openAI
+var gRand *rand.Rand                               //New Rand generator
+var gContextLength int                             //Max context length
+var gCurProcName string                            //Name of curren process
+var gUpdatesQty int                                //Updates qty
+var gModels []string                               //Reached models
+var gVerboseLevel byte                             //Logging level
+var gHsName = [][]openai.ChatCompletionMessage{{}} //Nulled promplt

@@ -18,7 +18,7 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 	var item QuestState                         //Для хранения состояния колбэка
 	var ans Answer                              //Для формирования uuid колбэка
 	msg := tgbotapi.NewMessage(toChat, mesText) //инициализируем сообщение
-	SetCurOperation(IM32[gLocale])
+	SetCurOperation(IM32[gLocale], 0)
 
 	//Message type definition
 	switch quest {
@@ -226,7 +226,7 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 }
 
 func SelectBotStyle(update tgbotapi.Update) {
-	SetCurOperation("Style processing")
+	SetCurOperation("Style processing", 0)
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 	if err != nil {
@@ -237,7 +237,7 @@ func SelectBotStyle(update tgbotapi.Update) {
 
 func SelectBotCharacter(update tgbotapi.Update) {
 	var chatItem ChatState
-	SetCurOperation("Character type")
+	SetCurOperation("Character type", 0)
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
 	if chatItem.ChatID != 0 {
@@ -247,7 +247,7 @@ func SelectBotCharacter(update tgbotapi.Update) {
 }
 
 func SelectBotModel(update tgbotapi.Update) {
-	SetCurOperation("Gpt model select")
+	SetCurOperation("Gpt model select", 0)
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 	if err != nil {
@@ -261,7 +261,7 @@ func SelectChat(update tgbotapi.Update) {
 	var msgString string
 	var chatItem ChatState
 	var keys []string
-	SetCurOperation("processing callback WB lists")
+	SetCurOperation("processing callback WB lists", 0)
 	keys, err = gRedisClient.Keys("ChatState:*").Result()
 	if err != nil {
 		SendToUser(gOwner, E12[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
@@ -298,7 +298,7 @@ func SelectChat(update tgbotapi.Update) {
 }
 
 func SelectChatRights(update tgbotapi.Update) {
-	SetCurOperation("Rights change")
+	SetCurOperation("Rights change", 0)
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 	if err != nil {
@@ -309,7 +309,7 @@ func SelectChatRights(update tgbotapi.Update) {
 
 func SelectChatFacts(update tgbotapi.Update) {
 	var chatItem ChatState
-	SetCurOperation("Chat facts processing")
+	SetCurOperation("Chat facts processing", 0)
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
 	if chatItem.ChatID != 0 {
@@ -318,7 +318,7 @@ func SelectChatFacts(update tgbotapi.Update) {
 }
 
 func DoWithChat(update tgbotapi.Update) {
-	SetCurOperation("Select tuning action")
+	SetCurOperation("Select tuning action", 0)
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 	if err != nil {
@@ -334,7 +334,7 @@ func Menu() {
 
 func UserMenu(update tgbotapi.Update) {
 	var chatItem ChatState
-	SetCurOperation("User menu show")
+	SetCurOperation("User menu show", 0)
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 	if err != nil {

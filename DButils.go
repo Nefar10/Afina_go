@@ -21,7 +21,7 @@ func redisPing(client redis.Client) error {
 
 func ResetDB() {
 	var err error
-	SetCurOperation("Resetting")
+	SetCurOperation("Resetting", 0)
 	err = gRedisClient.FlushDB().Err()
 	if err != nil {
 		SendToUser(gOwner, E10[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
@@ -35,7 +35,7 @@ func FlushCache() {
 	var keys []string
 	var err error
 	var chatItem ChatState
-	SetCurOperation("Cache cleaning")
+	SetCurOperation("Cache cleaning", 0)
 	keys, err = gRedisClient.Keys("QuestState:*").Result()
 	if err != nil {
 		SendToUser(gOwner, E12[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)

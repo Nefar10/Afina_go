@@ -12,7 +12,7 @@ import (
 )
 
 func ProcessCallbacks(update tgbotapi.Update) {
-	SetCurOperation("Callback processing")
+	SetCurOperation("Callback processing", 0)
 	cbData := update.CallbackQuery.Data
 	switch {
 	case strings.Contains(cbData, "WHITELIST") || strings.Contains(cbData, "BLACKLIST") || strings.Contains(cbData, "INPROCESS"):
@@ -83,7 +83,7 @@ func ProcessMessage(update tgbotapi.Update) {
 	var chatItem ChatState                          //Current ChatState item
 	var ChatMessages []openai.ChatCompletionMessage //Current prompt
 	var FullPromt []openai.ChatCompletionMessage    //Messages to send
-	SetCurOperation("Update message processing")
+	SetCurOperation("Update message processing", 0)
 	chatItem = GetChatStateDB("ChatState:" + strconv.FormatInt(update.Message.Chat.ID, 10))
 	if chatItem.ChatID != 0 && chatItem.BotState == RUN {
 		switch chatItem.AllowState { //Если доступ предоставлен
@@ -111,7 +111,7 @@ func ProcessMessage(update tgbotapi.Update) {
 						currentTime := time.Now()
 						elapsedTime := currentTime.Sub(gLastRequest)
 						time.Sleep(time.Second)
-						if elapsedTime >= 20*time.Second && !gclient_is_busy {
+						if elapsedTime >= 20*time.Second && !gClient_is_busy {
 							break
 						}
 					}
@@ -157,11 +157,11 @@ func ProcessMessage(update tgbotapi.Update) {
 					//log.Println(FullPromt)
 					//update.Message.Chat.Type == "private" ||
 					if toBotFlag {
-						gclient_is_busy = true
+						gClient_is_busy = true
 						gLastRequest = time.Now() //Прежде чем формировать запрос, запомним текущее время
 						for i := 0; i < 2; i++ {
 							gBot.Send(action)                          //Здесь мы продолжаем делать вид, что бот отреагировал на новое сообщение
-							resp, err := gclient.CreateChatCompletion( //Формируем запрос к мозгам
+							resp, err := gClient.CreateChatCompletion( //Формируем запрос к мозгам
 								context.Background(),
 								openai.ChatCompletionRequest{
 									Model:       chatItem.Model,
@@ -178,7 +178,7 @@ func ProcessMessage(update tgbotapi.Update) {
 								break
 							}
 						}
-						gclient_is_busy = false
+						gClient_is_busy = false
 						ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: msg.Text})
 					}
 					RenewDialog(strconv.FormatInt(update.Message.Chat.ID, 10), ChatMessages)
@@ -217,9 +217,9 @@ func ProcessMessage(update tgbotapi.Update) {
 
 func ProcessMember(update tgbotapi.Update) {
 	var chatItem ChatState
-	SetCurOperation("Chat member processing")
+	SetCurOperation("Chat member processing", 0)
 	if update.MyChatMember.NewChatMember.Status == "member" || update.MyChatMember.NewChatMember.Status == "administrator" {
-		SetCurOperation("Chat initialization")
+		SetCurOperation("Chat initialization", 0)
 		chatItem = ChatState{
 			ChatID:      update.MyChatMember.Chat.ID,
 			BotState:    RUN,

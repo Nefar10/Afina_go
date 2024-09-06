@@ -35,12 +35,12 @@ func ProcessInitiative() {
 					currentTime := time.Now()
 					elapsedTime := currentTime.Sub(gLastRequest)
 					time.Sleep(time.Second)
-					if elapsedTime >= 20*time.Second && !gclient_is_busy {
+					if elapsedTime >= 20*time.Second && !gClient_is_busy {
 						break
 					}
 				}
 				gLastRequest = time.Now() //Прежде чем формировать запрос, запомним текущее время
-				gclient_is_busy = true
+				gClient_is_busy = true
 				//ChatMessages = gIntFacts[chatItem.InterFacts].Prompt[gLocale]
 				//currentTime := time.Now()
 				//ChatMessages[len(ChatMessages)-1].Content = currentTime.Format("2006-01-02 15:04:05") + " " + ChatMessages[len(ChatMessages)-1].Content
@@ -49,7 +49,7 @@ func ProcessInitiative() {
 				FullPromt = append(FullPromt, gHsGender[gBotGender].Prompt[gLocale]...)
 				FullPromt = append(FullPromt, gIntFacts[chatItem.InterFacts].Prompt[gLocale]...)
 				//log.Println(FullPromt)
-				resp, err := gclient.CreateChatCompletion( //Формируем запрос к мозгам
+				resp, err := gClient.CreateChatCompletion( //Формируем запрос к мозгам
 					context.Background(),
 					openai.ChatCompletionRequest{
 						Model:       chatItem.Model,
@@ -57,7 +57,7 @@ func ProcessInitiative() {
 						Messages:    FullPromt,
 					},
 				)
-				gclient_is_busy = false
+				gClient_is_busy = false
 				if err != nil {
 					SendToUser(gOwner, E17[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, INFO, 0)
 				} else {
@@ -82,7 +82,7 @@ func isMyReaction(messages []openai.ChatCompletionMessage, Bstyle int, History [
 		FullPromt = append(FullPromt, messages...)
 	}
 	FullPromt = append(FullPromt, gHsReaction[0].Prompt[gLocale]...)
-	resp, err := gclient.CreateChatCompletion(
+	resp, err := gClient.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
 			Model:       BASEGPTMODEL,
