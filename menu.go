@@ -18,13 +18,13 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 	var item QuestState                         //Для хранения состояния колбэка
 	var ans Answer                              //Для формирования uuid колбэка
 	msg := tgbotapi.NewMessage(toChat, mesText) //инициализируем сообщение
-	SetCurOperation(IM32[gLocale], 0)
+	SetCurOperation(gIm[32][gLocale], 0)
 
 	//Message type definition
 	switch quest {
 	case ERROR:
 		{
-			msg.Text = mesText + "\n" + IM0[gLocale]
+			msg.Text = mesText + "\n" + gIm[0][gLocale]
 			Log(mesText, ERR, nil)
 		}
 	case INFO:
@@ -51,11 +51,11 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 			jsonDataBlock, _ = json.Marshal(ans)
 			numericKeyboard := tgbotapi.NewInlineKeyboardMarkup( //формируем меню для ответа
 				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData(M1[gLocale], string(jsonDataAllow)),
-					tgbotapi.NewInlineKeyboardButtonData(M2[gLocale], string(jsonDataDeny)),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[1][gLocale], string(jsonDataAllow)),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[2][gLocale], string(jsonDataDeny)),
 				),
 				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData(M3[gLocale], string(jsonDataBlock)),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[3][gLocale], string(jsonDataBlock)),
 				))
 			msg.ReplyMarkup = numericKeyboard
 
@@ -64,21 +64,21 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 		{
 			var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup( //формируем меню для ответа
 				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData(M4[gLocale], "WHITELIST"),
-					tgbotapi.NewInlineKeyboardButtonData(M5[gLocale], "BLACKLIST"),
-					tgbotapi.NewInlineKeyboardButtonData(M6[gLocale], "INPROCESS"),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[4][gLocale], "WHITELIST"),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[5][gLocale], "BLACKLIST"),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[6][gLocale], "INPROCESS"),
 				),
 				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData(M7[gLocale], "RESETTODEFAULTS"),
-					tgbotapi.NewInlineKeyboardButtonData(M8[gLocale], "FLUSHCACHE"),
-					tgbotapi.NewInlineKeyboardButtonData(M9[gLocale], "RESTART"),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[7][gLocale], "RESETTODEFAULTS"),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[8][gLocale], "FLUSHCACHE"),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[9][gLocale], "RESTART"),
 				),
 				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData(M10[gLocale], "TUNE_CHAT: "+strconv.FormatInt(toChat, 10)),
-					tgbotapi.NewInlineKeyboardButtonData(M11[gLocale], "CLEAR_CONTEXT: "+strconv.FormatInt(toChat, 10)),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[10][gLocale], "TUNE_CHAT: "+strconv.FormatInt(toChat, 10)),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[11][gLocale], "CLEAR_CONTEXT: "+strconv.FormatInt(toChat, 10)),
 				),
 				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData(M12[gLocale], "GAME_IT_ALIAS: "+strconv.FormatInt(toChat, 10)),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[12][gLocale], "GAME_IT_ALIAS: "+strconv.FormatInt(toChat, 10)),
 				))
 			msg.ReplyMarkup = numericKeyboard
 		}
@@ -86,11 +86,11 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 		{
 			var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup( //формируем меню для ответа
 				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData(M10[gLocale], "INFO: "+strconv.FormatInt(toChat, 10)),
-					tgbotapi.NewInlineKeyboardButtonData(M11[gLocale], "CLEAR_CONTEXT: "+strconv.FormatInt(toChat, 10)),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[10][gLocale], "INFO: "+strconv.FormatInt(toChat, 10)),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[11][gLocale], "CLEAR_CONTEXT: "+strconv.FormatInt(toChat, 10)),
 				),
 				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData(M12[gLocale], "GAME_IT_ALIAS: "+strconv.FormatInt(toChat, 10)),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[12][gLocale], "GAME_IT_ALIAS: "+strconv.FormatInt(toChat, 10)),
 				))
 			msg.ReplyMarkup = numericKeyboard
 		}
@@ -161,23 +161,23 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 		{
 			var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup( //формируем меню для ответа
 				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData(M13[gLocale], "STYLE: "+strconv.FormatInt(chatID[0], 10)),
-					tgbotapi.NewInlineKeyboardButtonData(M14[gLocale], "MODEL_TEMP: "+strconv.FormatInt(chatID[0], 10)),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[13][gLocale], "STYLE: "+strconv.FormatInt(chatID[0], 10)),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[14][gLocale], "MODEL_TEMP: "+strconv.FormatInt(chatID[0], 10)),
 					tgbotapi.NewInlineKeyboardButtonData("Нейромодель", "GPT_MODEL: "+strconv.FormatInt(chatID[0], 10)),
 				),
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData("Инициатива", "INITIATIVE: "+strconv.FormatInt(chatID[0], 10)),
-					tgbotapi.NewInlineKeyboardButtonData(M17[gLocale], "CHAT_FACTS: "+strconv.FormatInt(chatID[0], 10)),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[17][gLocale], "CHAT_FACTS: "+strconv.FormatInt(chatID[0], 10)),
 					tgbotapi.NewInlineKeyboardButtonData("Тип характера", "CHAT_CHARACTER: "+strconv.FormatInt(chatID[0], 10)),
 				),
 				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData(M16[gLocale], "CHAT_HISTORY: "+strconv.FormatInt(chatID[0], 10)),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[16][gLocale], "CHAT_HISTORY: "+strconv.FormatInt(chatID[0], 10)),
 				),
 				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData(M18[gLocale], "RIGHTS: "+strconv.FormatInt(chatID[0], 10)),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[18][gLocale], "RIGHTS: "+strconv.FormatInt(chatID[0], 10)),
 				),
 				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData(M19[gLocale], "MENU"),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[19][gLocale], "MENU"),
 				))
 			msg.ReplyMarkup = numericKeyboard
 		}
@@ -230,9 +230,9 @@ func SelectBotStyle(update tgbotapi.Update) {
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 	if err != nil {
-		SendToUser(gOwner, E15[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+		SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 	}
-	SendToUser(gOwner, IM12[gLocale], GPTSTYLES, 1, chatID)
+	SendToUser(gOwner, gIm[12][gLocale], GPTSTYLES, 1, chatID)
 }
 
 func SelectBotCharacter(update tgbotapi.Update) {
@@ -251,7 +251,7 @@ func SelectBotModel(update tgbotapi.Update) {
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 	if err != nil {
-		SendToUser(gOwner, E15[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+		SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 	}
 	SendToUser(gOwner, "Выберите модель"+chatIDstr, GPTSELECT, 2, chatID)
 }
@@ -264,7 +264,7 @@ func SelectChat(update tgbotapi.Update) {
 	SetCurOperation("processing callback WB lists", 0)
 	keys, err = gRedisClient.Keys("ChatState:*").Result()
 	if err != nil {
-		SendToUser(gOwner, E12[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+		SendToUser(gOwner, gErr[12][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 	}
 	//keys processing
 	msgString = ""
@@ -302,7 +302,7 @@ func SelectChatRights(update tgbotapi.Update) {
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 	if err != nil {
-		SendToUser(gOwner, E15[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+		SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 	}
 	SendToUser(gOwner, "Изменить права доступа для чата "+chatIDstr, ACCESS, 2, chatID)
 }
@@ -313,7 +313,7 @@ func SelectChatFacts(update tgbotapi.Update) {
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
 	if chatItem.ChatID != 0 {
-		SendToUser(gOwner, IM14[gLocale], INTFACTS, 1, chatItem.ChatID)
+		SendToUser(gOwner, gIm[14][gLocale], INTFACTS, 1, chatItem.ChatID)
 	}
 }
 
@@ -322,14 +322,14 @@ func DoWithChat(update tgbotapi.Update) {
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 	if err != nil {
-		SendToUser(gOwner, E15[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+		SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 	}
 	SendToUser(update.CallbackQuery.From.ID, "Выберите действие c чатом "+chatIDstr, TUNECHAT, 1, chatID)
 }
 
 func Menu() {
 	gCurProcName = "Menu show"
-	SendToUser(gOwner, IM12[gLocale], MENU, 1)
+	SendToUser(gOwner, gIm[12][gLocale], MENU, 1)
 }
 
 func UserMenu(update tgbotapi.Update) {
@@ -338,10 +338,10 @@ func UserMenu(update tgbotapi.Update) {
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 	if err != nil {
-		SendToUser(gOwner, E15[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+		SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 	}
 	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
 	if chatItem.ChatID != 0 {
-		SendToUser(chatID, IM12[gLocale], USERMENU, 1)
+		SendToUser(chatID, gIm[12][gLocale], USERMENU, 1)
 	}
 }

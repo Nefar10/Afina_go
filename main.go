@@ -40,13 +40,13 @@ func init() {
 	//Read bot API key from OS env
 	gToken = os.Getenv(TOKEN_NAME_IN_OS)
 	if gToken == "" {
-		Log(E1[gLocale]+TOKEN_NAME_IN_OS+IM29[gLocale]+gCurProcName, CRIT, nil)
+		Log(gErr[1][gLocale]+TOKEN_NAME_IN_OS+gIm[29][gLocale]+gCurProcName, CRIT, nil)
 	}
 
 	//Read owner's chatID from OS env
 	owner, err = strconv.Atoi(os.Getenv(OWNER_IN_OS))
 	if err != nil {
-		Log(E2[gLocale]+OWNER_IN_OS+IM29[gLocale]+gCurProcName, CRIT, err)
+		Log(gErr[2][gLocale]+OWNER_IN_OS+gIm[29][gLocale]+gCurProcName, CRIT, err)
 	} else {
 		gOwner = int64(owner) //Storing owner's chat ID in variable
 		gChangeSettings = gOwner
@@ -55,37 +55,37 @@ func init() {
 	//Telegram bot init
 	gBot, err = tgbotapi.NewBotAPI(gToken)
 	if err != nil {
-		Log(E6[gLocale]+IM29[gLocale]+gCurProcName, CRIT, err)
+		Log(gErr[6][gLocale]+gIm[29][gLocale]+gCurProcName, CRIT, err)
 	} else {
 		if gVerboseLevel > 1 {
 			gBot.Debug = true
 		}
-		Log(IM30[gLocale]+gBot.Self.UserName, NOERR, nil)
+		Log(gIm[30][gLocale]+gBot.Self.UserName, NOERR, nil)
 	}
 
 	//Current dir init
 	gDir, err = os.Getwd()
 	if err != nil {
-		SendToUser(gOwner, E8[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+		SendToUser(gOwner, gErr[8][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 	}
 
 	//Read redis connector options from OS env
 	//Redis IP
 	gRedisIP = os.Getenv(REDIS_IN_OS)
 	if gRedisIP == "" {
-		SendToUser(gOwner, E3[gLocale]+REDIS_IN_OS+IM29[gLocale]+gCurProcName, ERROR, 0)
+		SendToUser(gOwner, gErr[3][gLocale]+REDIS_IN_OS+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 	}
 
 	//Redis password
 	gRedisPass = os.Getenv(REDIS_PASS_IN_OS)
 	if gRedisIP == "" {
-		SendToUser(gOwner, E4[gLocale]+REDIS_PASS_IN_OS+IM29[gLocale]+gCurProcName, ERROR, 0)
+		SendToUser(gOwner, gErr[4][gLocale]+REDIS_PASS_IN_OS+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 	}
 
 	//DB ID
 	db, err = strconv.Atoi(os.Getenv(REDISDB_IN_OS))
 	if err != nil {
-		SendToUser(gOwner, E5[gLocale]+REDISDB_IN_OS+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+		SendToUser(gOwner, gErr[5][gLocale]+REDISDB_IN_OS+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 	} else {
 		gRedisDB = db //Storing DB ID
 	}
@@ -100,20 +100,20 @@ func init() {
 	//Chek redis connection
 	err = redisPing(*gRedisClient)
 	if err != nil {
-		SendToUser(gOwner, E9[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+		SendToUser(gOwner, gErr[9][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 	}
 
 	//Read OpenAI API token from OS env
 	gAIToken = os.Getenv(AI_IN_OS)
 	if gAIToken == "" {
-		SendToUser(gOwner, E7[gLocale]+AI_IN_OS+IM29[gLocale]+gCurProcName, ERROR, 0)
+		SendToUser(gOwner, gErr[7][gLocale]+AI_IN_OS+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 	}
 
 	//Read bot names from OS env
 	gBotNames = strings.Split(os.Getenv(BOTNAME_IN_OS), ",")
 	if gBotNames[0] == "" {
 		gBotNames = gDefBotNames
-		SendToUser(gOwner, IM1[gLocale]+BOTNAME_IN_OS+IM29[gLocale]+gCurProcName, INFO, 0)
+		SendToUser(gOwner, gIm[1][gLocale]+BOTNAME_IN_OS+gIm[29][gLocale]+gCurProcName, INFO, 0)
 	}
 
 	//Bot naming prompt
@@ -150,7 +150,7 @@ func init() {
 		UserName:    "All",
 		BotState:    SLEEP,
 		Type:        "private",
-		History:     gHsNulled[gLocale],
+		History:     gHsBasePrompt[gLocale],
 		InterFacts:  0,
 		Bstyle:      0,
 		SetState:    NO_ONE,
@@ -164,14 +164,14 @@ func init() {
 		UserName:    "Owner",
 		BotState:    RUN,
 		Type:        "private",
-		History:     gHsNulled[gLocale],
+		History:     gHsBasePrompt[gLocale],
 		InterFacts:  0,
 		Bstyle:      0,
 		SetState:    NO_ONE,
 		CharType:    ESFJ})
 
 	//Storing default chat states to DB
-	SetCurOperation(IM31[gLocale], 0)
+	SetCurOperation(gIm[31][gLocale], 0)
 	for _, item := range gChatsStates {
 		SetChatStateDB(item)
 	}
@@ -185,7 +185,7 @@ func init() {
 	gModels = nil
 	models, err := gClient.ListModels(ctx)
 	if err != nil {
-		SendToUser(gOwner, E18[gLocale], INFO, 1)
+		SendToUser(gOwner, gErr[18][gLocale], INFO, 1)
 	} else {
 		for _, model := range models.Models {
 			if strings.Contains(strings.ToLower(model.ID), "gpt-4o") {
@@ -194,9 +194,8 @@ func init() {
 		}
 	}
 	gClient_is_busy = false
-
 	//Send init complete message to owner
-	SendToUser(gOwner, IM3[gLocale]+" "+IM13[gLocale], INFO, 0)
+	SendToUser(gOwner, gIm[3][gLocale]+" "+gIm[13][gLocale], INFO, 0)
 }
 
 func ProcessMessages(update tgbotapi.Update) {
@@ -210,8 +209,18 @@ func ProcessMessages(update tgbotapi.Update) {
 		switch {
 		case update.Message.IsCommand():
 			ProcessCommand(update)
+		case update.Message.Location != nil:
+			//ProcessLocation(update)
 		default:
 			ProcessMessage(update)
+		}
+	case update.EditedMessage != nil:
+		switch {
+		case update.EditedMessage.Location != nil:
+			//ProcessLocation(update)
+		default:
+			{
+			}
 		}
 	}
 }

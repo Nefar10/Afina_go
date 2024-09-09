@@ -15,12 +15,12 @@ func GameAlias(update tgbotapi.Update) {
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 	if err != nil {
-		SendToUser(gOwner, E15[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+		SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 	}
 	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
 	if chatItem.ChatID != 0 {
 		ChatMessages = append(ChatMessages, gHsGame[0].Prompt[gLocale]...)
 		RenewDialog(chatIDstr, ChatMessages)
-		SendToUser(chatID, IM16[gLocale], NOTHING, 0)
+		SendToUser(chatID, gIm[16][gLocale], NOTHING, 0)
 	}
 }

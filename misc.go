@@ -38,12 +38,12 @@ func GetChatStateDB(key string) ChatState {
 	jsonStr, err = gRedisClient.Get(key).Result()
 	if err != nil {
 		Log("Ошибка", ERR, err)
-		//SendToUser(gOwner, E13[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+		//SendToUser(gOwner, E13[gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 		return ChatState{}
 	} else {
 		err = json.Unmarshal([]byte(jsonStr), &chatItem)
 		if err != nil {
-			SendToUser(gOwner, E14[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+			SendToUser(gOwner, gErr[14][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 		}
 		return chatItem
 	}
@@ -55,7 +55,7 @@ func RenewDialog(chatIDstr string, ChatMessages []openai.ChatCompletionMessage) 
 	SetCurOperation("Update dialog", 0)
 	jsonData, err = json.Marshal(ChatMessages)
 	if err != nil {
-		SendToUser(gOwner, E11[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+		SendToUser(gOwner, gErr[11][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 	}
 	DBWrite("Dialog:"+chatIDstr, string(jsonData), 0)
 }
@@ -70,12 +70,12 @@ func GetChatMessages(key string) []openai.ChatCompletionMessage {
 		Log("Ошибка", ERR, err)
 		return []openai.ChatCompletionMessage{}
 	} else if err != nil {
-		SendToUser(gOwner, E13[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+		SendToUser(gOwner, gErr[13][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 		return []openai.ChatCompletionMessage{}
 	} else { //Если диалог уже существует
 		err = json.Unmarshal([]byte(msgString), &ChatMessages)
 		if err != nil {
-			SendToUser(gOwner, E14[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+			SendToUser(gOwner, gErr[14][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 		}
 		return ChatMessages
 	}
@@ -83,7 +83,7 @@ func GetChatMessages(key string) []openai.ChatCompletionMessage {
 
 func Restart() {
 	SetCurOperation("Restarting", 0)
-	SendToUser(gOwner, IM5[gLocale], INFO, 1)
+	SendToUser(gOwner, gIm[5][gLocale], INFO, 1)
 	os.Exit(0)
 }
 
@@ -94,7 +94,7 @@ func ClearContext(update tgbotapi.Update) {
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 	if err != nil {
-		SendToUser(gOwner, E15[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+		SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 	}
 	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
 	if chatItem.ChatID != 0 {
@@ -134,13 +134,13 @@ func CheckChatRights(update tgbotapi.Update) {
 	if err == nil {
 		jsonStr, err = gRedisClient.Get("QuestState:" + ansItem.CallbackID.String()).Result() //читаем состояние запрса из БД
 		if err == redis.Nil {
-			SendToUser(gOwner, E16[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, INFO, 0)
+			SendToUser(gOwner, gErr[16][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, INFO, 0)
 		} else if err != nil {
-			SendToUser(gOwner, E13[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+			SendToUser(gOwner, gErr[13][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 		} else {
 			err = json.Unmarshal([]byte(jsonStr), &questItem)
 			if err != nil {
-				SendToUser(gOwner, E14[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+				SendToUser(gOwner, gErr[14][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 			}
 			if questItem.State == QUEST_IN_PROGRESS {
 				chatItem = GetChatStateDB("ChatState:" + strconv.FormatInt(questItem.ChatID, 10))
@@ -149,20 +149,20 @@ func CheckChatRights(update tgbotapi.Update) {
 					case ALLOW:
 						{
 							chatItem.AllowState = ALLOW
-							SendToUser(gOwner, IM6[gLocale], INFO, 0)
-							SendToUser(chatItem.ChatID, IM7[gLocale], INFO, 1)
+							SendToUser(gOwner, gIm[6][gLocale], INFO, 0)
+							SendToUser(chatItem.ChatID, gIm[7][gLocale], INFO, 1)
 						}
 					case DISALLOW:
 						{
 							chatItem.AllowState = DISALLOW
-							SendToUser(gOwner, IM8[gLocale], INFO, 0)
-							SendToUser(chatItem.ChatID, IM9[gLocale], INFO, 1)
+							SendToUser(gOwner, gIm[8][gLocale], INFO, 0)
+							SendToUser(chatItem.ChatID, gIm[9][gLocale], INFO, 1)
 						}
 					case BLACKLISTED:
 						{
 							chatItem.AllowState = BLACKLISTED
-							SendToUser(gOwner, IM10[gLocale], INFO, 0)
-							SendToUser(chatItem.ChatID, IM11[gLocale], INFO, 1)
+							SendToUser(gOwner, gIm[10][gLocale], INFO, 0)
+							SendToUser(chatItem.ChatID, gIm[11][gLocale], INFO, 1)
 						}
 					}
 					SetChatStateDB(chatItem)

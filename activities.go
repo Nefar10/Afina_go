@@ -21,7 +21,7 @@ func ProcessInitiative() {
 	rd := gRand.Intn(1000) + 1
 	keys, err = gRedisClient.Keys("ChatState:*").Result()
 	if err != nil {
-		SendToUser(gOwner, E12[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, ERROR, 0)
+		SendToUser(gOwner, gErr[12][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 	}
 	gCurProcName = "Initiative processing"
 	//keys processing
@@ -59,7 +59,7 @@ func ProcessInitiative() {
 				)
 				gClient_is_busy = false
 				if err != nil {
-					SendToUser(gOwner, E17[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, INFO, 0)
+					SendToUser(gOwner, gErr[17][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, INFO, 0)
 				} else {
 					//log.Printf("Чат ID: %d Токенов использовано: %d", chatItem.ChatID, resp.Usage.TotalTokens)
 					SendToUser(chatItem.ChatID, resp.Choices[0].Message.Content, NOTHING, 0)
@@ -73,8 +73,9 @@ func ProcessInitiative() {
 	}
 }
 
-func isMyReaction(messages []openai.ChatCompletionMessage, Bstyle int, History []openai.ChatCompletionMessage) bool {
+func isMyReaction(messages []openai.ChatCompletionMessage, CharPrmt []openai.ChatCompletionMessage, History []openai.ChatCompletionMessage) bool {
 	var FullPromt []openai.ChatCompletionMessage
+	FullPromt = append(FullPromt, CharPrmt...)
 	FullPromt = append(FullPromt, History...)
 	if len(messages) >= 3 {
 		FullPromt = append(FullPromt, messages[len(messages)-3:]...)
@@ -91,11 +92,11 @@ func isMyReaction(messages []openai.ChatCompletionMessage, Bstyle int, History [
 		},
 	)
 	if err != nil {
-		SendToUser(gOwner, E17[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, INFO, 0)
+		SendToUser(gOwner, gErr[17][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, INFO, 0)
 		time.Sleep(20 * time.Second)
 	} else {
 
-		if strings.Contains(resp.Choices[0].Message.Content, R1[gLocale]) {
+		if strings.Contains(resp.Choices[0].Message.Content, gBotReaction[0][gLocale]) {
 			return true
 		} else {
 			return false

@@ -72,9 +72,9 @@ func ProcessCommand(update tgbotapi.Update) {
 	switch command {
 	case "menu":
 		if update.Message.Chat.ID == gOwner {
-			SendToUser(gOwner, IM12[gLocale], MENU, 1)
+			SendToUser(gOwner, gIm[12][gLocale], MENU, 1)
 		} else {
-			SendToUser(update.Message.Chat.ID, IM12[gLocale], USERMENU, 1)
+			SendToUser(update.Message.Chat.ID, gIm[12][gLocale], USERMENU, 1)
 		}
 	}
 }
@@ -126,11 +126,6 @@ func ProcessMessage(update tgbotapi.Update) {
 						toBotFlag = true
 						//		break
 					}
-					if !toBotFlag && gUpdatesQty == 0 {
-						if isMyReaction(ChatMessages, chatItem.Bstyle, chatItem.History) {
-							toBotFlag = true
-						}
-					}
 					if len(ChatMessages) > 20 {
 						// Удаляем первые элементы, оставляя последние 10
 						ChatMessages = ChatMessages[1:]
@@ -145,11 +140,17 @@ func ProcessMessage(update tgbotapi.Update) {
 							{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
 						},
 					}
+					if !toBotFlag && gUpdatesQty == 0 {
+						if isMyReaction(ChatMessages, CharPrmt[gLocale], chatItem.History) {
+							toBotFlag = true
+						}
+					}
 
 					FullPromt = nil
 					FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...)
 					FullPromt = append(FullPromt, gHsGender[gBotGender].Prompt[gLocale]...)
 					FullPromt = append(FullPromt, CharPrmt[gLocale]...)
+					FullPromt = append(FullPromt, gHsBasePrompt[gLocale]...)
 					FullPromt = append(FullPromt, chatItem.History...)
 					FullPromt = append(FullPromt, ChatMessages...)
 					//log.Println(ChatMessages)
@@ -170,7 +171,7 @@ func ProcessMessage(update tgbotapi.Update) {
 								},
 							)
 							if err != nil {
-								SendToUser(gOwner, E17[gLocale]+err.Error()+IM29[gLocale]+gCurProcName, INFO, 0)
+								SendToUser(gOwner, gErr[17][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, INFO, 0)
 								time.Sleep(20 * time.Second)
 							} else {
 								//log.Printf("Чат ID: %d Токенов использовано: %d", update.Message.Chat.ID, resp.Usage.TotalTokens)
@@ -230,17 +231,19 @@ func ProcessMember(update tgbotapi.Update) {
 			Model:       BASEGPTMODEL,
 			Temperature: 0.5,
 			Inity:       0,
-			History: append(gHsNulled[gLocale],
-				openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "."},
-				openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"}),
-			InterFacts: 0,
-			Bstyle:     0,
-			SetState:   NO_ONE,
-			CharType:   ESTJ,
+			History:     gHsBasePrompt[gLocale],
+			InterFacts:  0,
+			Bstyle:      0,
+			SetState:    NO_ONE,
+			CharType:    ESTJ,
 		}
 		SetChatStateDB(chatItem)
 	} else if update.MyChatMember.NewChatMember.Status == "left" {
 		DestroyChat(strconv.FormatInt(update.MyChatMember.Chat.ID, 10))
 		SendToUser(gOwner, "Чат был закрыт, информация о нем удалена из БД", INFO, 1)
 	}
+}
+
+func ProcessLocation(update tgbotapi.Update) {
+
 }

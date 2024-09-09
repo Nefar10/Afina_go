@@ -75,7 +75,7 @@ const (
 	ERR   = 1
 	CRIT  = 2
 	//VERSION
-	VER = "0.20.1"
+	VER = "0.21.1"
 	//CHARAKTER TYPES
 	ISTJ = 1  // (Инспектор): Ответственный, организованный, практичный.
 	ISFJ = 2  // (Защитник): Заботливый, внимательный, преданный.
@@ -95,11 +95,26 @@ const (
 	ENTJ = 16 // (Командир): Решительный, стратегический, лидер по натуре.
 )
 
+// Character type constants
 var gCT = [16]string{"ISTJ", "ISFJ", "INFJ", "INTJ", "ISTP", "ISFP", "INFP", "INTP", "ESTP", "ESFP", "ENFP", "ENTP", "ESTJ", "ESFJ", "ENFJ", "ENTJ"}
-
 var gCTDescr = [2][16]string{
 	{
-		"1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "1", "2", "3", "4", "5", "6",
+		"(Inspector): Responsible, organized, practical.",
+		"(Protector): Caring, attentive, devoted.",
+		"(Advisor): Intuitive, idealistic, deeply feeling.",
+		"(Strategist): Analytical, independent, goal-oriented.",
+		"(Master): Practical, flexible, problem-solving.",
+		"(Artist): Creative, sensitive, appreciating beauty.",
+		"(Dreamer): Idealistic, emotional, searching for meaning.",
+		"(Thinker): Logical, independent, theoretical.",
+		"(Dynamo): Energetic, practical, adventure-loving.",
+		"(Executor): Sociable, cheerful, life-loving.",
+		"(Inspirer): Creative, enthusiastic, seeking new opportunities.",
+		"(Innovator): Innovative, loving discussions and new ideas.",
+		"(Leader): Organized, practical, results-oriented.",
+		"(Helper): Caring, sociable, striving to help others.",
+		"(Mentor): Inspiring, caring, able to lead others.",
+		"(Commander): Decisive, strategic, a natural leader.",
 	},
 	{
 		"(Инспектор): Ответственный, организованный, практичный.",
@@ -121,100 +136,109 @@ var gCTDescr = [2][16]string{
 	},
 }
 
-// ERRORS
-var E1 = [2]string{" Telegram bot API key not forund in OS environment ", " Не найден API ключ телеграмм бота в переменных окружения "}
-var E2 = [2]string{" Owner's chat ID not found or not valid in os environment ", " Не найден ID чата владельца в переменных окружения "}
-var E3 = [2]string{" DB server IP address and port not found in OS environment ", " Адрес сервера базы данных не найден в переменных окружения "}
-var E4 = [2]string{" DB password not found in OS environment ", " Пароль к базе данных не найден в переменных окружения "}
-var E5 = [2]string{" DB ID not forind or not valid in OS environment ", " Идентификатор базы не найден в переменных окружения "}
-var E6 = [2]string{" Telegram bot initialization error ", " Ошибка инициализации телеграмм бота "}
-var E7 = [2]string{" OpenAI API tocken not found in OS environment ", " API ключ OpenAI не найден в перменных окружения "}
-var E8 = [2]string{" Error initializing work dir ", " Ошибка инициализации рабочей директории "}
-var E9 = [2]string{" DB connection error ", " Ошибка подключения к базе данных "}
-var E10 = [2]string{" Error writting to DB ", " Ошибка записи в базу данных "}
-var E11 = [2]string{" Error json marshaling ", " Ошибка преобразования в json "}
-var E12 = [2]string{" Error reading keys from DB ", " Ошибка чтения ключа из базы данных "}
-var E13 = [2]string{" Error reading key value from DB ", " Ошибка чтения знаяения ключа из базы данных "}
-var E14 = [2]string{" Error json unmarshaling ", " Ошибка парсинга Json "}
-var E15 = [2]string{" Error convetring string to int ", " Ошибка преобразования строки в число "}
-var E16 = [2]string{" Unknown Error ", " Неизвестная ошибка "}
-var E17 = [2]string{" ChatCompletion error: %v\n ", " Ошибка обработки запроса к нейросети: %v\n"}
-var E18 = [2]string{"Error retrieving models:", "Ошибка получения списка моделей"}
-
-// Bot defaults
-var gDefBotNames = []string{"Athena", "Афина"}
+// Errors constants
+var gErr = [][2]string{
+	{"Telegram bot API key not forund in OS environment", "Не найден API ключ телеграмм бота в переменных окружения"},
+	{"Telegram bot API key not forund in OS environment", "Не найден API ключ телеграмм бота в переменных окружения"},
+	{"Owner's chat ID not found or not valid in os environment", "Не найден ID чата владельца в переменных окружения"},
+	{"DB server IP address and port not found in OS environment", "Адрес сервера базы данных не найден в переменных окружения"},
+	{"DB password not found in OS environment", "Пароль к базе данных не найден в переменных окружения"},
+	{"DB ID not forind or not valid in OS environment", "Идентификатор базы не найден в переменных окружения"},
+	{"Telegram bot initialization error", "Ошибка инициализации телеграмм бота"},
+	{"OpenAI API tocken not found in OS environment", "API ключ OpenAI не найден в перменных окружения"},
+	{"Error initializing work dir", "Ошибка инициализации рабочей директории"},
+	{"DB connection error", "Ошибка подключения к базе данных"},
+	{"Error writting to DB", "Ошибка записи в базу данных"},
+	{"Error json marshaling", "Ошибка преобразования в json"},
+	{"Error reading keys from DB", "Ошибка чтения ключа из базы данных"},
+	{"Error reading key value from DB", "Ошибка чтения знаяения ключа из базы данных"},
+	{"Error json unmarshaling", "Ошибка парсинга Json"},
+	{"Error convetring string to int", "Ошибка преобразования строки в число"},
+	{"Unknown Error", "Неизвестная ошибка "},
+	{"ChatCompletion error: %v\n", "Ошибка обработки запроса к нейросети: %v\n"},
+	{"Error retrieving models:", "Ошибка получения списка моделей"},
+}
 
 // INFO MESSAGES
-var IM0 = [2]string{"Process has been stoped", "Процесс был остановлен"}
-var IM1 = [2]string{"Bot name(s) not found or not valid in OS environment.\n Name Afina will be used. ", "Имя бота не найдено или не корректно в переменных окружения.\n Будет использовано имя Afina. "}
-var IM2 = [2]string{"Bot gender not found or not valid in OS environment.\n Neutral gender will be used. ", "Пол бота не найден или некорректен среди переменных окружения.\n Будет использован средний род. "}
-var IM3 = [2]string{"I'm back!", "Я снова с Вами!"}
-var IM4 = [2]string{"All DB data has been remowed. I'll reboot now ", "Все данные в бахе данных будут удалены. Проиводится перезагрузка "}
-var IM5 = [2]string{"I'll be back ", "Я еще вернусь "}
-var IM6 = [2]string{"Access granted ", "Доступ разрешен "}
-var IM7 = [2]string{"I was allowed to communicate with you! ", "Мне было разрешено с вами общаться "}
-var IM8 = [2]string{"Access denied ", "Доступ запрещен "}
-var IM9 = [2]string{"I apologize, but to continue the conversation, it is necessary to subscribe. ", "Простите, но для продолжения общения необходимо оформить подписку. "}
-var IM10 = [2]string{"Access bocked ", "Доступ заблокирован "}
-var IM11 = [2]string{"Congratulations! You have been added to the pranksters list! ", "Поздравляю! Вы были добавлены в список проказников! "}
-var IM12 = [2]string{"Please select what needs to be done. ", "Пожалуйста, выберите, что необходимо выполнить. "}
-var IM13 = [2]string{"Current version is " + VER + " ", "Текущая версия " + VER + " "}
-var IM14 = [2]string{"Choose a topic. ", " Выберите тему "}
-var IM15 = [2]string{"Topic has been changed. ", "Тема изменена "}
-var IM16 = [2]string{"Write - as soon as you are ready to start the game. ", "Пишите - как только будете готовы начать игру. "}
-var IM17 = [2]string{"Choose a style. ", " Выберите стиль общения "}
-var IM18 = [2]string{"The communication style has been changed to friendly. ", "Стиль общения изменен на доброжелательный. "}
-var IM19 = [2]string{"The communication style has been changed to unfriendly. ", "Стиль общения изменен на недоброжелательный. "}
-var IM20 = [2]string{"The communication style has been changed to Mery Poppins. ", "Стиль общения изменен на Мэри Поппинс. "}
-var IM21 = [2]string{"The communication style has been changed to SA. ", "Стиль общения изменен на Сисадмин. "}
-var IM22 = [2]string{" ", ""}
-var IM23 = [2]string{" ", ""}
-var IM24 = [2]string{" ", ""}
-var IM25 = [2]string{" ", ""}
-var IM26 = [2]string{" ", ""}
-var IM27 = [2]string{" ", ""}
-var IM28 = [2]string{" ", ""}
-var IM29 = [2]string{" in process ", " в процессе "}
-var IM30 = [2]string{"Authorized on account ", "Авторизовано с "}
-var IM31 = [2]string{"Chats initialization", "Инициализация чатов"}
-var IM32 = [2]string{"Parsing message to send", "Обработка сообщения перед отправкой"}
+var gIm = [][2]string{
+	{"Process has been stoped", "Процесс был остановлен"},
+	{"Bot name(s) not found or not valid in OS environment.\n Name Afina will be used. ",
+		"Имя бота не найдено или не корректно в переменных окружения.\n Будет использовано имя Afina. "},
+	{"Bot gender not found or not valid in OS environment.\n Neutral gender will be used. ",
+		"Пол бота не найден или некорректен среди переменных окружения.\n Будет использован средний род. "},
+	{"I'm back!", "Я снова с Вами!"},
+	{"All DB data has been remowed. I'll reboot now ", "Все данные в бахе данных будут удалены. Проиводится перезагрузка "},
+	{"I'll be back ", "Я еще вернусь "},
+	{"Access granted ", "Доступ разрешен "},
+	{"I was allowed to communicate with you! ", "Мне было разрешено с вами общаться "},
+	{"Access denied ", "Доступ запрещен "},
+	{"I apologize, but to continue the conversation, it is necessary to subscribe. ",
+		"Простите, но для продолжения общения необходимо оформить подписку. "},
+	{"Access bocked ", "Доступ заблокирован "},
+	{"Congratulations! You have been added to the pranksters list! ", "Поздравляю! Вы были добавлены в список проказников! "},
+	{"Please select what needs to be done. ", "Пожалуйста, выберите, что необходимо выполнить. "},
+	{"Current version is " + VER + " ", "Текущая версия " + VER + " "},
+	{"Choose a topic. ", " Выберите тему "},
+	{"Topic has been changed. ", "Тема изменена "},
+	{"Write - as soon as you are ready to start the game. ", "Пишите - как только будете готовы начать игру. "},
+	{"Choose a style. ", " Выберите стиль общения "},
+	{" ", ""},
+	{" ", ""},
+	{" ", ""},
+	{" ", ""},
+	{" ", ""},
+	{" ", ""},
+	{" ", ""},
+	{" ", ""},
+	{" ", ""},
+	{" ", ""},
+	{" ", ""},
+	{" in process ", " в процессе "},
+	{"Authorized on account ", "Авторизовано с "},
+	{"Chats initialization", "Инициализация чатов"},
+	{"Parsing message to send", "Обработка сообщения перед отправкой"},
+}
 
 // Menus
-var M1 = [2]string{"Yes", "Да"}
-var M2 = [2]string{"No", "Нет"}
-var M3 = [2]string{"To block", "Блокировать"}
-var M4 = [2]string{"Allowed chats", "Разрешенные чаты"}
-var M5 = [2]string{"Prohibited chats", "Запрещенные чаты"}
-var M6 = [2]string{"Without a decision", "Без решения"}
-var M7 = [2]string{"Full reset", "Полный сброс"}
-var M8 = [2]string{"Cache clearing", "Очистка кеша"}
-var M9 = [2]string{"Reboot", "Перезагрузка"}
-var M10 = [2]string{"Change settings", "Изменить параметры"}
-var M11 = [2]string{"Clear context", "Очистить контекст"}
-var M12 = [2]string{"Play IT-Elias", "Играть в IT-Элиас"}
-var M13 = [2]string{"Select model", "Выбрать модель"}
-var M14 = [2]string{"Creativity", "Креативность"}
-var M15 = [2]string{"Context size", "Размер контекста"}
-var M16 = [2]string{"Chat history", "История чата"}
-var M17 = [2]string{"Topic of interesting facts", "Тема интересных фактов"}
-var M18 = [2]string{"Access rights", "Права доступа"}
-var M19 = [2]string{"Go back", "Вернуться назад"}
-var M20 = [2]string{"General facts", "Общие факты"}
-var M21 = [2]string{"Natural sciences", "Естественные науки"}
-var M22 = [2]string{"IT", "Ай-Ти"}
-var M23 = [2]string{"Cars and racing", "Автомобили и гонки"}
-var M24 = [2]string{"-", "-"}
-var M25 = [2]string{"-", "-"}
-var M26 = [2]string{"Information", "Информация"}
-var M27 = [2]string{"-", "-"}
-var M28 = [2]string{"-", "-"}
+var gMenu = [][2]string{
+	{"-", "-"},
+	{"Yes", "Да"},
+	{"No", "Нет"},
+	{"To block", "Блокировать"},
+	{"Allowed chats", "Разрешенные чаты"},
+	{"Prohibited chats", "Запрещенные чаты"},
+	{"Without a decision", "Без решения"},
+	{"Full reset", "Полный сброс"},
+	{"Cache clearing", "Очистка кеша"},
+	{"Reboot", "Перезагрузка"},
+	{"Change settings", "Изменить параметры"},
+	{"Clear context", "Очистить контекст"},
+	{"Play IT-Elias", "Играть в IT-Элиас"},
+	{"Select model", "Выбрать модель"},
+	{"Creativity", "Креативность"},
+	{"Context size", "Размер контекста"},
+	{"Chat history", "История чата"},
+	{"Topic of interesting facts", "Тема интересных фактов"},
+	{"Access rights", "Права доступа"},
+	{"Go back", "Вернуться назад"},
+	{"-", "-"},
+	{"-", "-"},
+	{"-", "-"},
+	{"-", "-"},
+	{"-", "-"},
+	{"-", "-"},
+	{"Information", "Информация"},
+	{"-", "-"},
+	{"-", "-"},
+}
 
-// for my reaction
-var R1 = [2]string{"Yes", "Да"}
-var R2 = [2]string{"No", "Нет"}
+var gBotReaction = [][2]string{
+	{"Yes", "Да"},
+	{"No", "Нет"},
+}
 
 // Global types
-// Chat's structure for storing options in DB and operate with them
+// Chat's structure for storing options in DB and operate with chat item
 type ChatState struct {
 	ChatID      int64                          //Chat ID
 	UserName    string                         //Username
@@ -233,7 +257,7 @@ type ChatState struct {
 	CharType    byte                           //Character type ny myers-Briggs
 }
 
-// Quest operating structure
+// Quest operating structure for processing rights
 type QuestState struct {
 	ChatID     int64     //Chat ID
 	CallbackID uuid.UUID //Quest uuid
@@ -248,6 +272,17 @@ type Answer struct {
 	State      int       //Solve
 }
 
+// Location structure for storing and processing user location
+type UserLocation struct {
+	//UserChat
+	Longtitude           float32
+	Latitude             float32
+	HorizontalAccuracy   int
+	LivePeriod           int
+	Heading              int
+	ProximityAlertRadius int
+}
+
 type sCustomPrompt struct {
 	Id       int
 	Category string
@@ -255,9 +290,7 @@ type sCustomPrompt struct {
 	Prompt   [][]openai.ChatCompletionMessage
 }
 
-var gChangeSettings int64
-
-var gHsNulled = [][]openai.ChatCompletionMessage{
+var gHsBasePrompt = [][]openai.ChatCompletionMessage{
 	{
 		{Role: openai.ChatMessageRoleUser, Content: "You always talk about yourself when you are introduced to a group.\n" +
 			"You always respond if someone addresses you or mentions your name.\n" +
@@ -268,7 +301,8 @@ var gHsNulled = [][]openai.ChatCompletionMessage{
 		{Role: openai.ChatMessageRoleUser, Content: "Ты всегда рассказываешь о себе, когда тебя представляют группе.\n" +
 			"Ты всегда отвечаешь, если к тебе обращаются или упоминается твое имя.\n" +
 			"Ты не вмешиваешься в разговор других участников между собой, если он не касается описанных далее фактов.\n" +
-			"Ты стараешься нейтрализовать конфликт в спорах между участниками.\n"},
+			"Ты стараешься нейтрализовать конфликт в спорах между участниками.\n" +
+			"Ты не используешь типовой паттерн gpt, подобный 'отвечу на любые вопросы', при ответах.\n"},
 	},
 }
 
@@ -559,26 +593,31 @@ var gIntFacts = []sCustomPrompt{
 	},
 }
 
-var gBot *tgbotapi.BotAPI                          //Pointer to initialized bot.
-var gClient *openai.Client                         //OpenAI client init
-var gClient_is_busy bool                           //Request to API is active
-var gLocale byte                                   //Localization
-var gToken string                                  //Bot API token
-var gOwner int64                                   //Bot's owner chat ID for send confirmations
-var gBotNames []string                             //Bot names for calling he in group chats
-var gBotGender int                                 //Bot's gender
-var gChatsStates []ChatState                       //Default chat states initialization
-var gRedisIP string                                //DB server address and port
-var gRedisDB int                                   //DB number in redis
-var gAIToken string                                //OpenAI API key
-var gRedisPass string                              //Password for redis connect
-var gRedisClient *redis.Client                     //Pointer for redis client
-var gDir string                                    //Current dir in OS
-var gLastRequest time.Time                         //Time of last request to openAI
-var gRand *rand.Rand                               //New Rand generator
-var gContextLength int                             //Max context length
-var gCurProcName string                            //Name of curren process
-var gUpdatesQty int                                //Updates qty
-var gModels []string                               //Reached models
-var gVerboseLevel byte                             //Logging level
+var gBot *tgbotapi.BotAPI      //Pointer to initialized bot.
+var gClient *openai.Client     //OpenAI client init
+var gClient_is_busy bool       //Request to API is active
+var gLocale byte               //Localization
+var gToken string              //Bot API token
+var gOwner int64               //Bot's owner chat ID for send confirmations
+var gBotNames []string         //Bot names for calling he in group chats
+var gBotGender int             //Bot's gender
+var gChatsStates []ChatState   //Default chat states initialization
+var gRedisIP string            //DB server address and port
+var gRedisDB int               //DB number in redis
+var gAIToken string            //OpenAI API key
+var gRedisPass string          //Password for redis connect
+var gRedisClient *redis.Client //Pointer for redis client
+var gDir string                //Current dir in OS
+var gLastRequest time.Time     //Time of last request to openAI
+var gRand *rand.Rand           //New Rand generator
+var gContextLength int         //Max context length
+var gCurProcName string        //Name of curren process
+var gUpdatesQty int            //Updates qty
+var gModels []string           //Reached models
+var gVerboseLevel byte         //Logging level
+var gBotLocation UserLocation
+var gChangeSettings int64
+
+// Bot defaults
+var gDefBotNames = []string{"Athena", "Афина"}
 var gHsName = [][]openai.ChatCompletionMessage{{}} //Nulled promplt
