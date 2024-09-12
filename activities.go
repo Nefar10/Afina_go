@@ -104,3 +104,80 @@ func isMyReaction(messages []openai.ChatCompletionMessage, CharPrmt []openai.Cha
 	}
 	return false
 }
+
+func ProcessNews() {
+	// URL страницы
+	/*
+			url := "https://www.ixbt.com/news/2024/09/08/snapdragon-8-gen-4-soc-240.html"
+
+			// Получение HTML-страницы
+			resp, err := http.Get(url)
+			if err != nil {
+				fmt.Println("Ошибка при получении страницы:", err)
+				return
+			}
+			defer resp.Body.Close()
+
+			// Загружаем страницу в goquery
+			doc, err := goquery.NewDocumentFromReader(resp.Body)
+			if err != nil {
+				fmt.Println("Ошибка при загрузке документа:", err)
+				return
+			}
+
+			// Получаем HTML как строку
+			html, err := doc.Html()
+			if err != nil {
+				fmt.Println("Ошибка при получении HTML:", err)
+				return
+			}
+
+			// Преобразуем HTML в xmlpath
+			xmlDoc, err := xmlpath.ParseHTML(strings.NewReader(html))
+			if err != nil {
+				fmt.Println("Ошибка при парсинге HTML:", err)
+				return
+			}
+
+			// Указываем ваш XPath
+			path := xmlpath.MustCompile("//*[@id='main-pagecontent__div']") // Замените на ваш XPath
+
+			// Находим узел
+			node, ok := path.String(xmlDoc)
+			if ok {
+				fmt.Println("Содержимое блока:", node)
+			} else {
+				fmt.Println("Узел не найден")
+			}
+		}
+
+		//url := "https://www.ixbt.com/export/sec_cpu.rss"
+		/*
+			url := "https://www.ixbt.com/news/2024/09/08/snapdragon-8-gen-4-soc-240.html"
+			resp, err := http.Get(url)
+			if err != nil {
+				fmt.Println("Ошибка при получении данных:", err)
+				return
+			}
+			defer resp.Body.Close()
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				fmt.Println("Ошибка при чтении данных:", err)
+				return
+			}
+			var rss RSS
+			var rss
+			if err := xml.Unmarshal(body, &rss); err != nil {
+				fmt.Println("Ошибка при парсинге XML:", err)
+				return
+			}
+					jsonData, err := json.MarshalIndent(rss, "", "  ")
+				if err != nil {
+					fmt.Println("Ошибка при конвертации в JSON:", err)
+					return
+				}
+	*/
+	// Выводим результат
+	//fmt.Println(string(jsonData))
+	//fmt.Println(rss.Channel)
+}

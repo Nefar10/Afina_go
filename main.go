@@ -152,6 +152,7 @@ func init() {
 		Type:        "private",
 		History:     gHsBasePrompt[gLocale],
 		InterFacts:  0,
+		TimeZone:    15,
 		Bstyle:      0,
 		SetState:    NO_ONE,
 		CharType:    ISTJ})
@@ -167,6 +168,7 @@ func init() {
 		History:     gHsBasePrompt[gLocale],
 		InterFacts:  0,
 		Bstyle:      0,
+		TimeZone:    15,
 		SetState:    NO_ONE,
 		CharType:    ESFJ})
 
@@ -188,7 +190,7 @@ func init() {
 		SendToUser(gOwner, gErr[18][gLocale], INFO, 1)
 	} else {
 		for _, model := range models.Models {
-			if strings.Contains(strings.ToLower(model.ID), "gpt-4o") {
+			if strings.Contains(strings.ToLower(model.ID), "gpt-4") {
 				gModels = append(gModels, model.ID)
 			}
 		}
@@ -250,5 +252,6 @@ func main() {
 	for {
 		time.Sleep(time.Minute)
 		ProcessInitiative()
+		ProcessNews()
 	}
 }

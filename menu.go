@@ -127,6 +127,22 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 			numericKeyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
 			msg.ReplyMarkup = numericKeyboard
 		}
+	case SELECTTIMEZONE:
+		{
+			msg.Text = mesText
+			var buttons []tgbotapi.InlineKeyboardButton
+			for i := 0; i <= 26; i++ {
+				buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData(gTimezones[i], strconv.Itoa(i)+"_TZ: "+strconv.FormatInt(chatID[0], 10)))
+			}
+			var rows [][]tgbotapi.InlineKeyboardButton
+			for _, button := range buttons {
+				row := []tgbotapi.InlineKeyboardButton{button}
+				rows = append(rows, row)
+			}
+			numericKeyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
+			msg.ReplyMarkup = numericKeyboard
+		}
+
 	case GPTSELECT:
 		{
 			msg.Text = "Выберите модель"
@@ -172,6 +188,7 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 				),
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData(gMenu[16][gLocale], "CHAT_HISTORY: "+strconv.FormatInt(chatID[0], 10)),
+					tgbotapi.NewInlineKeyboardButtonData("Часовой пояс", "CH_TIMEZONE: "+strconv.FormatInt(chatID[0], 10)),
 				),
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData(gMenu[18][gLocale], "RIGHTS: "+strconv.FormatInt(chatID[0], 10)),
@@ -314,6 +331,16 @@ func SelectChatFacts(update tgbotapi.Update) {
 	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
 	if chatItem.ChatID != 0 {
 		SendToUser(gOwner, gIm[14][gLocale], INTFACTS, 1, chatItem.ChatID)
+	}
+}
+
+func SelectTimeZone(update tgbotapi.Update) {
+	var chatItem ChatState
+	SetCurOperation("Chat time zone processing", 0)
+	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
+	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
+	if chatItem.ChatID != 0 {
+		SendToUser(gOwner, gIm[14][gLocale], SELECTTIMEZONE, 1, chatItem.ChatID)
 	}
 }
 

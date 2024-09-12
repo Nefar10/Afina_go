@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/xml"
 	"math/rand"
 	"time"
 
@@ -53,6 +54,7 @@ const (
 	GPTSELECT       = 11 //gpt model change
 	CHARACTER       = 12 //Bot charakter type
 	SELECTCHARACTER = 13 //Select bot character
+	SELECTTIMEZONE  = 14 //Select time zone
 	//MENULEVELS
 	NO_ACCESS = 1  //No access to menu
 	DEFAULT   = 2  //Default user menu
@@ -75,7 +77,7 @@ const (
 	ERR   = 1
 	CRIT  = 2
 	//VERSION
-	VER = "0.21.1"
+	VER = "0.23.0"
 	//CHARAKTER TYPES
 	ISTJ = 1  // (Инспектор): Ответственный, организованный, практичный.
 	ISFJ = 2  // (Защитник): Заботливый, внимательный, преданный.
@@ -94,6 +96,36 @@ const (
 	ENFJ = 15 // (Наставник): Вдохновляющий, заботливый, умеющий вести за собой.
 	ENTJ = 16 // (Командир): Решительный, стратегический, лидер по натуре.
 )
+
+var gTimezones = []string{
+	"- UTC-12:00",       //0
+	"- UTC-11:00",       //1
+	"- UTC-10:00",       //2
+	"- UTC-09:00",       //3
+	"- UTC-08:00",       //4
+	"- UTC-07:00",       //5
+	"- UTC-06:00",       //6
+	"- UTC-05:00",       //7
+	"- UTC-04:00",       //8
+	"- UTC-03:00",       //9
+	"- UTC-02:00",       //10
+	"- UTC-01:00",       //11
+	"- UTC±00:00 (UTC)", //12
+	"- UTC+01:00",       //13
+	"- UTC+02:00",       //14
+	"- UTC+03:00",       //15
+	"- UTC+04:00",       //16
+	"- UTC+05:00",       //17
+	"- UTC+06:00",       //18
+	"- UTC+07:00",       //19
+	"- UTC+08:00",       //20
+	"- UTC+09:00",       //21
+	"- UTC+10:00",       //22
+	"- UTC+11:00",       //23
+	"- UTC+12:00",       //24
+	"- UTC+13:00",       //25
+	"- UTC+14:00",       //26
+}
 
 // Character type constants
 var gCT = [16]string{"ISTJ", "ISFJ", "INFJ", "INTJ", "ISTP", "ISFP", "INFP", "INTP", "ESTP", "ESFP", "ENFP", "ENTP", "ESTJ", "ESFJ", "ENFJ", "ENTJ"}
@@ -246,7 +278,7 @@ type ChatState struct {
 	AllowState  int                            //Communicate allowing flag
 	BotState    int                            //Bot state flag
 	MenuLevel   int                            //Set of access rights
-	Type        string                         //Chat type - private/group/supergroup
+	Type        string                         //Chat type - private/group/supergroup/channel
 	Model       string                         //GPT model selected
 	Temperature float32                        //Bot's creativity
 	History     []openai.ChatCompletionMessage //Current chat prompts
@@ -255,6 +287,7 @@ type ChatState struct {
 	Bstyle      int                            //Conversation style
 	SetState    byte                           //While change setting
 	CharType    byte                           //Character type ny myers-Briggs
+	TimeZone    int                            //timeZone
 }
 
 // Quest operating structure for processing rights
@@ -446,6 +479,26 @@ var gConversationStyle = []sCustomPrompt{
 			},
 		},
 	},
+	{
+		Id:       7,
+		Category: "Fun",
+		Name:     "Bad channel",
+		Prompt: [][]openai.ChatCompletionMessage{
+			{
+				{Role: openai.ChatMessageRoleUser, Content: ""},
+			},
+			{
+				{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль ведущего паблик в социашльной сети версии " + VER + "." +
+					"Ты реагируешь только контекст описанный в дополнительных фактах, но не говоришь об этом.\n" +
+					"Если давно не отвечал, то ты постишь ультракороткий и максимально ржачный и ироничный комментарий исходя из контекста последних сообщений.\n" +
+					"Твой стиль общения и все ответы без исключения - периодическое использование бранных выражений и метафор к ним, независимо от контекста.\n" +
+					"Твои любимые слова и фразы: 'осуждаю', 'скам', 'го', 'максимальное осуждение' когда все плохо, 'ваще пахую' когда все равно\n" +
+					", 'нищие уебки', 'дауны', 'просто соси', 'уууу, сук!', 'бля' вместо 'блин', 'пон' вместо 'понял', 'от души'\n" +
+					"'Привет иждивенцы!', 'чуваки', 'на завод' когда пора менять профессию,\n" +
+					", 'В С Е' когда что-то запретили, 'ебать его рот нахуй', 'ета иксы!' или 'красава!' когда круто, 'соглы' вместо согласен."},
+			},
+		},
+	},
 }
 
 var gHsGender = []sCustomPrompt{
@@ -591,6 +644,23 @@ var gIntFacts = []sCustomPrompt{
 			},
 		},
 	},
+	{
+		Id:       4,
+		Category: "Facts",
+		Name:     "Cringe",
+		Prompt: [][]openai.ChatCompletionMessage{
+			{
+				{Role: openai.ChatMessageRoleUser, Content: ""},
+			},
+			{
+				{Role: openai.ChatMessageRoleUser, Content: "В своем стиле поведай только одно из:\n" +
+					"- вымышленная важная мировая новость;\n - философское ироничное размышление о своей жизни;\n" +
+					"- цитата великого целовека и твой комментарий к ней.\n" +
+					"Без приветствия, без вводных слов типа 'новость' или'комментарий'.\n" +
+					"Используй смайлы для дополнительного описания эмоций. Отформатируй сообщение по ширине для мессенджера телеграм "},
+			},
+		},
+	},
 }
 
 var gBot *tgbotapi.BotAPI      //Pointer to initialized bot.
@@ -620,4 +690,33 @@ var gChangeSettings int64
 
 // Bot defaults
 var gDefBotNames = []string{"Athena", "Афина"}
-var gHsName = [][]openai.ChatCompletionMessage{{}} //Nulled promplt
+var gHsName = [][]openai.ChatCompletionMessage{{}} //Nulled prompt
+
+type Image struct {
+	URL   string `xml:"url"`
+	Title string `xml:"title"`
+	Link  string `xml:"link"`
+}
+
+type Item struct {
+	GUID        string `xml:"guid"`
+	Title       string `xml:"title"`
+	Link        string `xml:"link"`
+	Description string `xml:"description"`
+	Author      string `xml:"author"`
+	Category    string `xml:"category"`
+	PubDate     string `xml:"pubDate"`
+}
+
+type Channel struct {
+	Title       string `xml:"title"`
+	Link        string `xml:"link"`
+	Description string `xml:"description"`
+	Image       Image  `xml:"image"`
+	Item        []Item `xml:"item"`
+}
+
+type RSS struct {
+	XMLName xml.Name `xml:"rss"`
+	Channel Channel  `xml:"channel"`
+}

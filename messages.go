@@ -51,6 +51,10 @@ func ProcessCallbacks(update tgbotapi.Update) {
 		SetBotInitiative(update)
 	case strings.Contains(update.CallbackQuery.Data, "CHAT_FACTS:"):
 		SelectChatFacts(update)
+	case strings.Contains(update.CallbackQuery.Data, "CH_TIMEZONE:"):
+		SelectTimeZone(update)
+	case strings.Contains(update.CallbackQuery.Data, "_TZ:"):
+		SetTimeZone(update)
 	case strings.Contains(update.CallbackQuery.Data, "INFO:"):
 		ShowChatInfo(update)
 	case strings.Contains(update.CallbackQuery.Data, "RIGHTS:"):
@@ -147,10 +151,13 @@ func ProcessMessage(update tgbotapi.Update) {
 					}
 
 					FullPromt = nil
+					FullPromt = append(FullPromt, isNow(update, chatItem.TimeZone)[gLocale]...)
 					FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...)
 					FullPromt = append(FullPromt, gHsGender[gBotGender].Prompt[gLocale]...)
 					FullPromt = append(FullPromt, CharPrmt[gLocale]...)
-					FullPromt = append(FullPromt, gHsBasePrompt[gLocale]...)
+					if chatItem.Type != "channel" {
+						FullPromt = append(FullPromt, gHsBasePrompt[gLocale]...)
+					}
 					FullPromt = append(FullPromt, chatItem.History...)
 					FullPromt = append(FullPromt, ChatMessages...)
 					//log.Println(ChatMessages)
@@ -231,11 +238,12 @@ func ProcessMember(update tgbotapi.Update) {
 			Model:       BASEGPTMODEL,
 			Temperature: 0.5,
 			Inity:       0,
-			History:     gHsBasePrompt[gLocale],
-			InterFacts:  0,
-			Bstyle:      0,
-			SetState:    NO_ONE,
-			CharType:    ESTJ,
+			//History:     {{}},
+			InterFacts: 0,
+			Bstyle:     0,
+			SetState:   NO_ONE,
+			CharType:   ESTJ,
+			TimeZone:   15,
 		}
 		SetChatStateDB(chatItem)
 	} else if update.MyChatMember.NewChatMember.Status == "left" {

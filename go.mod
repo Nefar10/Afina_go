@@ -1,6 +1,8 @@
 module Afina_go
 
-go 1.21.4
+go 1.23
+
+toolchain go1.23.1
 
 require (
 	github.com/go-redis/redis v6.15.9+incompatible
@@ -10,6 +12,10 @@ require (
 )
 
 require (
+	github.com/PuerkitoBio/goquery v1.10.0 // indirect
+	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.30.0 // indirect
+	golang.org/x/net v0.29.0 // indirect
+	gopkg.in/xmlpath.v2 v2.0.0-20150820204837-860cbeca3ebc // indirect
 )

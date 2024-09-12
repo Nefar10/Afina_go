@@ -98,7 +98,6 @@ func SetBotTemp(update tgbotapi.Update) {
 func SetBotInitiative(update tgbotapi.Update) {
 	var chatItem ChatState
 	SetCurOperation("Set bot initiative", 0)
-	gCurProcName = "Edit initiative"
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
 	if chatItem.ChatID != 0 {
@@ -106,6 +105,20 @@ func SetBotInitiative(update tgbotapi.Update) {
 		gChangeSettings = chatItem.ChatID
 		SetChatStateDB(chatItem)
 		SendToUser(gOwner, "Текущий уровень - "+strconv.Itoa(int(chatItem.Inity))+"\nУкажите степень инициативы от 0 до 10", INFO, 1, chatItem.ChatID)
+	}
+}
+
+func SetTimeZone(update tgbotapi.Update) {
+	var chatItem ChatState
+	SetCurOperation("Select chat time zone", 0)
+	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
+	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
+	//log.Println(chatItem.IntFacts)
+	if chatItem.ChatID != 0 {
+		chatItem.TimeZone, _ = strconv.Atoi(strings.Split(update.CallbackQuery.Data, "_TZ:")[0])
+		SetChatStateDB(chatItem)
+		SendToUser(gOwner, "Изменено на: "+gTimezones[chatItem.TimeZone], INFO, 1)
+		//log.Println(chatItem.IntFacts)
 	}
 }
 
