@@ -77,8 +77,13 @@ func SetChatHistory(update tgbotapi.Update) {
 		chatItem.SetState = HISTORY
 		gChangeSettings = chatItem.ChatID
 		SetChatStateDB(chatItem)
-		SendToUser(gOwner, "**Текущая история базовая:**\n"+gHsBasePrompt[gLocale][0].Content+"\n"+
-			"**Дополнитиельные факты:**\n"+chatItem.History[0].Content+"\nНапишите историю:", INFO, 1, chatItem.ChatID)
+		if len(chatItem.History) > 0 {
+			SendToUser(gOwner, "**Текущая история базовая:**\n"+gHsBasePrompt[gLocale][0].Content+"\n"+
+				"**Дополнитиельные факты:**\n"+chatItem.History[0].Content+"\nНапишите историю:", INFO, 1, chatItem.ChatID)
+		} else {
+			SendToUser(gOwner, "**Текущая история базовая:**\n"+gHsBasePrompt[gLocale][0].Content+"\n"+
+				"**Дополнитиельные факты:**\nНапишите историю:", INFO, 1, chatItem.ChatID)
+		}
 	}
 }
 
