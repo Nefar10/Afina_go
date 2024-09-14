@@ -228,26 +228,14 @@ func ProcessMessage(update tgbotapi.Update) {
 func ProcessMember(update tgbotapi.Update) {
 	var chatItem ChatState
 	SetCurOperation("Chat member processing", 0)
+	chatItem = gDefChatState
 	if update.MyChatMember != nil {
 		if update.MyChatMember.NewChatMember.Status == "member" || update.MyChatMember.NewChatMember.Status == "administrator" {
 			SetCurOperation("Chat initialization", 0)
-			chatItem = ChatState{
-				ChatID:      update.MyChatMember.Chat.ID,
-				BotState:    RUN,
-				AllowState:  IN_PROCESS,
-				UserName:    update.MyChatMember.From.UserName,
-				Type:        update.MyChatMember.Chat.Type,
-				Title:       update.MyChatMember.Chat.Title,
-				Model:       BASEGPTMODEL,
-				Temperature: 0.5,
-				Inity:       0,
-				//History:     {{}},
-				InterFacts: 0,
-				Bstyle:     0,
-				SetState:   NO_ONE,
-				CharType:   ESTJ,
-				TimeZone:   15,
-			}
+			chatItem.ChatID = update.MyChatMember.Chat.ID
+			chatItem.UserName = update.MyChatMember.From.UserName
+			chatItem.Type = update.MyChatMember.Chat.Type
+			chatItem.Title = update.MyChatMember.Chat.Title
 			SetChatStateDB(chatItem)
 		} else if update.MyChatMember.NewChatMember.Status == "left" {
 			DestroyChat(strconv.FormatInt(update.MyChatMember.Chat.ID, 10))
@@ -257,23 +245,10 @@ func ProcessMember(update tgbotapi.Update) {
 	if update.Message != nil {
 		if update.Message.Command() == "start" {
 			SetCurOperation("Chat initialization", 0)
-			chatItem = ChatState{
-				ChatID:      update.Message.Chat.ID,
-				BotState:    RUN,
-				AllowState:  IN_PROCESS,
-				UserName:    update.Message.From.UserName,
-				Type:        update.Message.Chat.Type,
-				Title:       update.Message.Chat.Title,
-				Model:       BASEGPTMODEL,
-				Temperature: 0.5,
-				Inity:       0,
-				//History:     {{}},
-				InterFacts: 0,
-				Bstyle:     0,
-				SetState:   NO_ONE,
-				CharType:   ESTJ,
-				TimeZone:   15,
-			}
+			chatItem.ChatID = update.Message.Chat.ID
+			chatItem.UserName = update.Message.From.UserName
+			chatItem.Type = update.Message.Chat.Type
+			chatItem.Title = update.Message.Chat.Title
 			SetChatStateDB(chatItem)
 		}
 	}

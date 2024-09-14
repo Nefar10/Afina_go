@@ -140,44 +140,6 @@ func init() {
 		gBotGender = FEMALE
 	}
 
-	//Default chat states init
-	gChatsStates = append(gChatsStates, ChatState{
-		ChatID:      1,
-		Model:       BASEGPTMODEL,
-		Inity:       0,
-		Temperature: 0.1,
-		AllowState:  DISALLOW,
-		UserName:    "All",
-		BotState:    SLEEP,
-		Type:        "private",
-		History:     gHsBasePrompt[gLocale],
-		InterFacts:  0,
-		TimeZone:    15,
-		Bstyle:      0,
-		SetState:    NO_ONE,
-		CharType:    ISTJ})
-	gChatsStates = append(gChatsStates, ChatState{
-		ChatID:      gOwner,
-		Model:       BASEGPTMODEL,
-		Inity:       0,
-		Temperature: 0.5,
-		AllowState:  ALLOW,
-		UserName:    "Owner",
-		BotState:    RUN,
-		Type:        "private",
-		History:     gHsBasePrompt[gLocale],
-		InterFacts:  0,
-		Bstyle:      0,
-		TimeZone:    15,
-		SetState:    NO_ONE,
-		CharType:    ESFJ})
-
-	//Storing default chat states to DB
-	SetCurOperation(gIm[31][gLocale], 0)
-	for _, item := range gChatsStates {
-		SetChatStateDB(item)
-	}
-
 	//OpenAI client init
 	config := openai.DefaultConfig(gAIToken)
 	config.BaseURL = "https://api.proxyapi.ru/openai/v1"
