@@ -78,7 +78,7 @@ func init() {
 
 	//Redis password
 	gRedisPass = os.Getenv(REDIS_PASS_IN_OS)
-	if gRedisIP == "" {
+	if gRedisPass == "" {
 		SendToUser(gOwner, gErr[4][gLocale]+REDIS_PASS_IN_OS+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 	}
 

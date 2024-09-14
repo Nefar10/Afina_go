@@ -41,13 +41,14 @@ func ProcessInitiative() {
 				}
 				gLastRequest = time.Now() //Прежде чем формировать запрос, запомним текущее время
 				gClient_is_busy = true
-				//ChatMessages = gIntFacts[chatItem.InterFacts].Prompt[gLocale]
-				//currentTime := time.Now()
-				//ChatMessages[len(ChatMessages)-1].Content = currentTime.Format("2006-01-02 15:04:05") + " " + ChatMessages[len(ChatMessages)-1].Content
 				FullPromt = nil
 				FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...)
 				FullPromt = append(FullPromt, gHsGender[gBotGender].Prompt[gLocale]...)
-				FullPromt = append(FullPromt, gIntFacts[chatItem.InterFacts].Prompt[gLocale]...)
+				if gRand.Intn(5) == 0 {
+					FullPromt = append(FullPromt, gIntFacts[0].Prompt[gLocale][gRand.Intn(len(gIntFacts[0].Prompt[gLocale]))])
+				} else {
+					FullPromt = append(FullPromt, gIntFacts[chatItem.InterFacts].Prompt[gLocale][gRand.Intn(len(gIntFacts[chatItem.InterFacts].Prompt[gLocale]))])
+				}
 				//log.Println(FullPromt)
 				resp, err := gClient.CreateChatCompletion( //Формируем запрос к мозгам
 					context.Background(),
