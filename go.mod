@@ -12,10 +12,8 @@ require (
 )
 
 require (
-	github.com/PuerkitoBio/goquery v1.10.0 // indirect
-	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.30.0 // indirect
 	golang.org/x/net v0.29.0 // indirect
-	gopkg.in/xmlpath.v2 v2.0.0-20150820204837-860cbeca3ebc // indirect
+	golang.org/x/sys v0.25.0 // indirect
 )
