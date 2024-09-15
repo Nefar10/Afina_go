@@ -86,6 +86,7 @@ func ProcessCommand(update tgbotapi.Update) {
 }
 
 func ProcessMessage(update tgbotapi.Update) {
+	var BotReaction byte
 	var chatItem ChatState                          //Current ChatState item
 	var ChatMessages []openai.ChatCompletionMessage //Current prompt
 	var FullPromt []openai.ChatCompletionMessage    //Messages to send
@@ -123,11 +124,11 @@ func ProcessMessage(update tgbotapi.Update) {
 					}
 					action := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
 					toBotFlag := false
-					for _, name := range gBotNames { //Определим - есть ли в контексте последнего сообщения имя бота
-						if strings.Contains(strings.ToUpper(update.Message.Text), strings.ToUpper(name)) && gUpdatesQty == 0 {
-							toBotFlag = true
-						}
-					}
+					//for _, name := range gBotNames { //Определим - есть ли в контексте последнего сообщения имя бота
+					//	if strings.Contains(strings.ToUpper(update.Message.Text), strings.ToUpper(name)) && gUpdatesQty == 0 {
+					//		toBotFlag = true
+					//	}
+					//}
 					if update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.ID == gBot.Self.ID && gUpdatesQty == 0 { //Если имя бота встречается
 						toBotFlag = true
 						//		break
@@ -147,7 +148,8 @@ func ProcessMessage(update tgbotapi.Update) {
 						},
 					}
 					if !toBotFlag && gUpdatesQty == 0 {
-						if isMyReaction(ChatMessages, CharPrmt[gLocale], chatItem.History) {
+						BotReaction = isMyReaction(ChatMessages, CharPrmt[gLocale], chatItem.History)
+						if BotReaction == NEEDANSWER || BotReaction == NEEDANSWER+CALCULATE {
 							toBotFlag = true
 						}
 					}
@@ -162,30 +164,6 @@ func ProcessMessage(update tgbotapi.Update) {
 					}
 					FullPromt = append(FullPromt, chatItem.History...)
 					FullPromt = append(FullPromt, ChatMessages...)
-					//log.Println(ChatMessages)
-					//log.Println("")
-					//log.Println(FullPromt)
-					//update.Message.Chat.Type == "private" ||
-					//if strings.Contains(strings.ToUpper(update.Message.Text), strings.ToUpper("сколько")) {
-					//	chatItem.Temperature = 0
-
-					/*
-						else if strings.Contains(strings.ToUpper(update.Message.Text), strings.ToUpper("сколько")) {
-														ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: msg.Text})
-														ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "Подумай хорошо и дай точный ответ без комментариев."})
-														FullPromt = nil
-														FullPromt = append(FullPromt, isNow(update, chatItem.TimeZone)[gLocale]...)
-														FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...)
-														FullPromt = append(FullPromt, gHsGender[gBotGender].Prompt[gLocale]...)
-														FullPromt = append(FullPromt, CharPrmt[gLocale]...)
-														if chatItem.Type != "channel" {
-															FullPromt = append(FullPromt, gHsBasePrompt[gLocale]...)
-														}
-														FullPromt = append(FullPromt, chatItem.History...)
-														FullPromt = append(FullPromt, ChatMessages...)
-														time.Sleep(20 * time.Second)
-													}
-					*/
 
 					if toBotFlag {
 						gClient_is_busy = true
@@ -203,9 +181,9 @@ func ProcessMessage(update tgbotapi.Update) {
 							if err != nil {
 								SendToUser(gOwner, gErr[17][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, INFO, 0)
 								time.Sleep(20 * time.Second)
-							} else if i == 0 && strings.Contains(strings.ToUpper(update.Message.Text), strings.ToUpper("сколько")) {
+							} else if i == 0 && BotReaction == NEEDANSWER+CALCULATE {
 								ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content})
-								ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "Подумай лучше и дай правильный ответ без комментариев."})
+								ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "Ответ не верный. Подумай лучше, учти все детали задачи, и дай правильный ответ без комментариев, в своём стиле."})
 								FullPromt = nil
 								FullPromt = append(FullPromt, isNow(update, chatItem.TimeZone)[gLocale]...)
 								FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...)
@@ -216,7 +194,7 @@ func ProcessMessage(update tgbotapi.Update) {
 								}
 								FullPromt = append(FullPromt, chatItem.History...)
 								FullPromt = append(FullPromt, ChatMessages...)
-								time.Sleep(1 * time.Second)
+								time.Sleep(5 * time.Second)
 							} else {
 								//log.Printf("Чат ID: %d Токенов использовано: %d", update.Message.Chat.ID, resp.Usage.TotalTokens)
 								msg.Text = resp.Choices[0].Message.Content //Записываем ответ в сообщение

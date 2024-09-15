@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -74,9 +75,15 @@ func ProcessInitiative() {
 	}
 }
 
-func isMyReaction(messages []openai.ChatCompletionMessage, CharPrmt []openai.ChatCompletionMessage, History []openai.ChatCompletionMessage) bool {
+func isMyReaction(messages []openai.ChatCompletionMessage, CharPrmt []openai.ChatCompletionMessage, History []openai.ChatCompletionMessage) byte {
 	var FullPromt []openai.ChatCompletionMessage
-	FullPromt = append(FullPromt, CharPrmt...)
+	var resp openai.ChatCompletionResponse
+	var err error
+	var result byte
+	result = DONOTHING
+	FullPromt = nil
+	//FullPromt = append(FullPromt, CharPrmt...)
+	FullPromt = append(FullPromt, gHsName[gLocale]...)
 	FullPromt = append(FullPromt, History...)
 	if len(messages) >= 3 {
 		FullPromt = append(FullPromt, messages[len(messages)-3:]...)
@@ -84,11 +91,11 @@ func isMyReaction(messages []openai.ChatCompletionMessage, CharPrmt []openai.Cha
 		FullPromt = append(FullPromt, messages...)
 	}
 	FullPromt = append(FullPromt, gHsReaction[0].Prompt[gLocale]...)
-	resp, err := gClient.CreateChatCompletion(
+	resp, err = gClient.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
 			Model:       BASEGPTMODEL,
-			Temperature: 1,
+			Temperature: 0,
 			Messages:    FullPromt,
 		},
 	)
@@ -96,14 +103,34 @@ func isMyReaction(messages []openai.ChatCompletionMessage, CharPrmt []openai.Cha
 		SendToUser(gOwner, gErr[17][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, INFO, 0)
 		time.Sleep(20 * time.Second)
 	} else {
-
+		log.Println(resp.Choices[0].Message.Content)
 		if strings.Contains(resp.Choices[0].Message.Content, gBotReaction[0][gLocale]) {
-			return true
-		} else {
-			return false
+			result = result + NEEDANSWER
 		}
 	}
-	return false
+	FullPromt = nil
+	//FullPromt = append(FullPromt, CharPrmt...)
+	//FullPromt = append(FullPromt, History...)
+	FullPromt = append(FullPromt, messages[len(messages)-1])
+	FullPromt = append(FullPromt, gHsReaction[1].Prompt[gLocale]...)
+	resp, err = gClient.CreateChatCompletion(
+		context.Background(),
+		openai.ChatCompletionRequest{
+			Model:       BASEGPTMODEL,
+			Temperature: 0,
+			Messages:    FullPromt,
+		},
+	)
+	if err != nil {
+		SendToUser(gOwner, gErr[17][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, INFO, 0)
+		time.Sleep(20 * time.Second)
+	} else {
+		log.Println(resp.Choices[0].Message.Content)
+		if strings.Contains(resp.Choices[0].Message.Content, gBotReaction[0][gLocale]) {
+			result = result + CALCULATE
+		}
+	}
+	return result
 }
 
 func ProcessNews() {

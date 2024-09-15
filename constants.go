@@ -76,8 +76,12 @@ const (
 	NOERR = 0
 	ERR   = 1
 	CRIT  = 2
+	//REACTION
+	DONOTHING  = 0
+	NEEDANSWER = 1
+	CALCULATE  = 2
 	//VERSION
-	VER = "0.24.7"
+	VER = "0.24.8"
 	//CHARAKTER TYPES
 	ISTJ = 1  // (Инспектор): Ответственный, организованный, практичный.
 	ISFJ = 2  // (Защитник): Заботливый, внимательный, преданный.
@@ -327,13 +331,11 @@ type sCustomPrompt struct {
 var gHsBasePrompt = [][]openai.ChatCompletionMessage{
 	{
 		{Role: openai.ChatMessageRoleUser, Content: "You always talk about yourself when you are introduced to a group.\n" +
-			"You always respond if someone addresses you or mentions your name.\n" +
 			"You do not interfere in conversations between other participants unless it concerns the facts described below.\n" +
 			"You strive to neutralize conflicts in disputes between participants.\n"},
 	},
 	{
 		{Role: openai.ChatMessageRoleUser, Content: "Ты всегда рассказываешь о себе, когда тебя представляют группе.\n" +
-			"Ты всегда отвечаешь, если к тебе обращаются или упоминается твое имя.\n" +
 			"Ты не вмешиваешься в разговор других участников между собой, если он не касается описанных далее фактов.\n" +
 			"Ты стараешься нейтрализовать конфликт в спорах между участниками.\n" +
 			"Ты не используешь типовой паттерн gpt, подобный 'отвечу на любые вопросы', при ответах.\n"},
@@ -695,7 +697,21 @@ var gHsReaction = []sCustomPrompt{
 				{Role: openai.ChatMessageRoleUser, Content: "Based on the context, determine if your response is required. If yes, reply 'Yes'; if no, reply 'No'"},
 			},
 			{
-				{Role: openai.ChatMessageRoleUser, Content: "Исходя из контекста определи - требуется ли твой ответ. Если да - ответь четко 'Да' и почему, если нет - ответь четко 'Нет' и почему"},
+				{Role: openai.ChatMessageRoleUser, Content: "Исходя из контекста определи - требуется ли твой ответ.\n" +
+					"Ты должен отвечать, если к тебе обращаются или упоминается твое имя. Если да - ответь четко 'Да', если нет - ответь четко 'Нет' и почему"},
+			},
+		},
+	},
+	{
+		Id:       1,
+		Category: "Reaction",
+		Name:     "Mathematics",
+		Prompt: [][]openai.ChatCompletionMessage{
+			{
+				{Role: openai.ChatMessageRoleUser, Content: ""},
+			},
+			{
+				{Role: openai.ChatMessageRoleUser, Content: "Исходя из контекста определи - требуется ли счет чего-нибудь или сравнение чисел?. Если да - ответь четко 'Да', если нет - ответь четко 'Нет' и почему"},
 			},
 		},
 	},
