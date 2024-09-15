@@ -205,7 +205,7 @@ func ProcessMessage(update tgbotapi.Update) {
 								time.Sleep(20 * time.Second)
 							} else if i == 0 && strings.Contains(strings.ToUpper(update.Message.Text), strings.ToUpper("сколько")) {
 								ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content})
-								ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "Подумай лучше и дай без комментариев."})
+								ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "Подумай лучше и дай правильный ответ без комментариев."})
 								FullPromt = nil
 								FullPromt = append(FullPromt, isNow(update, chatItem.TimeZone)[gLocale]...)
 								FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...)
