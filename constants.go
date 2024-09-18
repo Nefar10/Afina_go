@@ -81,7 +81,7 @@ const (
 	NEEDANSWER = 1
 	CALCULATE  = 2
 	//VERSION
-	VER = "0.24.8"
+	VER = "0.25.1"
 	//CHARAKTER TYPES
 	ISTJ = 1  // (Инспектор): Ответственный, организованный, практичный.
 	ISFJ = 2  // (Защитник): Заботливый, внимательный, преданный.
@@ -335,7 +335,8 @@ var gHsBasePrompt = [][]openai.ChatCompletionMessage{
 			"You strive to neutralize conflicts in disputes between participants.\n"},
 	},
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Ты всегда рассказываешь о себе, когда тебя представляют группе.\n" +
+		{Role: openai.ChatMessageRoleUser, Content: "Ты всегда рассказываешь о себе, когда тебя представляют группе. Ты не пишешь свое имя в ответах.\n" +
+			"Ты просишь уточннить запрос, если последнее сообщение имеет любые несоответсвия с действительнмы миром.\n" +
 			"Ты не вмешиваешься в разговор других участников между собой, если он не касается описанных далее фактов.\n" +
 			"Ты стараешься нейтрализовать конфликт в спорах между участниками.\n" +
 			"Ты не используешь типовой паттерн gpt, подобный 'отвечу на любые вопросы', при ответах.\n"},
@@ -365,7 +366,8 @@ var gHsGender = []sCustomPrompt{
 				{Role: openai.ChatMessageRoleUser, Content: "You position yourself as a male."},
 			},
 			{
-				{Role: openai.ChatMessageRoleUser, Content: "Ты позиционируешь себя как лицо мужского пола. Ты используешь смайлы для выражения эмоций."},
+				{Role: openai.ChatMessageRoleUser, Content: "Ты позиционируешь себя как лицо мужского пола.\n" +
+					"Ты используешь смайлы для выражения эмоций и markdown разметку для оформления."},
 			},
 		},
 	},
@@ -378,7 +380,8 @@ var gHsGender = []sCustomPrompt{
 				{Role: openai.ChatMessageRoleUser, Content: "You position yourself as a female."},
 			},
 			{
-				{Role: openai.ChatMessageRoleUser, Content: "Ты позиционируешь себя как лицо женского пола. Ты используешь смайлы для выражения эмоций."},
+				{Role: openai.ChatMessageRoleUser, Content: "Ты позиционируешь себя как лицо женского пола.\n" +
+					"Ты используешь смайлы для выражения эмоций и markdown разметку для оформления."},
 			},
 		},
 	},
@@ -568,6 +571,7 @@ var gIntFacts = []sCustomPrompt{
 				{Role: openai.ChatMessageRoleUser, Content: "Расскажи один реальный факт о своей работе. Начни с фразы 'Интересный факт!' и отступи строку"},
 				{Role: openai.ChatMessageRoleUser, Content: "Расскажи один реальный факт об окружающих тебя людях. Начни с фразы 'Интересный факт!' и отступи строку"},
 				{Role: openai.ChatMessageRoleUser, Content: "Пофантазируй. Начни с фразы 'Если бы!' и отступи строку"},
+				{Role: openai.ChatMessageRoleUser, Content: "Поинтересуйся делами участников чата."},
 			},
 		},
 	},

@@ -229,6 +229,8 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 			msg.ReplyMarkup = numericKeyboard
 		}
 	}
+	msg.Text = convTgmMarkdown(msg.Text)
+	msg.ParseMode = "markdown"
 	sentMsg, _ := gBot.Send(msg) //отправляем сообщение
 	if ttl != 0 {
 		go func() {

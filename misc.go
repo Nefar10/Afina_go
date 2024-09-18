@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -180,4 +182,23 @@ func isNow(update tgbotapi.Update, timezone int) [][]openai.ChatCompletionMessag
 	lHsTime = append(lHsTime, []openai.ChatCompletionMessage{{Role: openai.ChatMessageRoleUser, Content: "Current time is " + timeString + "."}})
 	lHsTime = append(lHsTime, []openai.ChatCompletionMessage{{Role: openai.ChatMessageRoleUser, Content: "Текущее время " + timeString + "."}})
 	return lHsTime
+}
+
+func convTgmMarkdown(input string) (output string) {
+	defer func() {
+		if r := recover(); r != nil {
+			SendToUser(gOwner, "Recovered from panic: "+fmt.Sprintf("%v", r), ERROR, 0)
+		}
+	}()
+	boldPattern := regexp.MustCompile(`\*\*(.*?)\*\*`)
+	input = boldPattern.ReplaceAllString(input, "==$1==")
+	boldPattern2 := regexp.MustCompile(`__(.*?)__`)
+	input = boldPattern2.ReplaceAllString(input, "==$1==")
+	italicPattern := regexp.MustCompile(`\*(.*?)\*`)
+	input = italicPattern.ReplaceAllString(input, "=$1=")
+	boldPattern3 := regexp.MustCompile(`==(.*?)==`)
+	input = boldPattern3.ReplaceAllString(input, "*$1*")
+	italicPattern2 := regexp.MustCompile(`=(.*?)=`)
+	input = italicPattern2.ReplaceAllString(input, "_ $1 _")
+	return input
 }

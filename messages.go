@@ -205,6 +205,8 @@ func ProcessMessage(update tgbotapi.Update) {
 						ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: msg.Text})
 					}
 					RenewDialog(strconv.FormatInt(update.Message.Chat.ID, 10), ChatMessages)
+					msg.Text = convTgmMarkdown(msg.Text)
+					msg.ParseMode = "markdown"
 					gBot.Send(msg)
 				}
 			}
