@@ -129,14 +129,6 @@ func ProcessMessage(update tgbotapi.Update) {
 					//		toBotFlag = true
 					//	}
 					//}
-					if update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.ID == gBot.Self.ID && gUpdatesQty == 0 { //Если имя бота встречается
-						toBotFlag = true
-						//		break
-					}
-					if len(ChatMessages) > 20 {
-						// Удаляем первые элементы, оставляя последние 10
-						ChatMessages = ChatMessages[1:]
-					}
 					CharPrmt := [2][]openai.ChatCompletionMessage{
 						{
 							{Role: openai.ChatMessageRoleUser, Content: "Important! Your personality type is " + gCT[chatItem.CharType-1]},
@@ -147,13 +139,22 @@ func ProcessMessage(update tgbotapi.Update) {
 							//	{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"},
 						},
 					}
-					if !toBotFlag && gUpdatesQty == 0 {
-						BotReaction = isMyReaction(ChatMessages, CharPrmt[gLocale], chatItem.History)
-						if BotReaction == NEEDANSWER || BotReaction == NEEDANSWER+CALCULATE {
+					if update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.ID == gBot.Self.ID && gUpdatesQty == 0 { //Если имя бота встречается
+						toBotFlag = true
+						//		break
+					}
+					for _, name := range gBotNames { //Определим - есть ли в контексте последнего сообщения имя бота
+						if strings.Contains(strings.ToUpper(update.Message.Text), strings.ToUpper(name)) && gUpdatesQty == 0 {
 							toBotFlag = true
 						}
 					}
-
+					if !toBotFlag && gUpdatesQty == 0 {
+						toBotFlag = isMyReaction(ChatMessages, CharPrmt[gLocale], chatItem.History)
+					}
+					if len(ChatMessages) > 20 {
+						// Удаляем первые элементы, оставляя последние 20
+						ChatMessages = ChatMessages[1:]
+					}
 					FullPromt = nil
 					FullPromt = append(FullPromt, isNow(update, chatItem.TimeZone)[gLocale]...)
 					FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...)
@@ -164,6 +165,7 @@ func ProcessMessage(update tgbotapi.Update) {
 					}
 					FullPromt = append(FullPromt, chatItem.History...)
 					FullPromt = append(FullPromt, ChatMessages...)
+					BotReaction = needFunction(ChatMessages, CharPrmt[gLocale], chatItem.History)
 
 					if toBotFlag {
 						gClient_is_busy = true
@@ -181,7 +183,7 @@ func ProcessMessage(update tgbotapi.Update) {
 							if err != nil {
 								SendToUser(gOwner, gErr[17][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, INFO, 0)
 								time.Sleep(20 * time.Second)
-							} else if i == 0 && BotReaction == NEEDANSWER+CALCULATE {
+							} else if i == 0 && BotReaction == DOCALCULATE {
 								ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content})
 								ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "Ответ не верный. Подумай лучше, учти все детали задачи, и дай правильный ответ без комментариев, в своём стиле."})
 								FullPromt = nil

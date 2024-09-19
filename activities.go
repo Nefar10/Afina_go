@@ -75,12 +75,12 @@ func ProcessInitiative() {
 	}
 }
 
-func isMyReaction(messages []openai.ChatCompletionMessage, CharPrmt []openai.ChatCompletionMessage, History []openai.ChatCompletionMessage) byte {
+func isMyReaction(messages []openai.ChatCompletionMessage, CharPrmt []openai.ChatCompletionMessage, History []openai.ChatCompletionMessage) bool {
 	var FullPromt []openai.ChatCompletionMessage
 	var resp openai.ChatCompletionResponse
 	var err error
-	var result byte
-	result = DONOTHING
+	var result bool
+	result = false
 	FullPromt = nil
 	//FullPromt = append(FullPromt, CharPrmt...)
 	FullPromt = append(FullPromt, gHsName[gLocale]...)
@@ -105,9 +105,18 @@ func isMyReaction(messages []openai.ChatCompletionMessage, CharPrmt []openai.Cha
 	} else {
 		log.Println(resp.Choices[0].Message.Content)
 		if strings.Contains(resp.Choices[0].Message.Content, gBotReaction[0][gLocale]) {
-			result = result + NEEDANSWER
+			result = true
 		}
 	}
+	return result
+}
+
+func needFunction(messages []openai.ChatCompletionMessage, CharPrmt []openai.ChatCompletionMessage, History []openai.ChatCompletionMessage) byte {
+	var FullPromt []openai.ChatCompletionMessage
+	var resp openai.ChatCompletionResponse
+	var err error
+	var result byte
+	result = DONOTHING
 	FullPromt = nil
 	//FullPromt = append(FullPromt, CharPrmt...)
 	//FullPromt = append(FullPromt, History...)
@@ -127,7 +136,7 @@ func isMyReaction(messages []openai.ChatCompletionMessage, CharPrmt []openai.Cha
 	} else {
 		log.Println(resp.Choices[0].Message.Content)
 		if strings.Contains(resp.Choices[0].Message.Content, gBotReaction[0][gLocale]) {
-			result = result + CALCULATE
+			result = result + DOCALCULATE
 		}
 	}
 	return result

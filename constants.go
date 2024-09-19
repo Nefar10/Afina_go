@@ -77,11 +77,10 @@ const (
 	ERR   = 1
 	CRIT  = 2
 	//REACTION
-	DONOTHING  = 0
-	NEEDANSWER = 1
-	CALCULATE  = 2
+	DONOTHING   = 0
+	DOCALCULATE = 1
 	//VERSION
-	VER = "0.25.1"
+	VER = "0.25.2"
 	//CHARAKTER TYPES
 	ISTJ = 1  // (Инспектор): Ответственный, организованный, практичный.
 	ISFJ = 2  // (Защитник): Заботливый, внимательный, преданный.

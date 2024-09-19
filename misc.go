@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"regexp"
@@ -184,12 +183,7 @@ func isNow(update tgbotapi.Update, timezone int) [][]openai.ChatCompletionMessag
 	return lHsTime
 }
 
-func convTgmMarkdown(input string) (output string) {
-	defer func() {
-		if r := recover(); r != nil {
-			SendToUser(gOwner, "Recovered from panic: "+fmt.Sprintf("%v", r), ERROR, 0)
-		}
-	}()
+func convTgmMarkdown(input string) string {
 	boldPattern := regexp.MustCompile(`\*\*(.*?)\*\*`)
 	input = boldPattern.ReplaceAllString(input, "==$1==")
 	boldPattern2 := regexp.MustCompile(`__(.*?)__`)
