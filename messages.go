@@ -177,6 +177,8 @@ func ProcessMessage(update tgbotapi.Update) {
 				{
 					if update.Message.From.ID == gOwner {
 						sendHistory(update.Message.Chat.ID, ChatMessages)
+					} else {
+						SendToUser(chatItem.ChatID, "Извините, у вас нет доступа.", INFO, 0)
 					}
 					return
 				}
