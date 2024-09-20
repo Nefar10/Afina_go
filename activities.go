@@ -67,7 +67,6 @@ func ProcessInitiative() {
 					SendToUser(chatItem.ChatID, resp.Choices[0].Message.Content, NOTHING, 0)
 				}
 				ChatMessages = GetChatMessages("Dialog:" + strconv.FormatInt(chatItem.ChatID, 10))
-				ChatMessages = append(ChatMessages, gIntFacts[chatItem.InterFacts].Prompt[gLocale]...)
 				ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content})
 				RenewDialog(strconv.FormatInt(chatItem.ChatID, 10), ChatMessages)
 			}

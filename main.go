@@ -144,7 +144,7 @@ func init() {
 	config := openai.DefaultConfig(gAIToken)
 	config.BaseURL = "https://api.proxyapi.ru/openai/v1"
 	gClient = openai.NewClientWithConfig(config)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	gModels = nil
 	models, err := gClient.ListModels(ctx)
