@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"regexp"
@@ -185,14 +188,61 @@ func isNow(update tgbotapi.Update, timezone int) [][]openai.ChatCompletionMessag
 
 func convTgmMarkdown(input string) string {
 	boldPattern := regexp.MustCompile(`\*\*(.*?)\*\*`)
-	input = boldPattern.ReplaceAllString(input, "==$1==")
+	input = boldPattern.ReplaceAllString(input, "*$1*")
 	boldPattern2 := regexp.MustCompile(`__(.*?)__`)
-	input = boldPattern2.ReplaceAllString(input, "==$1==")
-	italicPattern := regexp.MustCompile(`\*(.*?)\*`)
-	input = italicPattern.ReplaceAllString(input, "=$1=")
-	boldPattern3 := regexp.MustCompile(`==(.*?)==`)
-	input = boldPattern3.ReplaceAllString(input, "*$1*")
-	italicPattern2 := regexp.MustCompile(`=(.*?)=`)
-	input = italicPattern2.ReplaceAllString(input, "_ $1 _")
+	input = boldPattern2.ReplaceAllString(input, "*$1*")
+	/*
+		italicPattern := regexp.MustCompile(`\*(.*?)\*`)
+		input = italicPattern.ReplaceAllString(input, "=$1=")
+		boldPattern3 := regexp.MustCompile(`==(.*?)==`)
+		input = boldPattern3.ReplaceAllString(input, "*$1*")
+		italicPattern2 := regexp.MustCompile(`=(.*?)=`)
+		input = italicPattern2.ReplaceAllString(input, "_ $1 _")
+	*/
 	return input
+}
+
+func sendHistory(chatID int64, ChatMessages []openai.ChatCompletionMessage) {
+	var buffer bytes.Buffer
+
+	for _, msg := range ChatMessages {
+		_, err := fmt.Fprintf(&buffer, "%s: %s\n", msg.Role, msg.Content)
+		if err != nil {
+			SendToUser(gOwner, "Ошибка формирования сообщения", ERROR, 2)
+			return
+		}
+	}
+
+	msg := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+		Name:   "Messages.txt", // Имя файла, которое будет отображаться в Telegram
+		Reader: &buffer,
+	})
+
+	if _, err := gBot.Send(msg); err != nil {
+		SendToUser(gOwner, "Ошибка при отправке документа", ERROR, 2)
+		return
+	}
+}
+
+func SendRequest(FullPrompt []openai.ChatCompletionMessage, chatItem ChatState) []openai.ChatCompletionChoice {
+	var resp openai.ChatCompletionResponse
+	var err error
+	// Формируем запрос к API
+	resp, err = gClient.CreateChatCompletion(
+		context.Background(),
+		openai.ChatCompletionRequest{
+			Model:       chatItem.Model,
+			Temperature: chatItem.Temperature,
+			Messages:    FullPrompt,
+		},
+	)
+	if err != nil {
+		// Обработка ошибки
+		SendToUser(gOwner, gErr[17][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, INFO, 0)
+		time.Sleep(20 * time.Second)
+		return nil
+	}
+
+	// Возвращаем выборы из ответа
+	return resp.Choices // resp.Choices имеет тип []ChatCompletionChoice
 }

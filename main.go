@@ -152,7 +152,7 @@ func init() {
 		SendToUser(gOwner, gErr[18][gLocale], INFO, 1)
 	} else {
 		for _, model := range models.Models {
-			if strings.Contains(strings.ToLower(model.ID), "gpt-4") {
+			if (strings.Contains(strings.ToLower(model.ID), "o1")) || (strings.Contains(strings.ToLower(model.ID), "4o")) {
 				gModels = append(gModels, model.ID)
 			}
 		}

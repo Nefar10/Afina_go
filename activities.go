@@ -75,14 +75,13 @@ func ProcessInitiative() {
 	}
 }
 
-func isMyReaction(messages []openai.ChatCompletionMessage, CharPrmt []openai.ChatCompletionMessage, History []openai.ChatCompletionMessage) bool {
+func isMyReaction(messages []openai.ChatCompletionMessage, History []openai.ChatCompletionMessage) bool {
 	var FullPromt []openai.ChatCompletionMessage
 	var resp openai.ChatCompletionResponse
 	var err error
 	var result bool
 	result = false
 	FullPromt = nil
-	//FullPromt = append(FullPromt, CharPrmt...)
 	FullPromt = append(FullPromt, gHsName[gLocale]...)
 	FullPromt = append(FullPromt, History...)
 	if len(messages) >= 3 {
@@ -111,12 +110,11 @@ func isMyReaction(messages []openai.ChatCompletionMessage, CharPrmt []openai.Cha
 	return result
 }
 
-func needFunction(messages []openai.ChatCompletionMessage, CharPrmt []openai.ChatCompletionMessage, History []openai.ChatCompletionMessage) byte {
+func needFunction(messages []openai.ChatCompletionMessage, History []openai.ChatCompletionMessage) byte {
 	var FullPromt []openai.ChatCompletionMessage
 	var resp openai.ChatCompletionResponse
 	var err error
 	var result byte
-	result = DONOTHING
 	FullPromt = nil
 	//FullPromt = append(FullPromt, CharPrmt...)
 	//FullPromt = append(FullPromt, History...)
@@ -135,8 +133,15 @@ func needFunction(messages []openai.ChatCompletionMessage, CharPrmt []openai.Cha
 		time.Sleep(20 * time.Second)
 	} else {
 		log.Println(resp.Choices[0].Message.Content)
-		if strings.Contains(resp.Choices[0].Message.Content, gBotReaction[0][gLocale]) {
-			result = result + DOCALCULATE
+		switch {
+		case strings.Contains(resp.Choices[0].Message.Content, "Математика"):
+			result = DOCALCULATE
+		case strings.Contains(resp.Choices[0].Message.Content, "Меню"):
+			result = DOSHOWMENU
+		case strings.Contains(resp.Choices[0].Message.Content, "История"):
+			result = DOSHOWHIST
+		default:
+			result = DONOTHING
 		}
 	}
 	return result

@@ -69,14 +69,16 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 					tgbotapi.NewInlineKeyboardButtonData(gMenu[6][gLocale], "INPROCESS"),
 				),
 				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[10][gLocale], "TUNE_CHAT: "+strconv.FormatInt(toChat, 10)),
+					tgbotapi.NewInlineKeyboardButtonData("Информация", "INFO: "+strconv.FormatInt(toChat, 10)),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[11][gLocale], "CLEAR_CONTEXT: "+strconv.FormatInt(toChat, 10)),
+				),
+				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData(gMenu[7][gLocale], "RESETTODEFAULTS"),
 					tgbotapi.NewInlineKeyboardButtonData(gMenu[8][gLocale], "FLUSHCACHE"),
 					tgbotapi.NewInlineKeyboardButtonData(gMenu[9][gLocale], "RESTART"),
 				),
-				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData(gMenu[10][gLocale], "TUNE_CHAT: "+strconv.FormatInt(toChat, 10)),
-					tgbotapi.NewInlineKeyboardButtonData(gMenu[11][gLocale], "CLEAR_CONTEXT: "+strconv.FormatInt(toChat, 10)),
-				),
+
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData(gMenu[12][gLocale], "GAME_IT_ALIAS: "+strconv.FormatInt(toChat, 10)),
 				))
@@ -86,7 +88,7 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 		{
 			var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup( //формируем меню для ответа
 				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData(gMenu[10][gLocale], "INFO: "+strconv.FormatInt(toChat, 10)),
+					tgbotapi.NewInlineKeyboardButtonData("Информация", "INFO: "+strconv.FormatInt(toChat, 10)),
 					tgbotapi.NewInlineKeyboardButtonData(gMenu[11][gLocale], "CLEAR_CONTEXT: "+strconv.FormatInt(toChat, 10)),
 				),
 				tgbotapi.NewInlineKeyboardRow(
@@ -363,9 +365,17 @@ func Menu() {
 
 func UserMenu(update tgbotapi.Update) {
 	var chatItem ChatState
+	var chatID int64
+	var err error
+	var chatIDstr string
 	SetCurOperation("User menu show", 0)
-	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
-	chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
+	if update.CallbackQuery != nil {
+		chatIDstr = strings.Split(update.CallbackQuery.Data, " ")[1]
+		chatID, err = strconv.ParseInt(chatIDstr, 10, 64)
+	} else {
+		chatIDstr = strconv.Itoa(int(update.Message.Chat.ID))
+		chatID = update.Message.Chat.ID
+	}
 	if err != nil {
 		SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 	}
