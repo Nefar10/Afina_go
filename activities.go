@@ -68,7 +68,7 @@ func ProcessInitiative() {
 				}
 				ChatMessages = GetChatMessages("Dialog:" + strconv.FormatInt(chatItem.ChatID, 10))
 				ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content})
-				RenewDialog(strconv.FormatInt(chatItem.ChatID, 10), ChatMessages)
+				RenewDialog(chatItem.ChatID, ChatMessages)
 			}
 		}
 	}
@@ -139,11 +139,50 @@ func needFunction(messages []openai.ChatCompletionMessage, History []openai.Chat
 			result = DOSHOWMENU
 		case strings.Contains(resp.Choices[0].Message.Content, "История"):
 			result = DOSHOWHIST
+		case strings.Contains(resp.Choices[0].Message.Content, "Чистка"):
+			result = DOCLEARHIST
+		case strings.Contains(resp.Choices[0].Message.Content, "Игра"):
+			result = DOGAME
 		default:
 			result = DONOTHING
 		}
 	}
 	return result
+}
+
+func DoBotFunction(BotReaction byte, update tgbotapi.Update, ChatMessages []openai.ChatCompletionMessage) {
+	switch BotReaction {
+	case DOSHOWMENU:
+		{
+			if update.Message.Chat.ID == gOwner {
+				Menu()
+			} else {
+				UserMenu(update)
+			}
+		}
+	case DOSHOWHIST:
+		{
+			if update.Message.From.ID == gOwner {
+				sendHistory(update.Message.Chat.ID, ChatMessages)
+			} else {
+				SendToUser(update.Message.Chat.ID, "Извините, у вас нет доступа.", INFO, 0)
+			}
+		}
+	case DOCLEARHIST:
+		{
+			if update.Message.From.ID == gOwner {
+				ClearContext(update.Message.Chat.ID)
+			} else {
+				SendToUser(update.Message.Chat.ID, "Извините, у вас нет доступа.", INFO, 0)
+			}
+			return
+		}
+	case DOGAME:
+		{
+			GameAlias(update.Message.Chat.ID)
+		}
+	}
+	return
 }
 
 func ProcessNews() {

@@ -25,9 +25,23 @@ func ProcessCallbacks(update tgbotapi.Update) {
 	case strings.Contains(cbData, "ID:"):
 		DoWithChat(update)
 	case strings.Contains(cbData, "CLEAR_CONTEXT:"):
-		ClearContext(update)
+		{
+			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
+			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
+			if err != nil {
+				SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
+			}
+			ClearContext(chatID)
+		}
 	case strings.Contains(cbData, "GAME_IT_ALIAS"):
-		GameAlias(update)
+		{
+			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
+			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
+			if err != nil {
+				SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
+			}
+			GameAlias(chatID)
+		}
 	case cbData == "MENU":
 		Menu()
 	case strings.Contains(cbData, "USERMENU:"):
@@ -163,40 +177,22 @@ func ProcessMessage(update tgbotapi.Update) {
 		//Определяем требуется ли выполнить функцию
 		if toBotFlag {
 			BotReaction = needFunction(LastMessages, chatItem.History)
-			switch BotReaction {
-			case DOSHOWMENU:
-				{
-					if update.Message.Chat.ID == gOwner {
-						Menu()
-					} else {
-						UserMenu(update)
+			if BotReaction != DONOTHING {
+				DoBotFunction(BotReaction, update, ChatMessages)
+			}
+			if BotReaction < DOCALCULATE {
+				for {
+					currentTime := time.Now()
+					elapsedTime := currentTime.Sub(gLastRequest)
+					time.Sleep(time.Second)
+					if elapsedTime >= 10*time.Second && !gClient_is_busy {
+						break
 					}
-					return
 				}
-			case DOSHOWHIST:
-				{
-					if update.Message.From.ID == gOwner {
-						sendHistory(update.Message.Chat.ID, ChatMessages)
-					} else {
-						SendToUser(chatItem.ChatID, "Извините, у вас нет доступа.", INFO, 0)
-					}
-					return
-				}
-			default:
-				{
-					for {
-						currentTime := time.Now()
-						elapsedTime := currentTime.Sub(gLastRequest)
-						time.Sleep(time.Second)
-						if elapsedTime >= 10*time.Second && !gClient_is_busy {
-							break
-						}
-					}
-					gClient_is_busy = true    //Флаг занятости
-					gLastRequest = time.Now() //Запомним текущее время
-					gBot.Send(action)         //Симулируем набор текста
-					resp = SendRequest(FullPromt, chatItem)
-				}
+				gClient_is_busy = true    //Флаг занятости
+				gLastRequest = time.Now() //Запомним текущее время
+				gBot.Send(action)         //Симулируем набор текста
+				resp = SendRequest(FullPromt, chatItem)
 
 			}
 			//обрабатываем ответ
@@ -217,16 +213,18 @@ func ProcessMessage(update tgbotapi.Update) {
 					msg.Text = resp[0].Message.Content //Записываем ответ в сообщение
 				}
 			}
-			gClient_is_busy = false
-			ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: msg.Text})
-		}
-		RenewDialog(strconv.FormatInt(update.Message.Chat.ID, 10), ChatMessages)
-		msg.Text = convTgmMarkdown(msg.Text)
-		msg.ParseMode = "markdown"
-		gBot.Send(msg)
-		if chatItem.Title != update.Message.Chat.Title {
-			chatItem.Title = update.Message.Chat.Title
-			SetChatStateDB(chatItem)
+			if BotReaction <= DOCALCULATE {
+				gClient_is_busy = false
+				ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: msg.Text})
+				RenewDialog(update.Message.Chat.ID, ChatMessages)
+				msg.Text = convTgmMarkdown(msg.Text)
+				msg.ParseMode = "markdown"
+				gBot.Send(msg)
+				if chatItem.Title != update.Message.Chat.Title {
+					chatItem.Title = update.Message.Chat.Title
+					SetChatStateDB(chatItem)
+				}
+			}
 		}
 		return
 	}

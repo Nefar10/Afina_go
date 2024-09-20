@@ -54,9 +54,11 @@ func GetChatStateDB(key string) ChatState {
 	}
 }
 
-func RenewDialog(chatIDstr string, ChatMessages []openai.ChatCompletionMessage) {
+func RenewDialog(chatID int64, ChatMessages []openai.ChatCompletionMessage) {
 	var jsonData []byte
 	var err error
+	var chatIDstr string
+	chatIDstr = strconv.FormatInt(chatID, 10)
 	SetCurOperation("Update dialog", 0)
 	jsonData, err = json.Marshal(ChatMessages)
 	if err != nil {
@@ -92,21 +94,12 @@ func Restart() {
 	os.Exit(0)
 }
 
-func ClearContext(update tgbotapi.Update) {
-	var chatItem ChatState
+func ClearContext(chatID int64) {
 	var ChatMessages []openai.ChatCompletionMessage
 	SetCurOperation("Context cleaning", 0)
-	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
-	chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
-	if err != nil {
-		SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
-	}
-	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
-	if chatItem.ChatID != 0 {
-		ChatMessages = nil
-		RenewDialog(chatIDstr, ChatMessages)
-		SendToUser(chatID, "Контекст очищен!", NOTHING, 1)
-	}
+	ChatMessages = nil
+	RenewDialog(chatID, ChatMessages)
+	SendToUser(chatID, "Контекст очищен!", NOTHING, 1)
 }
 
 func ShowChatInfo(update tgbotapi.Update) {
