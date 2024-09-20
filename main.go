@@ -214,6 +214,6 @@ func main() {
 	for {
 		time.Sleep(time.Minute)
 		ProcessInitiative()
-		ProcessNews()
+		//ProcessNews()
 	}
 }

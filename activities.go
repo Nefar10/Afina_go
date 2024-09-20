@@ -2,11 +2,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	openai "github.com/sashabaranov/go-openai"
 )
@@ -109,12 +112,15 @@ func isMyReaction(messages []openai.ChatCompletionMessage, History []openai.Chat
 	return result
 }
 
-func needFunction(messages []openai.ChatCompletionMessage, History []openai.ChatCompletionMessage) byte {
+func needFunction(messages []openai.ChatCompletionMessage) (byte, string) {
 	var FullPromt []openai.ChatCompletionMessage
 	var resp openai.ChatCompletionResponse
 	var err error
 	var result byte
+	var URI string
+	var respstr []string
 	FullPromt = nil
+	URI = ""
 	//FullPromt = append(FullPromt, CharPrmt...)
 	//FullPromt = append(FullPromt, History...)
 	FullPromt = append(FullPromt, messages[len(messages)-1])
@@ -143,14 +149,20 @@ func needFunction(messages []openai.ChatCompletionMessage, History []openai.Chat
 			result = DOCLEARHIST
 		case strings.Contains(resp.Choices[0].Message.Content, "Игра"):
 			result = DOGAME
+		case strings.Contains(resp.Choices[0].Message.Content, "Сайт"):
+			respstr = strings.Split(resp.Choices[0].Message.Content, "\n")
+			URI = respstr[len(respstr)-1]
+			result = DOREADSITE
 		default:
 			result = DONOTHING
 		}
 	}
-	return result
+	return result, URI
 }
 
-func DoBotFunction(BotReaction byte, update tgbotapi.Update, ChatMessages []openai.ChatCompletionMessage) {
+func DoBotFunction(BotReaction byte, chatItem ChatState, update tgbotapi.Update, ChatMessages []openai.ChatCompletionMessage, FullPromt []openai.ChatCompletionMessage, URI string) []openai.ChatCompletionChoice {
+	var resp []openai.ChatCompletionChoice
+	resp = nil
 	switch BotReaction {
 	case DOSHOWMENU:
 		{
@@ -170,94 +182,46 @@ func DoBotFunction(BotReaction byte, update tgbotapi.Update, ChatMessages []open
 		}
 	case DOCLEARHIST:
 		{
-			if update.Message.From.ID == gOwner {
-				ClearContext(update.Message.Chat.ID)
-			} else {
-				SendToUser(update.Message.Chat.ID, "Извините, у вас нет доступа.", INFO, 0)
-			}
-			return
+			SendToUser(update.Message.Chat.ID, "Извините, у вас нет доступа.", INFO, 0)
 		}
 	case DOGAME:
 		{
 			GameAlias(update.Message.Chat.ID)
 		}
+	case DOREADSITE:
+		{
+			FullPromt = append(FullPromt, ProcessWebPage(URI)...)
+			gClient_is_busy = true    //Флаг занятости
+			gLastRequest = time.Now() //Запомним текущее время
+			resp = SendRequest(FullPromt, chatItem)
+		}
 	}
-	return
+	return resp
 }
 
-func ProcessNews() {
-	// URL страницы
-	/*
-			url := "https://www.ixbt.com/news/2024/09/08/snapdragon-8-gen-4-soc-240.html"
+func ProcessWebPage(URI string) []openai.ChatCompletionMessage {
+	var answer []openai.ChatCompletionMessage
+	answer = nil
+	resp, err := http.Get(URI)
+	if err != nil {
+		fmt.Println("Ошибка при получении страницы:", err)
+		return answer
+	}
+	defer resp.Body.Close()
 
-			// Получение HTML-страницы
-			resp, err := http.Get(url)
-			if err != nil {
-				fmt.Println("Ошибка при получении страницы:", err)
-				return
-			}
-			defer resp.Body.Close()
-
-			// Загружаем страницу в goquery
-			doc, err := goquery.NewDocumentFromReader(resp.Body)
-			if err != nil {
-				fmt.Println("Ошибка при загрузке документа:", err)
-				return
-			}
-
-			// Получаем HTML как строку
-			html, err := doc.Html()
-			if err != nil {
-				fmt.Println("Ошибка при получении HTML:", err)
-				return
-			}
-
-			// Преобразуем HTML в xmlpath
-			xmlDoc, err := xmlpath.ParseHTML(strings.NewReader(html))
-			if err != nil {
-				fmt.Println("Ошибка при парсинге HTML:", err)
-				return
-			}
-
-			// Указываем ваш XPath
-			path := xmlpath.MustCompile("//*[@id='main-pagecontent__div']") // Замените на ваш XPath
-
-			// Находим узел
-			node, ok := path.String(xmlDoc)
-			if ok {
-				fmt.Println("Содержимое блока:", node)
-			} else {
-				fmt.Println("Узел не найден")
-			}
-		}
-
-		//url := "https://www.ixbt.com/export/sec_cpu.rss"
-		/*
-			url := "https://www.ixbt.com/news/2024/09/08/snapdragon-8-gen-4-soc-240.html"
-			resp, err := http.Get(url)
-			if err != nil {
-				fmt.Println("Ошибка при получении данных:", err)
-				return
-			}
-			defer resp.Body.Close()
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				fmt.Println("Ошибка при чтении данных:", err)
-				return
-			}
-			var rss RSS
-			var rss
-			if err := xml.Unmarshal(body, &rss); err != nil {
-				fmt.Println("Ошибка при парсинге XML:", err)
-				return
-			}
-					jsonData, err := json.MarshalIndent(rss, "", "  ")
-				if err != nil {
-					fmt.Println("Ошибка при конвертации в JSON:", err)
-					return
-				}
-	*/
-	// Выводим результат
-	//fmt.Println(string(jsonData))
-	//fmt.Println(rss.Channel)
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	if err != nil {
+		fmt.Println("Ошибка при загрузке документа:", err)
+		return answer
+	}
+	html, err := doc.Html()
+	if err != nil {
+		fmt.Println("Ошибка при получении HTML:", err)
+		return answer
+	}
+	log.Println(html)
+	answer = []openai.ChatCompletionMessage{
+		{Role: openai.ChatMessageRoleUser, Content: html},
+		{Role: openai.ChatMessageRoleUser, Content: "Проанализируй содержимое представленного контента не обращая внимания на HTML разметку. Предоставь ссылки на выбранные тобой темы."}}
+	return answer
 }

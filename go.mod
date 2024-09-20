@@ -11,9 +11,11 @@ require (
 	github.com/sashabaranov/go-openai v1.20.4
 )
 
+require github.com/andybalholm/cascadia v1.3.2 // indirect
+
 require (
+	github.com/PuerkitoBio/goquery v1.10.0
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.30.0 // indirect
 	golang.org/x/net v0.29.0 // indirect
-	golang.org/x/sys v0.25.0 // indirect
 )

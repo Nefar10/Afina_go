@@ -106,6 +106,7 @@ func ProcessMessage(update tgbotapi.Update) {
 	var LastMessages []openai.ChatCompletionMessage //Current prompt
 	var FullPromt []openai.ChatCompletionMessage    //Messages to send
 	var resp []openai.ChatCompletionChoice
+	var URI string
 	SetCurOperation("Update message processing", 0)
 	//Получим информацию о чате
 	chatItem = GetChatStateDB("ChatState:" + strconv.FormatInt(update.Message.Chat.ID, 10))
@@ -176,9 +177,9 @@ func ProcessMessage(update tgbotapi.Update) {
 		FullPromt = append(FullPromt, LastMessages...)     //Последние сообщения
 		//Определяем требуется ли выполнить функцию
 		if toBotFlag {
-			BotReaction = needFunction(LastMessages, chatItem.History)
+			BotReaction, URI = needFunction(LastMessages)
 			if BotReaction != DONOTHING {
-				DoBotFunction(BotReaction, update, ChatMessages)
+				resp = DoBotFunction(BotReaction, chatItem, update, ChatMessages, FullPromt, URI)
 			}
 			if BotReaction < DOCALCULATE {
 				for {
@@ -212,8 +213,11 @@ func ProcessMessage(update tgbotapi.Update) {
 				if resp != nil {
 					msg.Text = resp[0].Message.Content //Записываем ответ в сообщение
 				}
+				if BotReaction == DOREADSITE {
+					msg.Text = resp[0].Message.Content //Записываем ответ в сообщение
+				}
 			}
-			if BotReaction <= DOCALCULATE {
+			if BotReaction <= DOCALCULATE || BotReaction == DOREADSITE {
 				gClient_is_busy = false
 				ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: msg.Text})
 				RenewDialog(update.Message.Chat.ID, ChatMessages)
