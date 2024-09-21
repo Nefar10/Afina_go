@@ -200,7 +200,7 @@ func ProcessWebPage(LastMessages []openai.ChatCompletionMessage) []openai.ChatCo
 			data += "Заголовок: " + e.Text + "\n"
 		})
 		c.OnHTML("a[href]", func(e *colly.HTMLElement) {
-			data += "link [" + e.Attr("href") + "] (" + e.Text + ")\n"
+			data += e.Attr("href") + " " + e.Text + "\n"
 		})
 		c.OnHTML("p", func(e *colly.HTMLElement) {
 			data += e.Text
@@ -216,7 +216,7 @@ func ProcessWebPage(LastMessages []openai.ChatCompletionMessage) []openai.ChatCo
 		answer = append(answer, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: data})
 		answer = append(answer, LastMessages[len(LastMessages)-1:]...)
 		answer = append(answer, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "В предыдущих сообщенииях содержимое сайта " +
-			URI + "Предоставь информацию с ссылками на контент в markdown разметке"})
+			URI + "Предоставь информацию на моем языке с ссылками на контент в markdown разметке"})
 		return answer
 	} else {
 		return answer

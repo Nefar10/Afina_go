@@ -205,7 +205,9 @@ func ProcessMessage(update tgbotapi.Update) {
 			case DOSHOWMENU, DOSHOWHIST, DOCLEARHIST, DOGAME:
 				DoBotFunction(BotReaction, ChatMessages, update)
 			case DOREADSITE:
-				FullPromt = append(FullPromt, ProcessWebPage(LastMessages)...)
+				tmpMSGs := ProcessWebPage(LastMessages)
+				FullPromt = append(FullPromt, tmpMSGs...)
+				ChatMessages = append(ChatMessages, tmpMSGs...)
 				resp = SendRequest(FullPromt, chatItem)
 			default:
 				resp = SendRequest(FullPromt, chatItem)
