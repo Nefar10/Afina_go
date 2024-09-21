@@ -195,6 +195,6 @@ func SetChatSettings(chatItem ChatState, update tgbotapi.Update) {
 		chatItem.SetState = NO_ONE
 		SetChatStateDB(chatItem)
 		SendToUser(gOwner, "Принято!", INFO, 1)
-		gChangeSettings = gOwner
+		gChangeSettings = 0
 	}
 }

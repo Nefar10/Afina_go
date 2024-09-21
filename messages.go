@@ -110,10 +110,12 @@ func ProcessMessage(update tgbotapi.Update) {
 	//Получим информацию о чате
 	chatItem = GetChatStateDB("ChatState:" + strconv.FormatInt(update.Message.Chat.ID, 10))
 	//Проверим - не требуется ли настройка
-	if (chatItem.SetState != NO_ONE) && (chatItem.ChatID == gOwner) {
-		if gChangeSettings != gOwner {
-			chatItem = GetChatStateDB("ChatState:" + strconv.FormatInt(gChangeSettings, 10))
-		}
+	if update.Message.Chat.ID == gOwner && gChangeSettings != gOwner && gChangeSettings != 0 {
+		chatItem = GetChatStateDB("ChatState:" + strconv.FormatInt(gChangeSettings, 10))
+		SetChatSettings(chatItem, update)
+		return
+	}
+	if update.Message.Chat.ID == gOwner && gChangeSettings == gOwner {
 		SetChatSettings(chatItem, update)
 		return
 	}
@@ -250,6 +252,7 @@ func ProcessMessage(update tgbotapi.Update) {
 			if update.Message.Chat.Type == "private" {
 				SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.From.UserName+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться с этим пользователем?", ACCESS, 0, update.Message.Chat.ID)
 				log.Println("Запрос диалога от " + update.Message.From.FirstName + " " + update.Message.From.UserName + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
+				ProcessMember(update)
 			} else {
 				SendToUser(gOwner, "В группововм чате "+update.Message.From.FirstName+" "+update.Message.Chat.Title+" открыли диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться в этом чате?", ACCESS, 0, update.Message.Chat.ID)
 				log.Println("Запрос диалога от " + update.Message.From.FirstName + " " + update.Message.Chat.Title + " " + strconv.FormatInt(update.Message.Chat.ID, 10))

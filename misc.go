@@ -44,7 +44,7 @@ func GetChatStateDB(key string) ChatState {
 	if err != nil {
 		Log("Ошибка", ERR, err)
 		//SendToUser(gOwner, E13[gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
-		return ChatState{}
+		return ChatState{AllowState: IN_PROCESS}
 	} else {
 		err = json.Unmarshal([]byte(jsonStr), &chatItem)
 		if err != nil {
