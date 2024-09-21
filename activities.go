@@ -4,13 +4,15 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/PuerkitoBio/goquery"
+	//cu "github.com/Davincible/chromedp-undetected"
+	//"github.com/PuerkitoBio/goquery"
+	//"github.com/chromedp/chromedp"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/gocolly/colly/v2"
 	openai "github.com/sashabaranov/go-openai"
 )
 
@@ -112,31 +114,16 @@ func isMyReaction(messages []openai.ChatCompletionMessage, History []openai.Chat
 	return result
 }
 
-func needFunction(messages []openai.ChatCompletionMessage) (byte, string) {
+func needFunction(messages []openai.ChatCompletionMessage) byte {
 	var FullPromt []openai.ChatCompletionMessage
 	var resp openai.ChatCompletionResponse
-	var err error
 	var result byte
-	var URI string
-	var respstr []string
+	result = DONOTHING
 	FullPromt = nil
-	URI = ""
-	//FullPromt = append(FullPromt, CharPrmt...)
-	//FullPromt = append(FullPromt, History...)
 	FullPromt = append(FullPromt, messages[len(messages)-1])
 	FullPromt = append(FullPromt, gHsReaction[1].Prompt[gLocale]...)
-	resp, err = gClient.CreateChatCompletion(
-		context.Background(),
-		openai.ChatCompletionRequest{
-			Model:       BASEGPTMODEL,
-			Temperature: 0,
-			Messages:    FullPromt,
-		},
-	)
-	if err != nil {
-		SendToUser(gOwner, gErr[17][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, INFO, 0)
-		time.Sleep(20 * time.Second)
-	} else {
+	resp = SendRequest(FullPromt, ChatState{Model: BASEGPTMODEL, Temperature: 0})
+	if len(resp.Choices) > 0 {
 		log.Println(resp.Choices[0].Message.Content)
 		switch {
 		case strings.Contains(resp.Choices[0].Message.Content, "Математика"):
@@ -150,19 +137,17 @@ func needFunction(messages []openai.ChatCompletionMessage) (byte, string) {
 		case strings.Contains(resp.Choices[0].Message.Content, "Игра"):
 			result = DOGAME
 		case strings.Contains(resp.Choices[0].Message.Content, "Сайт"):
-			respstr = strings.Split(resp.Choices[0].Message.Content, "\n")
-			URI = respstr[len(respstr)-1]
 			result = DOREADSITE
+		case strings.Contains(resp.Choices[0].Message.Content, "Поиск"):
+			result = DOSEARCH
 		default:
 			result = DONOTHING
 		}
 	}
-	return result, URI
+	return result
 }
 
-func DoBotFunction(BotReaction byte, chatItem ChatState, update tgbotapi.Update, ChatMessages []openai.ChatCompletionMessage, FullPromt []openai.ChatCompletionMessage, URI string) []openai.ChatCompletionChoice {
-	var resp []openai.ChatCompletionChoice
-	resp = nil
+func DoBotFunction(BotReaction byte, ChatMessages []openai.ChatCompletionMessage, update tgbotapi.Update) {
 	switch BotReaction {
 	case DOSHOWMENU:
 		{
@@ -182,24 +167,121 @@ func DoBotFunction(BotReaction byte, chatItem ChatState, update tgbotapi.Update,
 		}
 	case DOCLEARHIST:
 		{
-			SendToUser(update.Message.Chat.ID, "Извините, у вас нет доступа.", INFO, 0)
+			if update.Message.From.ID == gOwner {
+				ClearContext(update.Message.Chat.ID)
+			} else {
+				SendToUser(update.Message.Chat.ID, "Извините, у вас нет доступа.", INFO, 0)
+			}
 		}
 	case DOGAME:
 		{
 			GameAlias(update.Message.Chat.ID)
 		}
-	case DOREADSITE:
-		{
-			FullPromt = append(FullPromt, ProcessWebPage(URI)...)
-			gClient_is_busy = true    //Флаг занятости
-			gLastRequest = time.Now() //Запомним текущее время
-			resp = SendRequest(FullPromt, chatItem)
-		}
+		return
 	}
-	return resp
+}
+func ProcessWebPage(LastMessages []openai.ChatCompletionMessage) []openai.ChatCompletionMessage {
+	var resp openai.ChatCompletionResponse
+	var answer []openai.ChatCompletionMessage
+	var FullPromt []openai.ChatCompletionMessage
+	var err error
+	var URI string
+	var data string
+
+	FullPromt = append(FullPromt, LastMessages[len(LastMessages)-1:]...)
+	FullPromt = append(FullPromt, []openai.ChatCompletionMessage{
+		{Role: openai.ChatMessageRoleUser, Content: "Укажи без комментариев и разметки только полный адрес сайта из контекста предыдущего сообщения. Подставь протокол, если онне указан"}}...)
+	resp = SendRequest(FullPromt, ChatState{Model: BASEGPTMODEL, Temperature: 0})
+	if resp.Choices != nil {
+		URI = resp.Choices[0].Message.Content
+		log.Println(URI)
+		c := colly.NewCollector()
+		c.OnHTML("h1", func(e *colly.HTMLElement) {
+			data += "Заголовок: " + e.Text + "\n"
+		})
+		c.OnHTML("a[href]", func(e *colly.HTMLElement) {
+			data += "link [" + e.Attr("href") + "] (" + e.Text + ")\n"
+		})
+		c.OnHTML("p", func(e *colly.HTMLElement) {
+			data += e.Text
+		})
+		c.OnError(func(r *colly.Response, err error) {
+			log.Println("Ошибка:", err)
+		})
+		err = c.Visit(URI)
+		if err != nil {
+			log.Println(err)
+		}
+		fmt.Println(data)
+		answer = append(answer, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: data})
+		answer = append(answer, LastMessages[len(LastMessages)-1:]...)
+		answer = append(answer, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "В предыдущих сообщенииях содержимое сайта " +
+			URI + "Предоставь информацию с ссылками на контент в markdown разметке"})
+		return answer
+	} else {
+		return answer
+	}
 }
 
-func ProcessWebPage(URI string) []openai.ChatCompletionMessage {
+/*
+	os := runtime.GOOS
+	switch os {
+	case "windows":
+		ctx, cancel, err = cu.New(cu.NewConfig(
+			//cu.WithHeadless(),
+			cu.WithTimeout(60 * time.Second),
+		))
+	case "linux":
+		ctx, cancel, err = cu.New(cu.NewConfig(
+			cu.WithHeadless(),
+			cu.WithTimeout(60*time.Second),
+		))
+	default:
+		SendToUser(gOwner, "Неизвестная ОС", ERROR, 2)
+		return answer
+	}
+	if err != nil {
+		panic(err)
+	}
+	defer cancel()
+	if err := chromedp.Run(ctx,
+		chromedp.Navigate(URI),
+		chromedp.OuterHTML("html", &pageContent),
+	); err != nil {
+		panic(err)
+	}
+	// Загружаем HTML из строки
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(pageContent))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var data ParsedData
+
+	// звлечение текста из всех блоко
+		doc.Find("p, div").Each(func(i int, s *goquery.Selection) {
+			s.Contents().Each(func(j int, child *goquery.Selection) {
+				node := child.Get(0) // Получаем текущий узел
+
+				if node.Type == 1 && node.Data == "a" { // Если это ссылка
+					href, exists := child.Attr("href")
+					if exists {
+						data.Content = append(data.Content, fmt.Sprintf("[%s](%s)", child.Text(), href))
+					}
+				} else if node.Type == 3 { // Если это текстовый узел
+					text := child.Text()
+					if text != "" {
+						data.Content = append(data.Content, text)
+					}
+				}
+			})
+		})
+
+	fmt.Println(data)
+	return answer
+}
+
+/*
 	var answer []openai.ChatCompletionMessage
 	answer = nil
 	resp, err := http.Get(URI)
@@ -225,3 +307,72 @@ func ProcessWebPage(URI string) []openai.ChatCompletionMessage {
 		{Role: openai.ChatMessageRoleUser, Content: "Проанализируй содержимое представленного контента не обращая внимания на HTML разметку. Предоставь ссылки на выбранные тобой темы."}}
 	return answer
 }
+/*
+unc main() {
+	// Запускаем Selenium сервер
+	const (
+	 seleniumPath = "path/to/selenium-server-standalone.jar" // Укажите путь к JAR-файлу
+	 chromeDriverPath = "path/to/chromedriver" // Укажите путь к Chromedriver
+	 port = 8080
+	)
+
+	// Запуск Selenium сервер
+	opts := []selenium.ServiceOption{
+	 selenium.StartFrameBuffer(), // Запуск в headless режиме
+	 selenium.ChromeDriver(chromeDriverPath), // Путь к Chromedriver
+	}
+	srv, err := selenium.NewSeleniumService(seleniumPath, port, opts...)
+	if err != nil {
+	 log.Fatalf("Error starting the Selenium server: %s", err)
+	}
+	defer srv.Stop()
+
+	// Подключение к Selenium
+	caps := selenium.Capabilities{"browserName": "chrome"}
+	caps.Add("goog:chromeOptions", map[string]interface{}{
+	 "args": []string{"--headless", "--no-sandbox", "--disable-dev-shm-usage"},
+	})
+
+	webDriver, err := selenium.NewRemote(caps, fmt.Sprintf("http://localhost:%d/wd/hub", port))
+	if err != nil {
+	 log.Fatalf("Error connecting to the remote server: %s", err)
+	}
+	defer webDriver.Quit()
+
+	// Открываем страницу
+	if err := webDriver.Get("http://example.com"); err != nil { // Укажите URL-адрес
+	 log.Fatalf("Error opening page: %s", err)
+	}
+
+	// Получаем текст страницы
+	pageSource, err := webDriver.PageSource()
+	if err != nil {
+	 log.Fatalf("Error getting page source: %s", err)
+	}
+
+	// Извлекаем текст и ссылки
+	text := extractText(pageSource)
+	links := extractLinks(pageSource)
+
+	fmt.Println("Текст страницы:")
+	fmt.Println(text)
+	fmt.Println("\nСсылки:")
+	for _, link := range links {
+	 fmt.Println(link)
+	}
+   }
+
+   // Функция для извлечения текста
+   func extractText(source string) string {
+	// Здесь можно добавить логику для извлечения текста
+	// Например, удалив теги HTML
+	return strings.Join(strings.Fields(source), " ")
+   }
+
+   // Функция для извлечения ссылок
+   func extractLinks(source string) []string {
+	// Здесь можно добавить логику для извлечения ссылок
+	// Например, используя регулярные выражения
+	return []string{"http://example.com/link1", "http://example.com/link2"} // Замените на логику извлечения ссылок
+   }
+*/

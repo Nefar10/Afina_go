@@ -105,8 +105,7 @@ func ProcessMessage(update tgbotapi.Update) {
 	var ChatMessages []openai.ChatCompletionMessage //Current prompt
 	var LastMessages []openai.ChatCompletionMessage //Current prompt
 	var FullPromt []openai.ChatCompletionMessage    //Messages to send
-	var resp []openai.ChatCompletionChoice
-	var URI string
+	var resp openai.ChatCompletionResponse
 	SetCurOperation("Update message processing", 0)
 	//Получим информацию о чате
 	chatItem = GetChatStateDB("ChatState:" + strconv.FormatInt(update.Message.Chat.ID, 10))
@@ -164,61 +163,55 @@ func ProcessMessage(update tgbotapi.Update) {
 		if !toBotFlag && gUpdatesQty == 0 {
 			toBotFlag = isMyReaction(ChatMessages, chatItem.History)
 		}
-		//Формируем промпт
-		FullPromt = nil
-		FullPromt = append(FullPromt, isNow(update, chatItem.TimeZone)[gLocale]...)           //Текущее время
-		FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...) //Модель поведения
-		FullPromt = append(FullPromt, gHsGender[gBotGender].Prompt[gLocale]...)               //Пол
-		FullPromt = append(FullPromt, CharPrmt[gLocale]...)                                   //Стиль общения
-		if chatItem.Type != "channel" && chatItem.Type != "private" {
-			FullPromt = append(FullPromt, gHsBasePrompt[gLocale]...) //Включить базовый промпт для группы
-		}
-		FullPromt = append(FullPromt, chatItem.History...) //История группы
-		FullPromt = append(FullPromt, LastMessages...)     //Последние сообщения
 		//Определяем требуется ли выполнить функцию
 		if toBotFlag {
-			BotReaction, URI = needFunction(LastMessages)
-			if BotReaction != DONOTHING {
-				resp = DoBotFunction(BotReaction, chatItem, update, ChatMessages, FullPromt, URI)
+			for {
+				gBot.Send(action) //Симулируем набор текста
+				currentTime := time.Now()
+				elapsedTime := currentTime.Sub(gLastRequest)
+				time.Sleep(time.Second)
+				if elapsedTime >= 10*time.Second && !gClient_is_busy {
+					break
+				}
 			}
-			if BotReaction < DOCALCULATE {
-				for {
-					currentTime := time.Now()
-					elapsedTime := currentTime.Sub(gLastRequest)
-					time.Sleep(time.Second)
-					if elapsedTime >= 10*time.Second && !gClient_is_busy {
-						break
+			//Формируем промпт
+			FullPromt = nil
+			FullPromt = append(FullPromt, isNow(update, chatItem.TimeZone)[gLocale]...)           //Текущее время
+			FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...) //Модель поведения
+			FullPromt = append(FullPromt, gHsGender[gBotGender].Prompt[gLocale]...)               //Пол
+			FullPromt = append(FullPromt, CharPrmt[gLocale]...)                                   //Стиль общения
+			if chatItem.Type != "channel" && chatItem.Type != "private" {
+				FullPromt = append(FullPromt, gHsBasePrompt[gLocale]...) //Включить базовый промпт для группы
+			}
+			FullPromt = append(FullPromt, chatItem.History...) //История группы
+			FullPromt = append(FullPromt, LastMessages...)     //Последние сообщения
+			BotReaction = needFunction(LastMessages)
+			switch BotReaction {
+			case DOCALCULATE:
+				{
+					resp = SendRequest(FullPromt, chatItem)
+					if resp.Choices != nil {
+						ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content})
+						ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "Ответ не верный. Подумай лучше, учти все детали задачи, и дай правильный ответ без комментариев, в своём стиле."})
+						FullPromt = nil
+						FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...)
+						FullPromt = append(FullPromt, gHsGender[gBotGender].Prompt[gLocale]...)
+						FullPromt = append(FullPromt, CharPrmt[gLocale]...)
+						FullPromt = append(FullPromt, ChatMessages[len(ChatMessages)-4:]...)
+						time.Sleep(5 * time.Second)
+						resp = SendRequest(FullPromt, chatItem)
 					}
 				}
-				gClient_is_busy = true    //Флаг занятости
-				gLastRequest = time.Now() //Запомним текущее время
-				gBot.Send(action)         //Симулируем набор текста
+			case DOSHOWMENU, DOSHOWHIST, DOCLEARHIST, DOGAME:
+				DoBotFunction(BotReaction, ChatMessages, update)
+			case DOREADSITE:
+				FullPromt = append(FullPromt, ProcessWebPage(LastMessages)...)
 				resp = SendRequest(FullPromt, chatItem)
-
-			}
-			//обрабатываем ответ
-			if resp != nil {
-				//Проверяем, не нужно ли точных вычислений
-				if BotReaction == DOCALCULATE {
-					ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: resp[0].Message.Content})
-					ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "Ответ не верный. Подумай лучше, учти все детали задачи, и дай правильный ответ без комментариев, в своём стиле."})
-					FullPromt = nil
-					FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...)
-					FullPromt = append(FullPromt, gHsGender[gBotGender].Prompt[gLocale]...)
-					FullPromt = append(FullPromt, CharPrmt[gLocale]...)
-					FullPromt = append(FullPromt, ChatMessages[len(ChatMessages)-4:]...)
-					time.Sleep(5 * time.Second)
-					resp = SendRequest(FullPromt, chatItem)
-				}
-				if resp != nil {
-					msg.Text = resp[0].Message.Content //Записываем ответ в сообщение
-				}
-				if BotReaction == DOREADSITE {
-					msg.Text = resp[0].Message.Content //Записываем ответ в сообщение
-				}
+			default:
+				resp = SendRequest(FullPromt, chatItem)
 			}
 			if BotReaction <= DOCALCULATE || BotReaction == DOREADSITE {
-				gClient_is_busy = false
+				msg.Text = resp.Choices[0].Message.Content
 				ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: msg.Text})
 				RenewDialog(update.Message.Chat.ID, ChatMessages)
 				msg.Text = convTgmMarkdown(msg.Text)

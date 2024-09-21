@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/xml"
 	"math/rand"
 	"time"
 
@@ -84,8 +83,9 @@ const (
 	DOCLEARHIST = 4
 	DOGAME      = 5
 	DOREADSITE  = 6
+	DOSEARCH    = 7
 	//VERSION
-	VER = "0.27.1"
+	VER = "0.28.1"
 	//CHARAKTER TYPES
 	ISTJ = 1  // (Инспектор): Ответственный, организованный, практичный.
 	ISFJ = 2  // (Защитник): Заботливый, внимательный, преданный.
@@ -726,7 +726,8 @@ var gHsReaction = []sCustomPrompt{
 					"- пользователь просит выгрузить историю чата, то ответь 'История'.\n" +
 					"- пользователь просит очистить историю чата, то ответь 'Чистка'.\n" +
 					"- пользователь просит играть, то ответь 'Игра'.\n" +
-					"- пользователь просит проанализировать содержимое сайта, то ответь 'Сайт' а на следующей строке напиши полный адрес сайта с указанием протокола https.\n" +
+					"- пользователь просит информацию о содержимом сайта, то ответь 'Сайт'\n" +
+					//"- пользователь просит найти информацию, то ответь 'Поиск'\n" +
 					"Если попадания в категорию нет, то ответь 'Нет' и почему"},
 			},
 		},
@@ -777,31 +778,6 @@ var gDefChatState = ChatState{
 	CharType:    ESTJ,
 	TimeZone:    15}
 
-type Image struct {
-	URL   string `xml:"url"`
-	Title string `xml:"title"`
-	Link  string `xml:"link"`
-}
-
-type Item struct {
-	GUID        string `xml:"guid"`
-	Title       string `xml:"title"`
-	Link        string `xml:"link"`
-	Description string `xml:"description"`
-	Author      string `xml:"author"`
-	Category    string `xml:"category"`
-	PubDate     string `xml:"pubDate"`
-}
-
-type Channel struct {
-	Title       string `xml:"title"`
-	Link        string `xml:"link"`
-	Description string `xml:"description"`
-	Image       Image  `xml:"image"`
-	Item        []Item `xml:"item"`
-}
-
-type RSS struct {
-	XMLName xml.Name `xml:"rss"`
-	Channel Channel  `xml:"channel"`
+type ParsedData struct {
+	Content []string `json:"content"` // Массив для хранения текста и ссылок
 }

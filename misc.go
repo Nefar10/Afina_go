@@ -180,6 +180,8 @@ func isNow(update tgbotapi.Update, timezone int) [][]openai.ChatCompletionMessag
 }
 
 func convTgmMarkdown(input string) string {
+	clean := regexp.MustCompile(`[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]+`)
+	input = clean.ReplaceAllString(input, "")
 	boldPattern := regexp.MustCompile(`\*\*(.*?)\*\*`)
 	input = boldPattern.ReplaceAllString(input, "*$1*")
 	boldPattern2 := regexp.MustCompile(`__(.*?)__`)
@@ -217,10 +219,12 @@ func sendHistory(chatID int64, ChatMessages []openai.ChatCompletionMessage) {
 	}
 }
 
-func SendRequest(FullPrompt []openai.ChatCompletionMessage, chatItem ChatState) []openai.ChatCompletionChoice {
+func SendRequest(FullPrompt []openai.ChatCompletionMessage, chatItem ChatState) openai.ChatCompletionResponse {
 	var resp openai.ChatCompletionResponse
 	var err error
 	// Формируем запрос к API
+	gClient_is_busy = true    //Флаг занятости
+	gLastRequest = time.Now() //Запомним текущее время
 	resp, err = gClient.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
@@ -230,12 +234,9 @@ func SendRequest(FullPrompt []openai.ChatCompletionMessage, chatItem ChatState) 
 		},
 	)
 	if err != nil {
-		// Обработка ошибки
 		SendToUser(gOwner, gErr[17][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, INFO, 0)
 		time.Sleep(20 * time.Second)
-		return nil
 	}
-
-	// Возвращаем выборы из ответа
-	return resp.Choices // resp.Choices имеет тип []ChatCompletionChoice
+	gClient_is_busy = false
+	return resp
 }
