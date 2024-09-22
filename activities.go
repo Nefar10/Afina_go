@@ -114,13 +114,12 @@ func isMyReaction(messages []openai.ChatCompletionMessage, History []openai.Chat
 	return result
 }
 
-func needFunction(messages, hist []openai.ChatCompletionMessage) byte {
+func needFunction(messages []openai.ChatCompletionMessage) byte {
 	var FullPromt []openai.ChatCompletionMessage
 	var resp openai.ChatCompletionResponse
 	var result byte
 	result = DONOTHING
 	FullPromt = nil
-	FullPromt = append(FullPromt, hist...)
 	FullPromt = append(FullPromt, messages[len(messages)-1])
 	FullPromt = append(FullPromt, gHsReaction[1].Prompt[gLocale]...)
 	resp = SendRequest(FullPromt, ChatState{Model: BASEGPTMODEL, Temperature: 0})
@@ -181,13 +180,14 @@ func DoBotFunction(BotReaction byte, ChatMessages []openai.ChatCompletionMessage
 		return
 	}
 }
-func ProcessWebPage(LastMessages []openai.ChatCompletionMessage) []openai.ChatCompletionMessage {
+func ProcessWebPage(LastMessages, hist []openai.ChatCompletionMessage) []openai.ChatCompletionMessage {
 	var resp openai.ChatCompletionResponse
 	var answer []openai.ChatCompletionMessage
 	var FullPromt []openai.ChatCompletionMessage
 	var err error
 	var URI string
 	var data string
+	FullPromt = append(FullPromt, hist...)
 	if len(LastMessages) > 5 {
 		FullPromt = append(FullPromt, LastMessages[len(LastMessages)-5:]...)
 	} else {

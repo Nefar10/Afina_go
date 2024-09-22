@@ -187,7 +187,7 @@ func ProcessMessage(update tgbotapi.Update) {
 			}
 			FullPromt = append(FullPromt, chatItem.History...) //История группы
 			FullPromt = append(FullPromt, LastMessages...)     //Последние сообщения
-			BotReaction = needFunction(LastMessages, chatItem.History)
+			BotReaction = needFunction(LastMessages)
 			switch BotReaction {
 			case DOCALCULATE:
 				{
@@ -207,7 +207,7 @@ func ProcessMessage(update tgbotapi.Update) {
 			case DOSHOWMENU, DOSHOWHIST, DOCLEARHIST, DOGAME:
 				DoBotFunction(BotReaction, ChatMessages, update)
 			case DOREADSITE:
-				tmpMSGs := ProcessWebPage(LastMessages)
+				tmpMSGs := ProcessWebPage(LastMessages, chatItem.History)
 				FullPromt = append(FullPromt, tmpMSGs...)
 				ChatMessages = append(ChatMessages, tmpMSGs...)
 				resp = SendRequest(FullPromt, chatItem)
