@@ -184,8 +184,8 @@ func convTgmMarkdown(input string) string {
 	input = clean.ReplaceAllString(input, "")
 	boldPattern := regexp.MustCompile(`\*\*(.*?)\*\*`)
 	input = boldPattern.ReplaceAllString(input, "*$1*")
-	boldPattern2 := regexp.MustCompile(`__(.*?)__`)
-	input = boldPattern2.ReplaceAllString(input, "*$1*")
+	//boldPattern2 := regexp.MustCompile(`__(.*?)__`)
+	//input = boldPattern2.ReplaceAllString(input, "*$1*")
 	/*
 		italicPattern := regexp.MustCompile(`\*(.*?)\*`)
 		input = italicPattern.ReplaceAllString(input, "=$1=")
@@ -223,7 +223,7 @@ func SendRequest(FullPrompt []openai.ChatCompletionMessage, chatItem ChatState) 
 	var resp openai.ChatCompletionResponse
 	var err error
 	// Формируем запрос к API
-	log.Println(FullPrompt)
+	//log.Println(FullPrompt)
 	gClient_is_busy = true    //Флаг занятости
 	gLastRequest = time.Now() //Запомним текущее время
 	resp, err = gClient.CreateChatCompletion(
