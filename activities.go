@@ -187,20 +187,25 @@ func ProcessWebPage(LastMessages []openai.ChatCompletionMessage) []openai.ChatCo
 	var err error
 	var URI string
 	var data string
-
-	FullPromt = append(FullPromt, LastMessages[len(LastMessages)-1:]...)
+	if len(LastMessages) > 5 {
+		FullPromt = append(FullPromt, LastMessages[len(LastMessages)-5:]...)
+	} else {
+		FullPromt = append(FullPromt, LastMessages...)
+	}
 	FullPromt = append(FullPromt, []openai.ChatCompletionMessage{
-		{Role: openai.ChatMessageRoleUser, Content: "Укажи без комментариев и разметки только полный адрес сайта из контекста предыдущего сообщения. Подставь протокол, если онне указан"}}...)
+		{Role: openai.ChatMessageRoleUser, Content: "Укажи без комментариев и разметки только полный адрес сайта запрошенный в предыдущем сообщения. Адрес найди в контексте. Подставь протокол, если онне указан"}}...)
 	resp = SendRequest(FullPromt, ChatState{Model: BASEGPTMODEL, Temperature: 0})
 	if resp.Choices != nil {
 		URI = resp.Choices[0].Message.Content
 		log.Println(URI)
 		c := colly.NewCollector()
+		c.OnXML("//item", func(e *colly.XMLElement) {
+			data += e.ChildText("title") + " - " + e.ChildText("link") + " " + e.ChildText("description") + "\n"
+		})
 		c.OnHTML("title", func(e *colly.HTMLElement) {
 			title := e.Text
 			fmt.Println("Заголовок страницы:", title)
 		})
-
 		c.OnHTML("a[href]", func(e *colly.HTMLElement) {
 			data += e.Text + " - " + e.Attr("href") + "\n"
 		})
@@ -218,7 +223,7 @@ func ProcessWebPage(LastMessages []openai.ChatCompletionMessage) []openai.ChatCo
 		answer = append(answer, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: data})
 		answer = append(answer, LastMessages[len(LastMessages)-1:]...)
 		answer = append(answer, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "В предыдущих сообщенииях содержимое сайта " +
-			URI + "На базе представленного на сайте содержимого собери информацию на моем языке с точными гиперссылками на контент в markdown разметке"})
+			URI + "На базе представленного на сайте содержимого собери информацию на моем языке с точными гиперссылками на контент в markdown разметке, только не в виде кода"})
 		return answer
 	} else {
 		return answer

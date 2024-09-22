@@ -49,7 +49,7 @@ func init() {
 		Log(gErr[2][gLocale]+OWNER_IN_OS+gIm[29][gLocale]+gCurProcName, CRIT, err)
 	} else {
 		gOwner = int64(owner) //Storing owner's chat ID in variable
-		gChangeSettings = gOwner
+		gChangeSettings = 0
 	}
 
 	//Telegram bot init
