@@ -187,7 +187,7 @@ func ProcessMessage(update tgbotapi.Update) {
 			}
 			FullPromt = append(FullPromt, chatItem.History...) //История группы
 			FullPromt = append(FullPromt, LastMessages...)     //Последние сообщения
-			BotReaction = needFunction(LastMessages)
+			BotReaction = needFunction(LastMessages, chatItem.History)
 			switch BotReaction {
 			case DOCALCULATE:
 				{

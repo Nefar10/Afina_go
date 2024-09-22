@@ -114,12 +114,13 @@ func isMyReaction(messages []openai.ChatCompletionMessage, History []openai.Chat
 	return result
 }
 
-func needFunction(messages []openai.ChatCompletionMessage) byte {
+func needFunction(messages, hist []openai.ChatCompletionMessage) byte {
 	var FullPromt []openai.ChatCompletionMessage
 	var resp openai.ChatCompletionResponse
 	var result byte
 	result = DONOTHING
 	FullPromt = nil
+	FullPromt = append(FullPromt, hist...)
 	FullPromt = append(FullPromt, messages[len(messages)-1])
 	FullPromt = append(FullPromt, gHsReaction[1].Prompt[gLocale]...)
 	resp = SendRequest(FullPromt, ChatState{Model: BASEGPTMODEL, Temperature: 0})
