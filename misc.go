@@ -223,6 +223,7 @@ func SendRequest(FullPrompt []openai.ChatCompletionMessage, chatItem ChatState) 
 	var resp openai.ChatCompletionResponse
 	var err error
 	// Формируем запрос к API
+	log.Println(FullPrompt)
 	gClient_is_busy = true    //Флаг занятости
 	gLastRequest = time.Now() //Запомним текущее время
 	resp, err = gClient.CreateChatCompletion(

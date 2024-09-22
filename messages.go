@@ -220,7 +220,13 @@ func ProcessMessage(update tgbotapi.Update) {
 				RenewDialog(update.Message.Chat.ID, ChatMessages)
 				msg.Text = convTgmMarkdown(msg.Text)
 				msg.ParseMode = "markdown"
-				gBot.Send(msg)
+				_, err := gBot.Send(msg)
+				if err != nil {
+					log.Printf("Ошибка при отправке сообщения: %v", err)
+					return
+				}
+
+				log.Println("Сообщение отправлено успешно")
 				if chatItem.Title != update.Message.Chat.Title {
 					chatItem.Title = update.Message.Chat.Title
 					SetChatStateDB(chatItem)
