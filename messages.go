@@ -167,12 +167,13 @@ func ProcessMessage(update tgbotapi.Update) {
 		}
 		//Определяем требуется ли выполнить функцию
 		if toBotFlag {
+
 			for {
 				gBot.Send(action) //Симулируем набор текста
 				currentTime := time.Now()
 				elapsedTime := currentTime.Sub(gLastRequest)
 				time.Sleep(time.Second)
-				if elapsedTime >= 10*time.Second && !gClient_is_busy {
+				if elapsedTime >= 1*time.Second && !gClient_is_busy {
 					break
 				}
 			}

@@ -199,20 +199,17 @@ func convTgmMarkdown(input string) string {
 
 func sendHistory(chatID int64, ChatMessages []openai.ChatCompletionMessage) {
 	var buffer bytes.Buffer
-
 	for _, msg := range ChatMessages {
 		_, err := fmt.Fprintf(&buffer, "%s: %s\n", msg.Role, msg.Content)
 		if err != nil {
-			SendToUser(gOwner, "Ошибка формирования сообщения", ERROR, 2)
+			SendToUser(gOwner, err.Error()+" Ошибка формирования сообщения", ERROR, 2)
 			return
 		}
 	}
-
 	msg := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
-		Name:   "Messages.txt", // Имя файла, которое будет отображаться в Telegram
+		Name:   "Messages.txt",
 		Reader: &buffer,
 	})
-
 	if _, err := gBot.Send(msg); err != nil {
 		SendToUser(gOwner, "Ошибка при отправке документа", ERROR, 2)
 		return
@@ -222,12 +219,13 @@ func sendHistory(chatID int64, ChatMessages []openai.ChatCompletionMessage) {
 func SendRequest(FullPrompt []openai.ChatCompletionMessage, chatItem ChatState) openai.ChatCompletionResponse {
 	var resp openai.ChatCompletionResponse
 	var err error
-	// Формируем запрос к API
 	//log.Println(FullPrompt)
-	gClient_is_busy = true    //Флаг занятости
+	//gClient_is_busy = true    //Флаг занятости
 	gLastRequest = time.Now() //Запомним текущее время
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	resp, err = gClient.CreateChatCompletion(
-		context.Background(),
+		ctx,
 		openai.ChatCompletionRequest{
 			Model:       chatItem.Model,
 			Temperature: chatItem.Temperature,
@@ -236,8 +234,7 @@ func SendRequest(FullPrompt []openai.ChatCompletionMessage, chatItem ChatState) 
 	)
 	if err != nil {
 		SendToUser(gOwner, gErr[17][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, INFO, 0)
-		time.Sleep(20 * time.Second)
 	}
-	gClient_is_busy = false
+	//gClient_is_busy = false
 	return resp
 }

@@ -37,14 +37,14 @@ func ProcessInitiative() {
 	for _, key := range keys {
 		chatItem = GetChatStateDB(key)
 		if chatItem.ChatID != 0 {
-			if rd <= chatItem.Inity && chatItem.AllowState == ALLOW {
+			if rd <= chatItem.Inity && chatItem.AllowState == ALLOW && !gClient_is_busy {
 				act := tgbotapi.NewChatAction(chatItem.ChatID, tgbotapi.ChatTyping)
 				gBot.Send(act)
 				for {
 					currentTime := time.Now()
 					elapsedTime := currentTime.Sub(gLastRequest)
 					time.Sleep(time.Second)
-					if elapsedTime >= 20*time.Second && !gClient_is_busy {
+					if elapsedTime >= 3*time.Second && !gClient_is_busy {
 						break
 					}
 				}
