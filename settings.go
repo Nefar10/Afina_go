@@ -28,13 +28,9 @@ func SetTuneChat(update tgbotapi.Update) {
 	var chatItem ChatState
 	SetCurOperation("Chat tuning processing", 0)
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
-	chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
-	if err != nil {
-		SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
-	}
-	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
+	chatItem = GetChatStateDB(ParseChatKeyID("ChatState:" + chatIDstr))
 	if chatItem.ChatID != 0 {
-		SendToUser(gOwner, gIm[12][gLocale], TUNECHAT, 1, chatID)
+		SendToUser(gOwner, gIm[12][gLocale], TUNECHAT, 1, chatItem.ChatID)
 	}
 }
 
@@ -42,7 +38,7 @@ func SetBotStyle(update tgbotapi.Update) {
 	var chatItem ChatState
 	SetCurOperation("GPT model changing", 0)
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
-	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
+	chatItem = GetChatStateDB(ParseChatKeyID("ChatState:" + chatIDstr))
 	if chatItem.ChatID != 0 {
 		chatItem.Bstyle, _ = strconv.Atoi(strings.Split(update.CallbackQuery.Data, "_ST:")[0])
 		SendToUser(gOwner, "Выбран стиль общения "+gConversationStyle[chatItem.Bstyle].Name, INFO, 1)
@@ -55,16 +51,15 @@ func SetBotCharacter(update tgbotapi.Update) {
 	SetCurOperation("Select character type", 0)
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	charValue := strings.Split(update.CallbackQuery.Data, "_")[0]
-	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
+	chatItem = GetChatStateDB(ParseChatKeyID("ChatState:" + chatIDstr))
 	if chatItem.ChatID != 0 {
 		intVal, err := strconv.Atoi(charValue)
 		if err != nil {
 			SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
-			//log.Fatalln(err, E15[gLocale]+IM29[gLocale]+gCurProcName)
 		}
 		chatItem.CharType = byte(intVal)
 		SetChatStateDB(chatItem)
-		SendToUser(gOwner, "Выбран тип характера "+gCTDescr[gLocale][chatItem.CharType-1], INFO, 1, chatItem.ChatID)
+		SendToUser(gOwner, "Выбран тип характера: "+gCTDescr[gLocale][chatItem.CharType-1], INFO, 1, chatItem.ChatID)
 	}
 }
 
@@ -72,7 +67,7 @@ func SetChatHistory(update tgbotapi.Update) {
 	var chatItem ChatState
 	SetCurOperation("Edit history", 0)
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
-	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
+	chatItem = GetChatStateDB(ParseChatKeyID("ChatState:" + chatIDstr))
 	if chatItem.ChatID != 0 {
 		chatItem.SetState = HISTORY
 		gChangeSettings = chatItem.ChatID
@@ -91,7 +86,7 @@ func SetBotTemp(update tgbotapi.Update) {
 	var chatItem ChatState
 	SetCurOperation("Edit temperature", 0)
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
-	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
+	chatItem = GetChatStateDB(ParseChatKeyID("ChatState:" + chatIDstr))
 	if chatItem.ChatID != 0 {
 		chatItem.SetState = TEMPERATURE
 		gChangeSettings = chatItem.ChatID
@@ -104,7 +99,7 @@ func SetBotInitiative(update tgbotapi.Update) {
 	var chatItem ChatState
 	SetCurOperation("Set bot initiative", 0)
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
-	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
+	chatItem = GetChatStateDB(ParseChatKeyID("ChatState:" + chatIDstr))
 	if chatItem.ChatID != 0 {
 		chatItem.SetState = INITIATIVE
 		gChangeSettings = chatItem.ChatID
@@ -117,7 +112,7 @@ func SetTimeZone(update tgbotapi.Update) {
 	var chatItem ChatState
 	SetCurOperation("Select chat time zone", 0)
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
-	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
+	chatItem = GetChatStateDB(ParseChatKeyID("ChatState:" + chatIDstr))
 	//log.Println(chatItem.IntFacts)
 	if chatItem.ChatID != 0 {
 		chatItem.TimeZone, _ = strconv.Atoi(strings.Split(update.CallbackQuery.Data, "_TZ:")[0])
@@ -131,13 +126,11 @@ func SetChatFacts(update tgbotapi.Update) {
 	var chatItem ChatState
 	SetCurOperation("Select chat facts", 0)
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
-	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
-	//log.Println(chatItem.IntFacts)
+	chatItem = GetChatStateDB(ParseChatKeyID("ChatState:" + chatIDstr))
 	if chatItem.ChatID != 0 {
 		chatItem.InterFacts, _ = strconv.Atoi(strings.Split(update.CallbackQuery.Data, "_IF:")[0])
 		SendToUser(gOwner, "Выбрана тема интересных фактов: "+gIntFacts[chatItem.InterFacts].Name, INFO, 1)
 		SetChatStateDB(chatItem)
-		//log.Println(chatItem.IntFacts)
 		SendToUser(gOwner, gIm[15][gLocale]+" "+chatIDstr, INFO, 1)
 	}
 }
@@ -146,7 +139,7 @@ func SetBotModel(update tgbotapi.Update) {
 	var chatItem ChatState
 	SetCurOperation("Select gpt model", 0)
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
-	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
+	chatItem = GetChatStateDB(ParseChatKeyID("ChatState:" + chatIDstr))
 	if chatItem.ChatID != 0 {
 		chatItem.Model = strings.Split(update.CallbackQuery.Data, ":")[1]
 		SetChatStateDB(chatItem)

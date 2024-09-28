@@ -108,10 +108,10 @@ func ProcessMessage(update tgbotapi.Update) {
 	var resp openai.ChatCompletionResponse
 	SetCurOperation("Update message processing", 0)
 	//Получим информацию о чате
-	chatItem = GetChatStateDB("ChatState:" + strconv.FormatInt(update.Message.Chat.ID, 10))
+	chatItem = GetChatStateDB(update.Message.Chat.ID)
 	//Проверим - не требуется ли настройка
 	if update.Message.Chat.ID == gOwner && gChangeSettings != gOwner && gChangeSettings != 0 {
-		chatItem = GetChatStateDB("ChatState:" + strconv.FormatInt(gChangeSettings, 10))
+		chatItem = GetChatStateDB(gChangeSettings)
 		SetChatSettings(chatItem, update)
 		return
 	}
@@ -126,7 +126,7 @@ func ProcessMessage(update tgbotapi.Update) {
 		if update.Message.Chat.Type != "private" {             //Если чат не приватный, то ставим отметку - на какое соощение отвечаем
 			msg.ReplyToMessageID = update.Message.MessageID
 		}
-		ChatMessages = GetChatMessages("Dialog:" + strconv.FormatInt(update.Message.Chat.ID, 10))
+		ChatMessages = GetDialog("Dialog:" + strconv.FormatInt(update.Message.Chat.ID, 10))
 		ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: update.Message.From.FirstName + ": " + update.Message.Text})
 		//Симулируем набор текста
 		action := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
@@ -218,7 +218,7 @@ func ProcessMessage(update tgbotapi.Update) {
 			if BotReaction <= DOCALCULATE || BotReaction == DOREADSITE {
 				msg.Text = resp.Choices[0].Message.Content
 				ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: msg.Text})
-				RenewDialog(update.Message.Chat.ID, ChatMessages)
+				UpdateDialog(update.Message.Chat.ID, ChatMessages)
 				msg.Text = convTgmMarkdown(msg.Text)
 				msg.ParseMode = "markdown"
 				_, err := gBot.Send(msg)

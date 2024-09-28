@@ -35,15 +35,39 @@ func Log(msg string, lvl byte, err error) {
 	}
 }
 
-func GetChatStateDB(key string) ChatState {
+func ParseChatKeyID(key string) int64 {
+	var s string
+	if strings.Contains("ChatState:", s) {
+		s = strings.Split(key, ":")[1]
+	} else {
+		if gVerboseLevel > 1 {
+			SendToUser(gOwner, "Ошибка парсинга ID чата "+key, ERROR, 2)
+		} else {
+			Log("Ошибка парсинга ID чата "+key, ERR, nil)
+		}
+		return 0
+	}
+	n, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		if gVerboseLevel > 1 {
+			SendToUser(gOwner, "Ошибка парсинга ID чата "+s, ERROR, 2)
+		} else {
+			Log("Ошибка парсинга ID чата "+s, ERR, err)
+		}
+		return 0
+	} else {
+		return n
+	}
+}
+
+func GetChatStateDB(chatID int64) ChatState {
 	var err error
 	var jsonStr string
 	var chatItem ChatState
 	SetCurOperation("Get chat state", 1)
-	jsonStr, err = gRedisClient.Get(key).Result()
+	jsonStr, err = gRedisClient.Get("ChatState:" + strconv.FormatInt(chatID, 10)).Result()
 	if err != nil {
 		Log("Ошибка", ERR, err)
-		//SendToUser(gOwner, E13[gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 		return ChatState{AllowState: IN_PROCESS}
 	} else {
 		err = json.Unmarshal([]byte(jsonStr), &chatItem)
@@ -54,20 +78,18 @@ func GetChatStateDB(key string) ChatState {
 	}
 }
 
-func RenewDialog(chatID int64, ChatMessages []openai.ChatCompletionMessage) {
-	var jsonData []byte
-	var err error
+func UpdateDialog(chatID int64, ChatMessages []openai.ChatCompletionMessage) {
 	var chatIDstr string
 	chatIDstr = strconv.FormatInt(chatID, 10)
 	SetCurOperation("Update dialog", 0)
-	jsonData, err = json.Marshal(ChatMessages)
+	jsonData, err := json.Marshal(ChatMessages)
 	if err != nil {
 		SendToUser(gOwner, gErr[11][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 	}
 	DBWrite("Dialog:"+chatIDstr, string(jsonData), 0)
 }
 
-func GetChatMessages(key string) []openai.ChatCompletionMessage {
+func GetDialog(key string) []openai.ChatCompletionMessage {
 	var msgString string
 	var err error
 	var ChatMessages []openai.ChatCompletionMessage
@@ -98,7 +120,7 @@ func ClearContext(chatID int64) {
 	var ChatMessages []openai.ChatCompletionMessage
 	SetCurOperation("Context cleaning", 0)
 	ChatMessages = nil
-	RenewDialog(chatID, ChatMessages)
+	UpdateDialog(chatID, ChatMessages)
 	SendToUser(chatID, "Контекст очищен!", NOTHING, 1)
 }
 
@@ -107,7 +129,7 @@ func ShowChatInfo(update tgbotapi.Update) {
 	var chatItem ChatState
 	SetCurOperation("Chat info view", 0)
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
-	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
+	chatItem = GetChatStateDB(ParseChatKeyID("ChatState:" + chatIDstr))
 	if chatItem.ChatID != 0 {
 		msgString = "Название чата: " + chatItem.Title + "\n" +
 			"Модель поведения: " + gConversationStyle[chatItem.Bstyle].Name + "\n" +
@@ -141,7 +163,7 @@ func CheckChatRights(update tgbotapi.Update) {
 				SendToUser(gOwner, gErr[14][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 			}
 			if questItem.State == QUEST_IN_PROGRESS {
-				chatItem = GetChatStateDB("ChatState:" + strconv.FormatInt(questItem.ChatID, 10))
+				chatItem = GetChatStateDB(questItem.ChatID)
 				if chatItem.ChatID != 0 {
 					switch ansItem.State { //Изменяем флаг доступа
 					case ALLOW:
@@ -180,39 +202,45 @@ func isNow(update tgbotapi.Update, timezone int) [][]openai.ChatCompletionMessag
 }
 
 func convTgmMarkdown(input string) string {
-	clean := regexp.MustCompile(`[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]+`)
-	input = clean.ReplaceAllString(input, "")
-	boldPattern := regexp.MustCompile(`\*\*(.*?)\*\*`)
-	input = boldPattern.ReplaceAllString(input, "*$1*")
-	//boldPattern2 := regexp.MustCompile(`__(.*?)__`)
-	//input = boldPattern2.ReplaceAllString(input, "*$1*")
-	/*
-		italicPattern := regexp.MustCompile(`\*(.*?)\*`)
-		input = italicPattern.ReplaceAllString(input, "=$1=")
-		boldPattern3 := regexp.MustCompile(`==(.*?)==`)
-		input = boldPattern3.ReplaceAllString(input, "*$1*")
-		italicPattern2 := regexp.MustCompile(`=(.*?)=`)
-		input = italicPattern2.ReplaceAllString(input, "_ $1 _")
-	*/
+	var clean, itPat, bdPat *regexp.Regexp
+	var err error
+	clean, err = regexp.Compile(`[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]+`)
+	if err == nil {
+		input = clean.ReplaceAllString(input, "")
+	}
+	itPat, err = regexp.Compile(`(\n|\s)\*([^*].+?)\*`)
+	if err == nil {
+		input = itPat.ReplaceAllString(input, "$1\u200B_\u200B$2\u200B_")
+	}
+	bdPat, err = regexp.Compile(`\*\*(.+?)\*\*`)
+	if err == nil {
+		input = bdPat.ReplaceAllString(input, "*$1*")
+	}
+	bdPat, err = regexp.Compile(`#(#*?)(\s.+?)\n`)
+	if err == nil {
+		input = bdPat.ReplaceAllString(input, "`$2`")
+	}
 	return input
 }
 
 func sendHistory(chatID int64, ChatMessages []openai.ChatCompletionMessage) {
 	var buffer bytes.Buffer
-	for _, msg := range ChatMessages {
-		_, err := fmt.Fprintf(&buffer, "%s: %s\n", msg.Role, msg.Content)
-		if err != nil {
-			SendToUser(gOwner, err.Error()+" Ошибка формирования сообщения", ERROR, 2)
+	if len(ChatMessages) > 0 {
+		for _, msg := range ChatMessages {
+			_, err := fmt.Fprintf(&buffer, "%s: %s\n", msg.Role, msg.Content)
+			if err != nil {
+				SendToUser(gOwner, err.Error()+" Ошибка буферизации", ERROR, 2)
+				return
+			}
+		}
+		msg := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+			Name:   "Messages.txt",
+			Reader: &buffer,
+		})
+		if _, err := gBot.Send(msg); err != nil {
+			Log("Ошибка при отправке документа", ERR, err)
 			return
 		}
-	}
-	msg := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
-		Name:   "Messages.txt",
-		Reader: &buffer,
-	})
-	if _, err := gBot.Send(msg); err != nil {
-		SendToUser(gOwner, "Ошибка при отправке документа", ERROR, 2)
-		return
 	}
 }
 

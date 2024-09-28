@@ -35,7 +35,7 @@ func ProcessInitiative() {
 	gCurProcName = "Initiative processing"
 	//keys processing
 	for _, key := range keys {
-		chatItem = GetChatStateDB(key)
+		chatItem = GetChatStateDB(ParseChatKeyID(key))
 		if chatItem.ChatID != 0 {
 			if rd <= chatItem.Inity && chatItem.AllowState == ALLOW && !gClient_is_busy {
 				act := tgbotapi.NewChatAction(chatItem.ChatID, tgbotapi.ChatTyping)
@@ -76,9 +76,9 @@ func ProcessInitiative() {
 					//log.Printf("Чат ID: %d Токенов использовано: %d", chatItem.ChatID, resp.Usage.TotalTokens)
 					SendToUser(chatItem.ChatID, resp.Choices[0].Message.Content, NOTHING, 0)
 				}
-				ChatMessages = GetChatMessages("Dialog:" + strconv.FormatInt(chatItem.ChatID, 10))
+				ChatMessages = GetDialog("Dialog:" + strconv.FormatInt(chatItem.ChatID, 10))
 				ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content})
-				RenewDialog(chatItem.ChatID, ChatMessages)
+				UpdateDialog(chatItem.ChatID, ChatMessages)
 			}
 		}
 	}

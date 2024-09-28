@@ -41,7 +41,7 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 			item.State = QUEST_IN_PROGRESS   //соотояние обработки, которое запишем в БД
 			item.Time = time.Now()           //запомним текущее время
 			jsonData, _ = json.Marshal(item) //конвертируем структуру в json
-			DBWrite("QuestState:"+callbackID.String(), string(jsonData), 0)
+			DBWrite("QuestState:"+callbackID.String(), string(jsonData), 24*time.Hour)
 			ans.CallbackID = item.CallbackID //Генерируем вариант ответа "разрешить" для callback
 			ans.State = ALLOW
 			jsonDataAllow, _ = json.Marshal(ans) //генерируем вариант ответа "запретить" для callback
@@ -260,7 +260,7 @@ func SelectBotCharacter(update tgbotapi.Update) {
 	var chatItem ChatState
 	SetCurOperation("Character type", 0)
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
-	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
+	chatItem = GetChatStateDB(ParseChatKeyID("ChatState:" + chatIDstr))
 	if chatItem.ChatID != 0 {
 		SetChatStateDB(chatItem)
 		SendToUser(gOwner, "**Текущий Характер:**\n"+gCT[chatItem.CharType-1], SELECTCHARACTER, 1, chatItem.ChatID)
@@ -290,7 +290,7 @@ func SelectChat(update tgbotapi.Update) {
 	//keys processing
 	msgString = ""
 	for _, key := range keys {
-		chatItem = GetChatStateDB(key)
+		chatItem = GetChatStateDB(ParseChatKeyID(key))
 		if chatItem.ChatID != 0 {
 			if chatItem.AllowState == ALLOW && update.CallbackQuery.Data == "WHITELIST" {
 				if chatItem.Type != "private" {
@@ -332,7 +332,7 @@ func SelectChatFacts(update tgbotapi.Update) {
 	var chatItem ChatState
 	SetCurOperation("Chat facts processing", 0)
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
-	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
+	chatItem = GetChatStateDB(ParseChatKeyID("ChatState:" + chatIDstr))
 	if chatItem.ChatID != 0 {
 		SendToUser(gOwner, gIm[14][gLocale], INTFACTS, 1, chatItem.ChatID)
 	}
@@ -342,7 +342,7 @@ func SelectTimeZone(update tgbotapi.Update) {
 	var chatItem ChatState
 	SetCurOperation("Chat time zone processing", 0)
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
-	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
+	chatItem = GetChatStateDB(ParseChatKeyID("ChatState:" + chatIDstr))
 	if chatItem.ChatID != 0 {
 		SendToUser(gOwner, gIm[14][gLocale], SELECTTIMEZONE, 1, chatItem.ChatID)
 	}
@@ -379,7 +379,7 @@ func UserMenu(update tgbotapi.Update) {
 	if err != nil {
 		SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 	}
-	chatItem = GetChatStateDB("ChatState:" + chatIDstr)
+	chatItem = GetChatStateDB(ParseChatKeyID("ChatState:" + chatIDstr))
 	if chatItem.ChatID != 0 {
 		SendToUser(chatID, gIm[12][gLocale], USERMENU, 1)
 	}

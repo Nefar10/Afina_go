@@ -159,7 +159,7 @@ func init() {
 	}
 	gClient_is_busy = false
 	//Send init complete message to owner
-	SendToUser(gOwner, gIm[3][gLocale]+" "+gIm[13][gLocale], INFO, 0)
+	SendToUser(gOwner, gIm[3][gLocale]+" "+gIm[13][gLocale], INFO, 5)
 }
 
 func ProcessMessages(update tgbotapi.Update) {

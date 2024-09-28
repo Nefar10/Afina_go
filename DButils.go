@@ -53,7 +53,7 @@ func FlushCache() {
 		SendToUser(gOwner, gErr[12][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
 	}
 	for _, key := range keys {
-		chatItem = GetChatStateDB(key)
+		chatItem = GetChatStateDB(ParseChatKeyID(key))
 		if chatItem.AllowState == IN_PROCESS {
 			DestroyChat(strconv.FormatInt(chatItem.ChatID, 10))
 		}
