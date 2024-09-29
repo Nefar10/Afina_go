@@ -29,7 +29,7 @@ func ProcessCallbacks(update tgbotapi.Update) {
 			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 			if err != nil {
-				SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
+				SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
 			}
 			ClearContext(chatID)
 		}
@@ -38,7 +38,7 @@ func ProcessCallbacks(update tgbotapi.Update) {
 			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 			if err != nil {
-				SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
+				SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
 			}
 			GameAlias(chatID)
 		}
@@ -89,9 +89,9 @@ func ProcessCommand(update tgbotapi.Update) {
 	switch command {
 	case "menu":
 		if update.Message.Chat.ID == gOwner {
-			SendToUser(gOwner, gIm[12][gLocale], MENU, 1)
+			SendToUser(gOwner, gIm[12][gLocale], MENU_SHOW_MENU, 1)
 		} else {
-			SendToUser(update.Message.Chat.ID, gIm[12][gLocale], USERMENU, 1)
+			SendToUser(update.Message.Chat.ID, gIm[12][gLocale], MENU_SHOW_USERMENU, 1)
 		}
 	case "start":
 		ProcessMember(update)
@@ -120,7 +120,7 @@ func ProcessMessage(update tgbotapi.Update) {
 		return
 	}
 	//Если бот в работе, обработаем сообщение
-	if chatItem.ChatID != 0 && chatItem.BotState == RUN && chatItem.AllowState == ALLOW { //Если доступ предоставлен
+	if chatItem.ChatID != 0 && chatItem.BotState == BOT_RUN && chatItem.AllowState == CHAT_ALLOW { //Если доступ предоставлен
 		ChatMessages = nil                                     //Формируем новый диалог
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "") //Формирум новый ответ
 		if update.Message.Chat.Type != "private" {             //Если чат не приватный, то ставим отметку - на какое соощение отвечаем
@@ -215,7 +215,7 @@ func ProcessMessage(update tgbotapi.Update) {
 			default:
 				resp = SendRequest(FullPromt, chatItem)
 			}
-			if BotReaction <= DOCALCULATE || BotReaction == DOREADSITE {
+			if (BotReaction <= DOCALCULATE || BotReaction == DOREADSITE) && resp.Choices != nil {
 				msg.Text = resp.Choices[0].Message.Content
 				ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: msg.Text})
 				UpdateDialog(update.Message.Chat.ID, ChatMessages)
@@ -238,30 +238,30 @@ func ProcessMessage(update tgbotapi.Update) {
 	}
 	//Обработаем иные состояния чата
 	switch chatItem.AllowState {
-	case DISALLOW:
+	case CHAT_DISALLOW:
 		{
 			if update.Message.Chat.Type == "private" {
-				SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.From.UserName+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться с этим пользователем?", ACCESS, 0, update.Message.Chat.ID)
+				SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.From.UserName+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться с этим пользователем?", MENU_GET_ACCESS, 0, update.Message.Chat.ID)
 			} else {
-				SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.Chat.Title+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться в этом чате?", ACCESS, 0, update.Message.Chat.ID)
+				SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.Chat.Title+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться в этом чате?", MENU_GET_ACCESS, 0, update.Message.Chat.ID)
 
 			}
 		}
-	case BLACKLISTED:
+	case CHAT_BLACKLIST:
 		if update.Message.Chat.Type == "private" {
 			log.Println("Запрос заблокированного диалога от " + update.Message.From.FirstName + " " + update.Message.From.UserName + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
 		} else {
 			log.Println("Запрос заблокированного диалога от " + update.Message.From.FirstName + " " + update.Message.Chat.Title + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
 		}
 
-	case IN_PROCESS:
+	case CHAT_IN_PROCESS:
 		{
 			if update.Message.Chat.Type == "private" {
-				SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.From.UserName+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться с этим пользователем?", ACCESS, 0, update.Message.Chat.ID)
+				SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.From.UserName+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться с этим пользователем?", MENU_GET_ACCESS, 0, update.Message.Chat.ID)
 				log.Println("Запрос диалога от " + update.Message.From.FirstName + " " + update.Message.From.UserName + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
 				ProcessMember(update)
 			} else {
-				SendToUser(gOwner, "В группововм чате "+update.Message.From.FirstName+" "+update.Message.Chat.Title+" открыли диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться в этом чате?", ACCESS, 0, update.Message.Chat.ID)
+				SendToUser(gOwner, "В группововм чате "+update.Message.From.FirstName+" "+update.Message.Chat.Title+" открыли диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться в этом чате?", MENU_GET_ACCESS, 0, update.Message.Chat.ID)
 				log.Println("Запрос диалога от " + update.Message.From.FirstName + " " + update.Message.Chat.Title + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
 			}
 		}
@@ -283,7 +283,7 @@ func ProcessMember(update tgbotapi.Update) {
 			SetChatStateDB(chatItem)
 		} else if update.MyChatMember.NewChatMember.Status == "left" {
 			DestroyChat(strconv.FormatInt(update.MyChatMember.Chat.ID, 10))
-			SendToUser(gOwner, "Чат был закрыт, информация о нем удалена из БД", INFO, 1)
+			SendToUser(gOwner, "Чат был закрыт, информация о нем удалена из БД", MSG_INFO, 1)
 		}
 	}
 	if update.Message != nil {

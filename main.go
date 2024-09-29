@@ -17,7 +17,7 @@ import (
 func init() {
 	//Temporary variables
 	var err error
-	var owner int
+	var owner int64
 	var db int
 
 	//Logging level setup
@@ -28,7 +28,7 @@ func init() {
 
 	//Read localization setting from OS env
 	SetCurOperation("Environment initialization", 0)
-	switch os.Getenv(AFINA_LOCALE_IN_OS) {
+	switch os.Getenv(BOT_LOCALE_IN_OS) {
 	case "Ru":
 		gLocale = 1
 	case "En":
@@ -38,13 +38,13 @@ func init() {
 	}
 
 	//Read bot API key from OS env
-	gToken = os.Getenv(TOKEN_NAME_IN_OS)
+	gToken = os.Getenv(BOT_API_KEY_IN_OS)
 	if gToken == "" {
-		Log(gErr[1][gLocale]+TOKEN_NAME_IN_OS+gIm[29][gLocale]+gCurProcName, CRIT, nil)
+		Log(gErr[1][gLocale]+BOT_API_KEY_IN_OS+gIm[29][gLocale]+gCurProcName, CRIT, nil)
 	}
 
 	//Read owner's chatID from OS env
-	owner, err = strconv.Atoi(os.Getenv(OWNER_IN_OS))
+	owner, err = strconv.ParseInt(os.Getenv(OWNER_IN_OS), 10, 64)
 	if err != nil {
 		Log(gErr[2][gLocale]+OWNER_IN_OS+gIm[29][gLocale]+gCurProcName, CRIT, err)
 	} else {
@@ -66,26 +66,26 @@ func init() {
 	//Current dir init
 	gDir, err = os.Getwd()
 	if err != nil {
-		SendToUser(gOwner, gErr[8][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
+		SendToUser(gOwner, gErr[8][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
 	}
 
 	//Read redis connector options from OS env
 	//Redis IP
 	gRedisIP = os.Getenv(REDIS_IN_OS)
 	if gRedisIP == "" {
-		SendToUser(gOwner, gErr[3][gLocale]+REDIS_IN_OS+gIm[29][gLocale]+gCurProcName, ERROR, 0)
+		SendToUser(gOwner, gErr[3][gLocale]+REDIS_IN_OS+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
 	}
 
 	//Redis password
 	gRedisPass = os.Getenv(REDIS_PASS_IN_OS)
 	if gRedisPass == "" {
-		SendToUser(gOwner, gErr[4][gLocale]+REDIS_PASS_IN_OS+gIm[29][gLocale]+gCurProcName, ERROR, 0)
+		SendToUser(gOwner, gErr[4][gLocale]+REDIS_PASS_IN_OS+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
 	}
 
 	//DB ID
-	db, err = strconv.Atoi(os.Getenv(REDISDB_IN_OS))
+	db, err = strconv.Atoi(os.Getenv(REDIS_DB_IN_OS))
 	if err != nil {
-		SendToUser(gOwner, gErr[5][gLocale]+REDISDB_IN_OS+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
+		SendToUser(gOwner, gErr[5][gLocale]+REDIS_DB_IN_OS+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
 	} else {
 		gRedisDB = db //Storing DB ID
 	}
@@ -100,20 +100,20 @@ func init() {
 	//Chek redis connection
 	err = redisPing(*gRedisClient)
 	if err != nil {
-		SendToUser(gOwner, gErr[9][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
+		SendToUser(gOwner, gErr[9][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
 	}
 
 	//Read OpenAI API token from OS env
-	gAIToken = os.Getenv(AI_IN_OS)
+	gAIToken = os.Getenv(AI_API_KEY_IN_OS)
 	if gAIToken == "" {
-		SendToUser(gOwner, gErr[7][gLocale]+AI_IN_OS+gIm[29][gLocale]+gCurProcName, ERROR, 0)
+		SendToUser(gOwner, gErr[7][gLocale]+AI_API_KEY_IN_OS+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
 	}
 
 	//Read bot names from OS env
-	gBotNames = strings.Split(os.Getenv(BOTNAME_IN_OS), ",")
+	gBotNames = strings.Split(os.Getenv(BOT_NAME_IN_OS), ",")
 	if gBotNames[0] == "" {
 		gBotNames = gDefBotNames
-		SendToUser(gOwner, gIm[1][gLocale]+BOTNAME_IN_OS+gIm[29][gLocale]+gCurProcName, INFO, 0)
+		SendToUser(gOwner, gIm[1][gLocale]+BOT_NAME_IN_OS+gIm[29][gLocale]+gCurProcName, MSG_INFO, 0)
 	}
 
 	//Bot naming prompt
@@ -129,7 +129,7 @@ func init() {
 	}
 
 	//Read bot gender from OS env adn character comletion with gender information
-	switch os.Getenv(BOTGENDER_IN_OS) {
+	switch os.Getenv(BOT_GENDER_IN_OS) {
 	case "Male":
 		gBotGender = MALE
 	case "Female":
@@ -149,7 +149,7 @@ func init() {
 	gModels = nil
 	models, err := gClient.ListModels(ctx)
 	if err != nil {
-		SendToUser(gOwner, gErr[18][gLocale], INFO, 1)
+		SendToUser(gOwner, gErr[18][gLocale], MSG_INFO, 1)
 	} else {
 		for _, model := range models.Models {
 			if (strings.Contains(strings.ToLower(model.ID), "o1")) || (strings.Contains(strings.ToLower(model.ID), "4o")) {
@@ -159,7 +159,7 @@ func init() {
 	}
 	gClient_is_busy = false
 	//Send init complete message to owner
-	SendToUser(gOwner, gIm[3][gLocale]+" "+gIm[13][gLocale], INFO, 5)
+	SendToUser(gOwner, gIm[3][gLocale]+" "+gIm[13][gLocale], MSG_INFO, 5)
 }
 
 func ProcessMessages(update tgbotapi.Update) {

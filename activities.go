@@ -30,14 +30,14 @@ func ProcessInitiative() {
 	rd := gRand.Intn(1000) + 1
 	keys, err = gRedisClient.Keys("ChatState:*").Result()
 	if err != nil {
-		SendToUser(gOwner, gErr[12][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, ERROR, 0)
+		SendToUser(gOwner, gErr[12][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
 	}
 	gCurProcName = "Initiative processing"
 	//keys processing
 	for _, key := range keys {
 		chatItem = GetChatStateDB(ParseChatKeyID(key))
 		if chatItem.ChatID != 0 {
-			if rd <= chatItem.Inity && chatItem.AllowState == ALLOW && !gClient_is_busy {
+			if rd <= chatItem.Inity && chatItem.AllowState == CHAT_ALLOW && !gClient_is_busy {
 				act := tgbotapi.NewChatAction(chatItem.ChatID, tgbotapi.ChatTyping)
 				gBot.Send(act)
 				for {
@@ -70,11 +70,10 @@ func ProcessInitiative() {
 					resp = SendRequest(FullPromt, chatItem)
 				}
 				gClient_is_busy = false
-				if err != nil {
-					SendToUser(gOwner, gErr[17][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, INFO, 0)
+				if resp.Choices == nil || len(resp.Choices) == 0 {
 				} else {
 					//log.Printf("Чат ID: %d Токенов использовано: %d", chatItem.ChatID, resp.Usage.TotalTokens)
-					SendToUser(chatItem.ChatID, resp.Choices[0].Message.Content, NOTHING, 0)
+					SendToUser(chatItem.ChatID, resp.Choices[0].Message.Content, MSG_NOTHING, 0)
 				}
 				ChatMessages = GetDialog("Dialog:" + strconv.FormatInt(chatItem.ChatID, 10))
 				ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content})
@@ -108,7 +107,7 @@ func isMyReaction(messages []openai.ChatCompletionMessage, History []openai.Chat
 		},
 	)
 	if err != nil {
-		SendToUser(gOwner, gErr[17][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, INFO, 0)
+		SendToUser(gOwner, gErr[17][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_INFO, 0)
 		time.Sleep(20 * time.Second)
 	} else {
 		log.Println(resp.Choices[0].Message.Content)
@@ -167,7 +166,7 @@ func DoBotFunction(BotReaction byte, ChatMessages []openai.ChatCompletionMessage
 			if update.Message.From.ID == gOwner {
 				sendHistory(update.Message.Chat.ID, ChatMessages)
 			} else {
-				SendToUser(update.Message.Chat.ID, "Извините, у вас нет доступа.", INFO, 0)
+				SendToUser(update.Message.Chat.ID, "Извините, у вас нет доступа.", MSG_INFO, 0)
 			}
 		}
 	case DOCLEARHIST:
@@ -175,7 +174,7 @@ func DoBotFunction(BotReaction byte, ChatMessages []openai.ChatCompletionMessage
 			if update.Message.From.ID == gOwner {
 				ClearContext(update.Message.Chat.ID)
 			} else {
-				SendToUser(update.Message.Chat.ID, "Извините, у вас нет доступа.", INFO, 0)
+				SendToUser(update.Message.Chat.ID, "Извините, у вас нет доступа.", MSG_INFO, 0)
 			}
 		}
 	case DOGAME:
@@ -199,7 +198,8 @@ func ProcessWebPage(LastMessages, hist []openai.ChatCompletionMessage) []openai.
 		FullPromt = append(FullPromt, LastMessages...)
 	}
 	FullPromt = append(FullPromt, []openai.ChatCompletionMessage{
-		{Role: openai.ChatMessageRoleUser, Content: "Укажи без комментариев и разметки только полный адрес сайта запрошенный в предыдущем сообщения. Адрес найди в контексте. Подставь протокол, если онне указан"}}...)
+		{Role: openai.ChatMessageRoleUser, Content: "Исходя из контекста правильно сформируй только url на запрошенную в предыдущем сообщении веб-страницу.\n" +
+			"Без разметки и комметнариев."}}...)
 	resp = SendRequest(FullPromt, ChatState{Model: BASEGPTMODEL, Temperature: 0})
 	if resp.Choices != nil {
 		URI = resp.Choices[0].Message.Content
@@ -229,7 +229,7 @@ func ProcessWebPage(LastMessages, hist []openai.ChatCompletionMessage) []openai.
 		if len(data) > 255 {
 			answer = append(answer, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "Содержимое сайта " + URI + "\n" + data})
 			answer = append(answer, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "На базе представленного на сайте содержимого " +
-				"собери информацию на моем языке с точными гиперссылками на контент в markdown разметке."}) // в markdown разметке, только не в виде кода"})
+				"собери информацию на моем языке с точными гиперссылками на контент в markdown разметке, но не сообщай об этом."}) // в markdown разметке, только не в виде кода"})
 		} else {
 			answer = append(answer, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "Сообщи, что информацию с сайта" + URI + "получить не удалось"})
 		}

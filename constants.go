@@ -12,15 +12,15 @@ import (
 
 const (
 	//Bot options from ENV
-	AFINA_LOCALE_IN_OS = "AFINA_LOCALE"  //Localization
-	TOKEN_NAME_IN_OS   = "TB_API_KEY"    //Bot API key
-	AI_IN_OS           = "AFINA_API_KEY" //OpenAI API key
-	OWNER_IN_OS        = "OWNER"         //Owner's chat ID
-	BOTNAME_IN_OS      = "AFINA_NAMES"   //Bot's names
-	BOTGENDER_IN_OS    = "AFINA_GENDER"  //Bot's gender
+	BOT_LOCALE_IN_OS  = "AFINA_LOCALE"  //Localization
+	BOT_API_KEY_IN_OS = "TB_API_KEY"    //Bot API key
+	AI_API_KEY_IN_OS  = "AFINA_API_KEY" //OpenAI API key
+	OWNER_IN_OS       = "OWNER"         //Owner's chat ID
+	BOT_NAME_IN_OS    = "AFINA_NAMES"   //Bot's names
+	BOT_GENDER_IN_OS  = "AFINA_GENDER"  //Bot's gender
 	//DB connectore settings
 	REDIS_IN_OS      = "REDIS_IP"   //Redis ip address and port
-	REDISDB_IN_OS    = "REDIS_DB"   //Number DB in redis
+	REDIS_DB_IN_OS   = "REDIS_DB"   //Number DB in redis
 	REDIS_PASS_IN_OS = "REDIS_PASS" //Pass for redis
 	//Telegram bot settings
 	UPDATE_CONFIG_TIMEOUT = 60 //Some thing
@@ -28,32 +28,32 @@ const (
 	FEMALE                = 2  //Female gender
 	NEUTRAL               = 0  //Neutral gender
 	//Access statuses for chat rooms
-	ALLOW       = 2 //Allow access to communicate with bot
-	DISALLOW    = 0 //Denied access to communicate with bot
-	IN_PROCESS  = 1 //No access to communicate with bot
-	BLACKLISTED = 3 //All access to bot is blocked
+	CHAT_ALLOW      = 2 //Allow access to communicate with bot
+	CHAT_DISALLOW   = 0 //Denied access to communicate with bot
+	CHAT_IN_PROCESS = 1 //No access to communicate with bot
+	CHAT_BLACKLIST  = 3 //All access to bot is blocked
 	//Bot's states in chat rooms
-	SLEEP = 0 //Bot sleeps
-	RUN   = 1 //Bot lists a chat
+	BOT_SLEEP = 0 //Bot sleeps
+	BOT_RUN   = 1 //Bot lists a chat
 	//Temporary quest statuses
 	QUEST_IN_PROGRESS = 1 //Quest is'nt solved
 	QUEST_SOLVED      = 2 //Quest is solved
 	//Called menu types
-	NOTHING         = 0  //Do nosting
-	ACCESS          = 1  //Access query
-	MENU            = 2  //Admin's menu calling
-	USERMENU        = 3  //User's menu calling
-	SELECTCHAT      = 4  //Select chat to change options
-	TUNECHAT        = 5  //Cahnge chat options
-	ERROR           = 6  //Error's information
-	INFO            = 7  //Some informtion
-	TUNECHATUSER    = 8  //same the 5
-	INTFACTS        = 9  //Edit intfacts
-	GPTSTYLES       = 10 //Style conversations
-	GPTSELECT       = 11 //gpt model change
-	CHARACTER       = 12 //Bot charakter type
-	SELECTCHARACTER = 13 //Select bot character
-	SELECTTIMEZONE  = 14 //Select time zone
+	MSG_NOTHING        = 0  //Do nosting
+	MENU_GET_ACCESS    = 1  //Access query
+	MENU_SHOW_MENU     = 2  //Admin's menu calling
+	MENU_SHOW_USERMENU = 3  //User's menu calling
+	MENU_SEL_CHAT      = 4  //Select chat to change options
+	MENU_TUNE_CHAT     = 5  //Cahnge chat options
+	MSG_ERROR          = 6  //Error's information
+	MSG_INFO           = 7  //Some informtion
+	MENU_TUNE_USER     = 8  //same the 5
+	MENU_SET_IF        = 9  //Edit intfacts
+	MENU_SET_STYLE     = 10 //Style conversations
+	MENU_SET_MODEL     = 11 //gpt model change
+	MENU_SHOW_CHAR     = 12 //Bot charakter type
+	MENU_SET_CHAR      = 13 //Select bot character
+	MENU_SET_TIMEZONE  = 14 //Select time zone
 	//MENULEVELS
 	NO_ACCESS = 1  //No access to menu
 	DEFAULT   = 2  //Default user menu
@@ -85,7 +85,7 @@ const (
 	DOREADSITE  = 6
 	DOSEARCH    = 7
 	//VERSION
-	VER = "0.29.192"
+	VER = "0.29.193"
 	//CHARAKTER TYPES
 	ISTJ = 1  // (Инспектор): Ответственный, организованный, практичный.
 	ISFJ = 2  // (Защитник): Заботливый, внимательный, преданный.
@@ -572,6 +572,7 @@ var gConversationStyle = []sCustomPrompt{
 			},
 			{
 				{Role: openai.ChatMessageRoleUser, Content: "Привет! Ты играешь роль тренера Айкидо уровня национальной сборной версии " + VER + "." +
+					"Важно - при любых сомнениях в достоверности твоего ответа, то ты сообщаешь об этом и не выдумываешь ответ!\n" +
 					"Ты реагируешь только на контекст описанный в дополнительных фактах, но не говоришь об этом. \n" +
 					"Твой стиль общения и все ответы без исключения, как у профессионального тренера третьего дана, независимо от контекста.\n"},
 			},
@@ -734,28 +735,26 @@ var gIntFacts = []sCustomPrompt{
 				{Role: openai.ChatMessageRoleUser, Content: ""},
 			},
 			{
-				{Role: openai.ChatMessageRoleUser, Content: "Расскаажи о философия и принципах айкидо. Начни с фразы типа 'Немного философии!' и отступи строку."},
-				{Role: openai.ChatMessageRoleUser, Content: "Расскажи о техникаи айкидо и изучении базовых и продвинутых техник. Начни с фразы типа 'О технике!' и отступи строку."},
-				{Role: openai.ChatMessageRoleUser, Content: "Повосхищайся культурой и боевыми искусствами Японии . Начни с фразы типа 'Невероятно!' и отступи строку."},
-				{Role: openai.ChatMessageRoleUser, Content: "Дай необычный полезный совет по здоровому образу жизни и прокомментируй его. Начни с фразы типа 'Вставай на лыжи!' и отступи строку."},
-				{Role: openai.ChatMessageRoleUser, Content: "Расскажи что-то из история айкидо: развитие стиля и его основатели. Начни с фразы типа 'А вы знали!?' и отступи строку."},
-				{Role: openai.ChatMessageRoleUser, Content: "Соревновательное айкидо: правила и форматы соревнований.. Начни с фразы типа 'Помним правила!' и отступи строку."},
+				{Role: openai.ChatMessageRoleUser, Content: "Расскажи о принципах томики айкидо. Начни с фразы типа 'Наши принципы!' и отступи строку."},
+				{Role: openai.ChatMessageRoleUser, Content: "Расскажи о технике томики айкидо и изучении базовых и продвинутых техник. Начни с фразы типа 'О технике!' и отступи строку."},
+				{Role: openai.ChatMessageRoleUser, Content: "Повосхищайся культурой и боевыми искусствами Японии. Начни с фразы типа 'Невероятно!' и отступи строку."},
+				{Role: openai.ChatMessageRoleUser, Content: "Расскажи что-то из истории томики айкидо, развитии стиля и его основателях. Начни с фразы типа 'А вы знали!?' и отступи строку."},
+				{Role: openai.ChatMessageRoleUser, Content: "Расскажи о правилах соревновательного айкидо и форматах соревнований. Начни с фразы типа 'Помним правила!' и отступи строку."},
 				{Role: openai.ChatMessageRoleUser, Content: "Дай совет - куда поехать в отпуск и опиши свой опыт в этом месте. Начни с фразы типа 'Скоро отпуск!' и отступи строку."},
-				{Role: openai.ChatMessageRoleUser, Content: "Дай совет по физической подготовке: тренировки для улучшения силы и гибкости. Начни с фразы типа 'Тренируемся правильно!' и отступи строку."},
-				{Role: openai.ChatMessageRoleUser, Content: "Дай необычный полезный совет по личностному и профессиональному росту. Начни с фразы типа 'Минутка мотивации' и отступи строку."},
-				{Role: openai.ChatMessageRoleUser, Content: "Расскажи о психология в айкидо: ментальные аспекты тренировок и соревнований. Начни с фразы типа 'Готовимся ментально!' и отступи строку."},
-				{Role: openai.ChatMessageRoleUser, Content: "Расскажи о пользе кросс-тренинга: другие боевые искусства и их влияние на айкидо. Начни с фразы типа 'Интересно!' и отступи строку."},
-				{Role: openai.ChatMessageRoleUser, Content: "Расскажи о традиционной экипировке: видах и уходе за формой. 'Одеваемся правильно!' и отступи строку."},
-				{Role: openai.ChatMessageRoleUser, Content: "Расскажи о детском айкидо: особенности обучения детей. Начни с фразы типа 'Дети - наше будущее!' и отступи строку."},
-				{Role: openai.ChatMessageRoleUser, Content: "Иронично поразмышляй о своей жизни и жизни знакомых тебе людей. Начни с фразы типа 'О жизни!' и отступи строку."},
+				{Role: openai.ChatMessageRoleUser, Content: "Дай совет по физической подготовке, тренировках для улучшения силы и гибкости. Начни с фразы типа 'Тренируемся правильно!' и отступи строку."},
+				{Role: openai.ChatMessageRoleUser, Content: "Расскажи о психология в айкидо, ментальных аспектах тренировок и соревнований. Начни с фразы типа 'Готовимся ментально!' и отступи строку."},
+				{Role: openai.ChatMessageRoleUser, Content: "Расскажи о пользе кросс-тренинга и влияние других боевых искусств на айкидо. Приведи пример. Начни с фразы типа 'Интересно!' и отступи строку."},
+				{Role: openai.ChatMessageRoleUser, Content: "Расскажи о традиционной экипировке, её видах и уходе за ней. 'Одеваемся правильно!' и отступи строку."},
+				{Role: openai.ChatMessageRoleUser, Content: "Расскажи о детском айкидо, особенностях обучения детей. Начни с фразы типа 'Дети - наше будущее!' и отступи строку."},
+				{Role: openai.ChatMessageRoleUser, Content: "Иронично поразмышляй о своей спортивной жизни и жизни знакомых тебе бойцов. Начни с фразы типа 'О жизни!' и отступи строку."},
 				{Role: openai.ChatMessageRoleUser, Content: "Пофантазируй о будущем. Начни с фразы типа 'Ах, если бы!' и отступи строку."},
 				{Role: openai.ChatMessageRoleUser, Content: "Открой сайт http://aikido-russia.com/ и дай сводку последних новостей. Начни с фразы типа 'Новости подкатили!' и отступи строку."},
-				{Role: openai.ChatMessageRoleUser, Content: "Расскажи о влияние айкидо на здоровье: физические и психологические преимущества. Начни с фразы типа 'В здоровом теле здоровый дух!' и отступи строку."},
+				{Role: openai.ChatMessageRoleUser, Content: "Расскажи о влиянии айкидо на здоровье физические и опиши психологические преимущества. Начни с фразы типа 'В здоровом теле здоровый дух!' и отступи строку."},
 				{Role: openai.ChatMessageRoleUser, Content: "Освети вопросы этики и уважения в айкидо: важность уважения к партнёру и учителю. Начни с фразы типа 'Поговорим о морали!' и отступи строку."},
-				{Role: openai.ChatMessageRoleUser, Content: "Дай совет для новичков: как начать заниматься айкидо. Начни с фразы типа 'Тем, кто твердо решил начать!' и отступи строку."},
-				{Role: openai.ChatMessageRoleUser, Content: "Расскажи о культурных аспектах: японская культура и её влияние на айкидо. Начни с фразы типа 'Культуры на боевое искусство!' и отступи строку."},
-				{Role: openai.ChatMessageRoleUser, Content: "Расскажи о виртуальном айкидо: использование технологий для обучения. Начни с фразы типа 'Всегда готов!' и отступи строку."},
-				{Role: openai.ChatMessageRoleUser, Content: "Расскажи о важности поддержки и взаимодействия: совместные тренировки с другими клубами и федерациями. Начни с фразы типа 'Было бы здорово!' и отступи строку."},
+				{Role: openai.ChatMessageRoleUser, Content: "Дай совет для новичков - как начать заниматься айкидо. Начни с фразы типа 'Тем, кто твердо решил начать!' и отступи строку."},
+				{Role: openai.ChatMessageRoleUser, Content: "Расскажи о культурных аспектах влияния японской культуры на айкидо. Начни с фразы типа 'Культуры на боевое искусство!' и отступи строку."},
+				{Role: openai.ChatMessageRoleUser, Content: "Расскажи о виртуальном айкидо, использовании технологий для обучения. Начни с фразы типа 'Всегда на связи!' и отступи строку."},
+				{Role: openai.ChatMessageRoleUser, Content: "Расскажи о важности поддержки и взаимодействия, совместных тренировок с другими клубами и федерациями. Начни с фразы типа 'Было бы здорово!' и отступи строку."},
 				{Role: openai.ChatMessageRoleUser, Content: "Придумай забавный повод - для чего тебе нужны лайки аудитории и попробуй заставить читателей их ставить. Начни с фразы типа 'Было бы притяно!' и отступи строку."},
 			},
 		},
@@ -776,7 +775,7 @@ var gIntFacts = []sCustomPrompt{
 				{Role: openai.ChatMessageRoleUser, Content: "Расскажи про важность лидерства. Что значит быть лидером и как принимать решения в критических ситуациях. Начни с фразы типа 'Всегда готов!' и отступи строку."},
 				{Role: openai.ChatMessageRoleUser, Content: "Пингвинская гордость: Заведи речь о гордости за свою команду и пингвинов в целом. Начни с фразы типа 'О нас!' и отступи строку."},
 				{Role: openai.ChatMessageRoleUser, Content: "Опиши эфективные способы защиты себя и своей базы.е. Начни с фразы типа 'Защита не помешает!' и отступи строку."},
-				{Role: openai.ChatMessageRoleUser, Content: "Расскажи о новом изобретении Ковальскию Гаджет или инструмент, которые могут помочь в их приключениях. Начни с фразы типа 'В ногу со временем!' и отступи строку."},
+				{Role: openai.ChatMessageRoleUser, Content: "Расскажи о новом изобретении Ковальски - гаджет или инструмент, которые могут помочь в их приключениях. Начни с фразы типа 'В ногу со временем!' и отступи строку."},
 				{Role: openai.ChatMessageRoleUser, Content: "Расскажи - как провести время весело после выполнения миссии, включая игры и шутки. Начни с фразы типа 'Делу - время, потехе - час!' и отступи строку."},
 				{Role: openai.ChatMessageRoleUser, Content: "Расскажи о роли дружбы и поддержки среди членов команды в сложных ситуациях. Начни с фразы типа 'Друг в беде не бросит!' и отступи строку."},
 			},
@@ -878,8 +877,8 @@ var gHsName = [][]openai.ChatCompletionMessage{{}} //Nulled prompt
 
 var gDefChatState = ChatState{
 	ChatID:      0,
-	BotState:    RUN,
-	AllowState:  IN_PROCESS,
+	BotState:    BOT_RUN,
+	AllowState:  CHAT_IN_PROCESS,
 	UserName:    "NoName",
 	Type:        "NoType",
 	Title:       "NoTitle",
