@@ -107,9 +107,7 @@ func ProcessMessage(update tgbotapi.Update) {
 	var FullPromt []openai.ChatCompletionMessage    //Messages to send
 	var resp openai.ChatCompletionResponse
 	SetCurOperation("Update message processing", 0)
-	//Получим информацию о чате
 	chatItem = GetChatStateDB(update.Message.Chat.ID)
-	//Проверим - не требуется ли настройка
 	if update.Message.Chat.ID == gOwner && gChangeSettings != gOwner && gChangeSettings != 0 {
 		chatItem = GetChatStateDB(gChangeSettings)
 		SetChatSettings(chatItem, update)
@@ -119,7 +117,6 @@ func ProcessMessage(update tgbotapi.Update) {
 		SetChatSettings(chatItem, update)
 		return
 	}
-	//Если бот в работе, обработаем сообщение
 	if chatItem.ChatID != 0 && chatItem.BotState == BOT_RUN && chatItem.AllowState == CHAT_ALLOW { //Если доступ предоставлен
 		ChatMessages = nil                                     //Формируем новый диалог
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "") //Формирум новый ответ
@@ -128,9 +125,7 @@ func ProcessMessage(update tgbotapi.Update) {
 		}
 		ChatMessages = GetDialog("Dialog:" + strconv.FormatInt(update.Message.Chat.ID, 10))
 		ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: update.Message.From.FirstName + ": " + update.Message.Text})
-		//Симулируем набор текста
 		action := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
-		//Моделим тип личности
 		CharPrmt := [2][]openai.ChatCompletionMessage{
 			{
 				{Role: openai.ChatMessageRoleUser, Content: "Important! Your personality type is " + gCT[chatItem.CharType-1]},
@@ -167,7 +162,6 @@ func ProcessMessage(update tgbotapi.Update) {
 		}
 		//Определяем требуется ли выполнить функцию
 		if toBotFlag {
-
 			for {
 				gBot.Send(action) //Симулируем набор текста
 				currentTime := time.Now()

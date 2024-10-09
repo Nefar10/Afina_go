@@ -27,57 +27,57 @@ func ProcessInitiative() {
 	var LastMessages []openai.ChatCompletionMessage
 	var BotReaction byte
 	var resp openai.ChatCompletionResponse
+	SetCurOperation("Processing initiative", 0)
 	rd := gRand.Intn(1000) + 1
 	keys, err = gRedisClient.Keys("ChatState:*").Result()
 	if err != nil {
 		SendToUser(gOwner, gErr[12][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
-	}
-	gCurProcName = "Initiative processing"
-	//keys processing
-	for _, key := range keys {
-		chatItem = GetChatStateDB(ParseChatKeyID(key))
-		if chatItem.ChatID != 0 {
-			if rd <= chatItem.Inity && chatItem.AllowState == CHAT_ALLOW && !gClient_is_busy {
-				act := tgbotapi.NewChatAction(chatItem.ChatID, tgbotapi.ChatTyping)
-				gBot.Send(act)
-				for {
-					currentTime := time.Now()
-					elapsedTime := currentTime.Sub(gLastRequest)
-					time.Sleep(time.Second)
-					if elapsedTime >= 3*time.Second && !gClient_is_busy {
-						break
+		return
+	} else {
+		gCurProcName = "Initiative processing"
+		//keys processing
+		for _, key := range keys {
+			chatItem = GetChatStateDB(ParseChatKeyID(key))
+			if chatItem.ChatID != 0 {
+				if rd <= chatItem.Inity && chatItem.AllowState == CHAT_ALLOW && !gClient_is_busy {
+					act := tgbotapi.NewChatAction(chatItem.ChatID, tgbotapi.ChatTyping)
+					gBot.Send(act)
+					for {
+						currentTime := time.Now()
+						elapsedTime := currentTime.Sub(gLastRequest)
+						time.Sleep(time.Second)
+						if elapsedTime >= 3*time.Second {
+							break
+						}
 					}
+					gLastRequest = time.Now() //Прежде чем формировать запрос, запомним текущее время
+					FullPromt = nil
+					FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...)
+					FullPromt = append(FullPromt, gHsGender[gBotGender].Prompt[gLocale]...)
+					if gRand.Intn(5) == 0 {
+						LastMessages = append(LastMessages, gIntFacts[0].Prompt[gLocale][gRand.Intn(len(gIntFacts[0].Prompt[gLocale]))])
+					} else {
+						LastMessages = append(LastMessages, gIntFacts[chatItem.InterFacts].Prompt[gLocale][gRand.Intn(len(gIntFacts[chatItem.InterFacts].Prompt[gLocale]))])
+					}
+					FullPromt = append(FullPromt, LastMessages...)
+					BotReaction = needFunction(LastMessages)
+					//log.Println(LastMessages)
+					ChatMessages = GetDialog("Dialog:" + strconv.FormatInt(chatItem.ChatID, 10))
+					switch BotReaction {
+					case DOREADSITE:
+						tmpMSGs := ProcessWebPage(LastMessages, chatItem.History)
+						FullPromt = append(FullPromt, tmpMSGs...)
+						ChatMessages = append(ChatMessages, tmpMSGs...)
+						resp = SendRequest(FullPromt, chatItem)
+					default:
+						resp = SendRequest(FullPromt, chatItem)
+					}
+					if resp.Choices != nil || len(resp.Choices) > 0 {
+						SendToUser(chatItem.ChatID, resp.Choices[0].Message.Content, MSG_NOTHING, 0)
+					}
+					ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content})
+					UpdateDialog(chatItem.ChatID, ChatMessages)
 				}
-				gLastRequest = time.Now() //Прежде чем формировать запрос, запомним текущее время
-				gClient_is_busy = true
-				FullPromt = nil
-				FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...)
-				FullPromt = append(FullPromt, gHsGender[gBotGender].Prompt[gLocale]...)
-				if gRand.Intn(5) == 0 {
-					LastMessages = append(LastMessages, gIntFacts[0].Prompt[gLocale][gRand.Intn(len(gIntFacts[0].Prompt[gLocale]))])
-				} else {
-					LastMessages = append(LastMessages, gIntFacts[chatItem.InterFacts].Prompt[gLocale][gRand.Intn(len(gIntFacts[chatItem.InterFacts].Prompt[gLocale]))])
-				}
-				FullPromt = append(FullPromt, LastMessages...)
-				BotReaction = needFunction(LastMessages)
-				switch BotReaction {
-				case DOREADSITE:
-					tmpMSGs := ProcessWebPage(LastMessages, chatItem.History)
-					FullPromt = append(FullPromt, tmpMSGs...)
-					ChatMessages = append(ChatMessages, tmpMSGs...)
-					resp = SendRequest(FullPromt, chatItem)
-				default:
-					resp = SendRequest(FullPromt, chatItem)
-				}
-				gClient_is_busy = false
-				if resp.Choices == nil || len(resp.Choices) == 0 {
-				} else {
-					//log.Printf("Чат ID: %d Токенов использовано: %d", chatItem.ChatID, resp.Usage.TotalTokens)
-					SendToUser(chatItem.ChatID, resp.Choices[0].Message.Content, MSG_NOTHING, 0)
-				}
-				ChatMessages = GetDialog("Dialog:" + strconv.FormatInt(chatItem.ChatID, 10))
-				ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content})
-				UpdateDialog(chatItem.ChatID, ChatMessages)
 			}
 		}
 	}
@@ -126,6 +126,7 @@ func needFunction(messages []openai.ChatCompletionMessage) byte {
 	FullPromt = nil
 	FullPromt = append(FullPromt, messages[len(messages)-1])
 	FullPromt = append(FullPromt, gHsReaction[1].Prompt[gLocale]...)
+	//	log.Println(FullPromt)
 	resp = SendRequest(FullPromt, ChatState{Model: BASEGPTMODEL, Temperature: 0})
 	if len(resp.Choices) > 0 {
 		log.Println(resp.Choices[0].Message.Content)

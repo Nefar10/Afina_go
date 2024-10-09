@@ -18,25 +18,38 @@ import (
 )
 
 func SetCurOperation(msg string, log_level byte) {
-	gCurProcName = msg
-	if gVerboseLevel > log_level {
-		log.Println(msg)
+	if len(msg) > 0 {
+		gCurProcName = msg
+		if gVerboseLevel > log_level {
+			Log(msg, NOERR, nil)
+		}
+	} else {
+		return
 	}
 }
 
 func Log(msg string, lvl byte, err error) {
-	switch lvl {
-	case 0:
-		log.Println(msg)
-	case 1:
-		log.Println(msg, err)
-	case 2:
-		log.Fatalln(msg, err)
+	if len(msg) > 0 {
+		switch lvl {
+		case 0:
+			log.Println(msg)
+		case 1:
+			log.Println(msg, err)
+		case 2:
+			log.Fatalln(msg, err)
+		}
+	} else {
+		return
 	}
 }
 
 func ParseChatKeyID(key string) int64 {
 	var s string
+	var n int64
+	var err error
+	if len(key) <= 0 {
+		return 0
+	}
 	if strings.Contains("ChatState:", s) {
 		s = strings.Split(key, ":")[1]
 	} else {
@@ -47,7 +60,7 @@ func ParseChatKeyID(key string) int64 {
 		}
 		return 0
 	}
-	n, err := strconv.ParseInt(s, 10, 64)
+	n, err = strconv.ParseInt(s, 10, 64)
 	if err != nil {
 		if gVerboseLevel > 1 {
 			SendToUser(gOwner, "Ошибка парсинга ID чата "+s, MSG_ERROR, 2)
@@ -68,25 +81,29 @@ func GetChatStateDB(chatID int64) ChatState {
 	jsonStr, err = gRedisClient.Get("ChatState:" + strconv.FormatInt(chatID, 10)).Result()
 	if err != nil {
 		Log("Ошибка", ERR, err)
-		return ChatState{AllowState: CHAT_IN_PROCESS}
+		return ChatState{AllowState: CHAT_IN_PROCESS, ChatID: 0}
 	} else {
 		err = json.Unmarshal([]byte(jsonStr), &chatItem)
 		if err != nil {
 			SendToUser(gOwner, gErr[14][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+			return ChatState{AllowState: CHAT_IN_PROCESS, ChatID: 0}
+		} else {
+			return chatItem
 		}
-		return chatItem
 	}
 }
 
 func UpdateDialog(chatID int64, ChatMessages []openai.ChatCompletionMessage) {
 	var chatIDstr string
-	chatIDstr = strconv.FormatInt(chatID, 10)
 	SetCurOperation("Update dialog", 0)
+	chatIDstr = strconv.FormatInt(chatID, 10)
 	jsonData, err := json.Marshal(ChatMessages)
 	if err != nil {
 		SendToUser(gOwner, gErr[11][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+		return
+	} else {
+		DBWrite("Dialog:"+chatIDstr, string(jsonData), 0)
 	}
-	DBWrite("Dialog:"+chatIDstr, string(jsonData), 0)
 }
 
 func GetDialog(key string) []openai.ChatCompletionMessage {
@@ -94,19 +111,22 @@ func GetDialog(key string) []openai.ChatCompletionMessage {
 	var err error
 	var ChatMessages []openai.ChatCompletionMessage
 	SetCurOperation("Dialog reading from DB", 0)
-	msgString, err = gRedisClient.Get(key).Result() //Пытаемся прочесть из БД диалог
-	if err == redis.Nil {                           //Если диалога в БД нет, формируем новый и записываем в БД
-		Log("Ошибка", ERR, err)
+	msgString, err = gRedisClient.Get(key).Result()
+	if err != nil {
+		if err == redis.Nil {
+			Log("Не найдена запись в БД", ERR, err)
+		} else {
+			SendToUser(gOwner, gErr[13][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+		}
 		return []openai.ChatCompletionMessage{}
-	} else if err != nil {
-		SendToUser(gOwner, gErr[13][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
-		return []openai.ChatCompletionMessage{}
-	} else { //Если диалог уже существует
+	} else {
 		err = json.Unmarshal([]byte(msgString), &ChatMessages)
 		if err != nil {
 			SendToUser(gOwner, gErr[14][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+			return []openai.ChatCompletionMessage{}
+		} else {
+			return ChatMessages
 		}
-		return ChatMessages
 	}
 }
 
@@ -127,19 +147,25 @@ func ClearContext(chatID int64) {
 func ShowChatInfo(update tgbotapi.Update) {
 	var msgString string
 	var chatItem ChatState
+	var chatIDstr string
 	SetCurOperation("Chat info view", 0)
-	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
-	chatItem = GetChatStateDB(ParseChatKeyID("ChatState:" + chatIDstr))
-	if chatItem.ChatID != 0 {
-		msgString = "Название чата: " + chatItem.Title + "\n" +
-			"Модель поведения: " + gConversationStyle[chatItem.Bstyle].Name + "\n" +
-			"Тип характера: " + gCTDescr[gLocale][chatItem.CharType-1] + "\n" +
-			"Нейронная сеть: " + chatItem.Model + "\n" +
-			"Экспрессия: " + strconv.FormatFloat(float64(chatItem.Temperature*100), 'f', -1, 32) + "%\n" +
-			"Инициативность: " + strconv.Itoa(chatItem.Inity*10) + "%\n" +
-			"Тема интересных фактов: " + gIntFacts[chatItem.InterFacts].Name + "\n" +
-			"Текущая версия: " + VER
-		SendToUser(chatItem.ChatID, msgString, MSG_INFO, 2)
+	chatIDstr = strings.Split(update.CallbackQuery.Data, " ")[1]
+	if len(chatIDstr) <= 0 {
+		Log("Ошибка парсинга ID чата", ERR, nil)
+		return
+	} else {
+		chatItem = GetChatStateDB(ParseChatKeyID("ChatState:" + chatIDstr))
+		if chatItem.ChatID != 0 {
+			msgString = "Название чата: " + chatItem.Title + "\n" +
+				"Модель поведения: " + gConversationStyle[chatItem.Bstyle].Name + "\n" +
+				"Тип характера: " + gCTDescr[gLocale][chatItem.CharType-1] + "\n" +
+				"Нейронная сеть: " + chatItem.Model + "\n" +
+				"Экспрессия: " + strconv.FormatFloat(float64(chatItem.Temperature*100), 'f', -1, 32) + "%\n" +
+				"Инициативность: " + strconv.Itoa(chatItem.Inity*10) + "%\n" +
+				"Тема интересных фактов: " + gIntFacts[chatItem.InterFacts].Name + "\n" +
+				"Текущая версия: " + VER
+			SendToUser(chatItem.ChatID, msgString, MSG_INFO, 2)
+		}
 	}
 }
 
@@ -152,20 +178,23 @@ func CheckChatRights(update tgbotapi.Update) {
 	SetCurOperation("Chat state changing", 0)
 	err = json.Unmarshal([]byte(update.CallbackQuery.Data), &ansItem)
 	if err == nil {
-		jsonStr, err = gRedisClient.Get("QuestState:" + ansItem.CallbackID.String()).Result() //читаем состояние запрса из БД
-		if err == redis.Nil {
-			SendToUser(gOwner, gErr[16][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_INFO, 0)
-		} else if err != nil {
+		jsonStr, err = gRedisClient.Get("QuestState:" + ansItem.CallbackID.String()).Result()
+		if err != nil {
 			SendToUser(gOwner, gErr[13][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+			if err == redis.Nil {
+				SendToUser(gOwner, gErr[16][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_INFO, 0)
+			}
+			return
 		} else {
 			err = json.Unmarshal([]byte(jsonStr), &questItem)
 			if err != nil {
 				SendToUser(gOwner, gErr[14][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+				return
 			}
 			if questItem.State == QUEST_IN_PROGRESS {
 				chatItem = GetChatStateDB(questItem.ChatID)
 				if chatItem.ChatID != 0 {
-					switch ansItem.State { //Изменяем флаг доступа
+					switch ansItem.State {
 					case CHAT_ALLOW:
 						{
 							chatItem.AllowState = CHAT_ALLOW
@@ -204,23 +233,29 @@ func isNow(update tgbotapi.Update, timezone int) [][]openai.ChatCompletionMessag
 func convTgmMarkdown(input string) string {
 	var clean, itPat, bdPat *regexp.Regexp
 	var err error
-	clean, err = regexp.Compile(`[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]+`)
-	if err == nil {
-		input = clean.ReplaceAllString(input, "")
+	SetCurOperation("Fomatting message", 0)
+	if len(input) <= 0 {
+		Log("Сообщение отсутсвует", ERR, nil)
+		return ""
+	} else {
+		clean, err = regexp.Compile(`[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]+`)
+		if err == nil {
+			input = clean.ReplaceAllString(input, "")
+		}
+		itPat, err = regexp.Compile(`(\n|\s)\*([^*].+?)\*`)
+		if err == nil {
+			input = itPat.ReplaceAllString(input, "$1\u200B_\u200B$2\u200B_")
+		}
+		bdPat, err = regexp.Compile(`\*\*(.+?)\*\*`)
+		if err == nil {
+			input = bdPat.ReplaceAllString(input, "*$1*")
+		}
+		bdPat, err = regexp.Compile(`#(#*?)(\s.+?)\n`)
+		if err == nil {
+			input = bdPat.ReplaceAllString(input, "`$2`\n")
+		}
+		return input
 	}
-	itPat, err = regexp.Compile(`(\n|\s)\*([^*].+?)\*`)
-	if err == nil {
-		input = itPat.ReplaceAllString(input, "$1\u200B_\u200B$2\u200B_")
-	}
-	bdPat, err = regexp.Compile(`\*\*(.+?)\*\*`)
-	if err == nil {
-		input = bdPat.ReplaceAllString(input, "*$1*")
-	}
-	bdPat, err = regexp.Compile(`#(#*?)(\s.+?)\n`)
-	if err == nil {
-		input = bdPat.ReplaceAllString(input, "`$2`\n")
-	}
-	return input
 }
 
 func sendHistory(chatID int64, ChatMessages []openai.ChatCompletionMessage) {
@@ -248,7 +283,6 @@ func SendRequest(FullPrompt []openai.ChatCompletionMessage, chatItem ChatState) 
 	var resp openai.ChatCompletionResponse
 	var err error
 	//log.Println(FullPrompt)
-	//gClient_is_busy = true    //Флаг занятости
 	gLastRequest = time.Now() //Запомним текущее время
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -263,6 +297,5 @@ func SendRequest(FullPrompt []openai.ChatCompletionMessage, chatItem ChatState) 
 	if err != nil {
 		SendToUser(gOwner, gErr[17][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_INFO, 0)
 	}
-	//gClient_is_busy = false
 	return resp
 }

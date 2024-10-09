@@ -64,10 +64,10 @@ func init() {
 	}
 
 	//Current dir init
-	gDir, err = os.Getwd()
-	if err != nil {
-		SendToUser(gOwner, gErr[8][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
-	}
+	//gDir, err = os.Getwd()
+	//if err != nil {
+	//	SendToUser(gOwner, gErr[8][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+	//}
 
 	//Read redis connector options from OS env
 	//Redis IP

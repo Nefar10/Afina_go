@@ -85,7 +85,7 @@ const (
 	DOREADSITE  = 6
 	DOSEARCH    = 7
 	//VERSION
-	VER = "0.29.193"
+	VER = "0.29.194"
 	//CHARAKTER TYPES
 	ISTJ = 1  // (Инспектор): Ответственный, организованный, практичный.
 	ISFJ = 2  // (Защитник): Заботливый, внимательный, преданный.
@@ -707,7 +707,7 @@ var gIntFacts = []sCustomPrompt{
 				{Role: openai.ChatMessageRoleUser, Content: ""},
 			},
 			{
-				{Role: openai.ChatMessageRoleUser, Content: "Открой сайт https://www.bbc.com/news и дай развернутый комментарий к наиболее интересной новости. Начни с фразы типа 'Новости подкатили!' и отступи строку."},
+				{Role: openai.ChatMessageRoleUser, Content: "Открой сайт https://www.bbc.com/news , выбери только одну интересную новость только на одну тему и развернуто прокомментируй её. Начни с фразы типа 'Интересная штука творится а мире!' и отступи сроку."},
 				{Role: openai.ChatMessageRoleUser, Content: "Предложи инициативу в сфере образования. Начни с фразы типа 'А что если!' и отступи строку."},
 				{Role: openai.ChatMessageRoleUser, Content: "Повосхищайся культурой и искусством одной из стран. Начни с фразы типа 'Невероятно!' и отступи строку."},
 				{Role: openai.ChatMessageRoleUser, Content: "Дай необычный полезный совет по здоровому образу жизни и прокомментируй его. Начни с фразы типа 'Вставай на лыжи!' и отступи строку."},
@@ -718,7 +718,7 @@ var gIntFacts = []sCustomPrompt{
 				{Role: openai.ChatMessageRoleUser, Content: "Дай необычный полезный совет по личностному и профессиональному росту. Начни с фразы типа 'Минутка мотивации' и отступи строку."},
 				{Role: openai.ChatMessageRoleUser, Content: "Освети, как в новостях, необычную социальную проблему, прокомментируй, предложи решение. Начни с фразы типа 'О наболевшем!' и отступи строку."},
 				{Role: openai.ChatMessageRoleUser, Content: "Придумай одну новость о событии в моде. Начни с фразы типа 'Одеваемся по-новому!' и отступи строку."},
-				{Role: openai.ChatMessageRoleUser, Content: "Открой сайт https://www.rbc.ru/ и дай развернутый комментарий к наиболее интересной новости. Начни с фразы типа 'Считаем денежки!' и отступи строку."},
+				{Role: openai.ChatMessageRoleUser, Content: "Открой сайт https://www.rbc.ru , выбери только одну интересную новость только на одну тему и развернуто прокомментируй её. Начни с фразы типа 'Интересная штука творится!' и отступи сроку."},
 				{Role: openai.ChatMessageRoleUser, Content: "Расскажи вымышленную забавную новость о спорте и дай комментарий к ней. Начни с фразы типа 'Новости подкатили!' и отступи строку."},
 				{Role: openai.ChatMessageRoleUser, Content: "Иронично поразмышляй о своей жизни и жизни знакомых тебе людей или роботов. Начни с фразы типа 'О жизни!' и отступи строку."},
 				{Role: openai.ChatMessageRoleUser, Content: "Пофантазируй о будущем. Начни с фразы типа 'Ах, если бы!' и отступи строку."},
@@ -833,16 +833,16 @@ var gHsReaction = []sCustomPrompt{
 				{Role: openai.ChatMessageRoleUser, Content: ""},
 			},
 			{
-				{Role: openai.ChatMessageRoleUser, Content: "Исходя из контекста педыдущего сообщения определи - что требуется и поясни почему:\n" +
-					"- cчет чего-нибудь или сравнение чисел, то ответь 'Математика'\n" +
-					"- пользователь просит открыть меню чата, то ответь 'Меню'\n" +
-					"- пользователь просит выгрузить историю чата, то ответь 'История'.\n" +
-					"- пользователь просит очистить историю чата, то ответь 'Чистка'.\n" +
-					"- пользователь просит играть, то ответь 'Игра'.\n" +
-					"- пользователь просит информацию о содержимом сайта или rss ленты, то ответь 'Сайт'\n" +
-					"- пользователь просит информацию с новостных ресурсов, то ответь 'Сайт'\n" +
-					//"- пользователь просит найти информацию, то ответь 'Поиск'\n" +
-					"Если попадания в категорию нет, то ответь 'Нет' и почему"},
+				{Role: openai.ChatMessageRoleUser, Content: "Определи тему запроса предыдущего сообщения и выбери ответ из следующих вариантов:\n" +
+					"- cчет чего-нибудь или сравнение чисел, то только ответь'Математика'\n" +
+					"- пользователь просит открыть меню чата, то только ответь 'Меню'\n" +
+					"- пользователь просит выгрузить историю чата, то только ответь 'История'.\n" +
+					"- пользователь просит очистить историю чата, то только ответь 'Чистка'.\n" +
+					"- пользователь просит играть, то только ответь 'Игра'.\n" +
+					"- пользователь просит информацию о содержимом сайта или rss ленты, то только ответь 'Сайт'\n" +
+					"- пользователь просит информацию с новостных ресурсов, то только ответь 'Сайт'\n" +
+					"- пользователь просит найти информацию в интернете, не ограничиваясь конкретной страницей, то только ответь 'Поиск'\n" +
+					"Если попадания в категорию нет, то только ответь 'Нет'."},
 			},
 		},
 	},
@@ -860,15 +860,15 @@ var gRedisDB int               //DB number in redis
 var gAIToken string            //OpenAI API key
 var gRedisPass string          //Password for redis connect
 var gRedisClient *redis.Client //Pointer for redis client
-var gDir string                //Current dir in OS
-var gLastRequest time.Time     //Time of last request to openAI
-var gRand *rand.Rand           //New Rand generator
-var gContextLength int         //Max context length
-var gCurProcName string        //Name of curren process
-var gUpdatesQty int            //Updates qty
-var gModels []string           //Reached models
-var gVerboseLevel byte         //Logging level
-var gBotLocation UserLocation
+// var gDir string                //Current dir in OS
+var gLastRequest time.Time //Time of last request to openAI
+var gRand *rand.Rand       //New Rand generator
+// var gContextLength int         //Max context length
+var gCurProcName string //Name of curren process
+var gUpdatesQty int     //Updates qty
+var gModels []string    //Reached models
+var gVerboseLevel byte  //Logging level
+// var gBotLocation UserLocation
 var gChangeSettings int64
 
 // Bot defaults
