@@ -27,7 +27,7 @@ func ProcessInitiative() {
 	var LastMessages []openai.ChatCompletionMessage
 	var BotReaction byte
 	var resp openai.ChatCompletionResponse
-	SetCurOperation("Processing initiative", 0)
+	SetCurOperation("Processing initiative get chats settings", 1)
 	rd := gRand.Intn(1000) + 1
 	keys, err = gRedisClient.Keys("ChatState:*").Result()
 	if err != nil {
@@ -40,6 +40,7 @@ func ProcessInitiative() {
 			chatItem = GetChatStateDB(ParseChatKeyID(key))
 			if chatItem.ChatID != 0 {
 				if rd <= chatItem.Inity && chatItem.AllowState == CHAT_ALLOW && !gClient_is_busy {
+					SetCurOperation("Processing initiative", 0)
 					act := tgbotapi.NewChatAction(chatItem.ChatID, tgbotapi.ChatTyping)
 					gBot.Send(act)
 					for {
