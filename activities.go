@@ -19,7 +19,7 @@ import (
 func ProcessInitiative() {
 	//Temporary variables
 	var err error //Some errors
-	//var jsonData []byte                             //Current json bytecode
+	//var jsonData []byte                           //Current json bytecode
 	var chatItem ChatState                          //Current ChatState item
 	var keys []string                               //Curent keys array
 	var ChatMessages []openai.ChatCompletionMessage //Current prompt
