@@ -43,8 +43,10 @@ func ProcessInitiative() {
 						SetCurOperation("Processing initiative", 0)
 						BotWaiting(chatItem.ChatID, 3)
 						FullPromt = nil
+						FullPromt = append(FullPromt, isNow(time.Now())[gLocale]...)
 						FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...)
 						FullPromt = append(FullPromt, gHsGender[gBotGender].Prompt[gLocale]...)
+						log.Println(FullPromt)
 						if gRand.Intn(5) == 0 {
 							LastMessages = append(LastMessages, gIntFacts[0].Prompt[gLocale][gRand.Intn(len(gIntFacts[0].Prompt[gLocale]))])
 						} else {

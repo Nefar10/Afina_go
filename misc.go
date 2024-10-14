@@ -221,9 +221,8 @@ func CheckChatRights(update tgbotapi.Update) {
 	}
 }
 
-func isNow(update tgbotapi.Update, timezone int) [][]openai.ChatCompletionMessage {
+func isNow(currentTime time.Time) [][]openai.ChatCompletionMessage {
 	var lHsTime [][]openai.ChatCompletionMessage
-	currentTime := time.Unix(int64(update.Message.Date+((timezone-15)*3600)), 0)
 	timeString := currentTime.Format("Monday, 2006-01-02 15:04:05")
 	lHsTime = append(lHsTime, []openai.ChatCompletionMessage{{Role: openai.ChatMessageRoleUser, Content: "Current time is " + timeString + "."}})
 	lHsTime = append(lHsTime, []openai.ChatCompletionMessage{{Role: openai.ChatMessageRoleUser, Content: "Текущее время " + timeString + "."}})

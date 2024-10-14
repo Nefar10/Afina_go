@@ -173,10 +173,10 @@ func ProcessMessage(update tgbotapi.Update) {
 			}
 			//Формируем промпт
 			FullPromt = nil
-			FullPromt = append(FullPromt, isNow(update, chatItem.TimeZone)[gLocale]...)           //Текущее время
-			FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...) //Модель поведения
-			FullPromt = append(FullPromt, gHsGender[gBotGender].Prompt[gLocale]...)               //Пол
-			FullPromt = append(FullPromt, CharPrmt[gLocale]...)                                   //Стиль общения
+			FullPromt = append(FullPromt, isNow(time.Unix(int64(update.Message.Date+((chatItem.TimeZone-15)*3600)), 0))[gLocale]...) //Текущее время
+			FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...)                                    //Модель поведения
+			FullPromt = append(FullPromt, gHsGender[gBotGender].Prompt[gLocale]...)                                                  //Пол
+			FullPromt = append(FullPromt, CharPrmt[gLocale]...)                                                                      //Стиль общения
 			if chatItem.Type != "channel" && chatItem.Type != "private" {
 				FullPromt = append(FullPromt, gHsBasePrompt[gLocale]...) //Включить базовый промпт для группы
 			}
