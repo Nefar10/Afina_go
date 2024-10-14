@@ -231,17 +231,17 @@ func isNow(update tgbotapi.Update, timezone int) [][]openai.ChatCompletionMessag
 }
 
 func convTgmMarkdown(input string) string {
-	var clean, itPat, bdPat *regexp.Regexp
+	var itPat, bdPat *regexp.Regexp
 	var err error
 	SetCurOperation("Fomatting message", 0)
 	if len(input) <= 0 {
 		Log("Сообщение отсутсвует", ERR, nil)
 		return ""
 	} else {
-		clean, err = regexp.Compile(`[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]+`)
-		if err == nil {
-			input = clean.ReplaceAllString(input, "")
-		}
+		//clean, err = regexp.Compile(`[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]+`)
+		//if err == nil {
+		//	input = clean.ReplaceAllString(input, "")
+		//}
 		itPat, err = regexp.Compile(`(\n|\s)\*([^*].+?)\*`)
 		if err == nil {
 			input = itPat.ReplaceAllString(input, "$1\u200B_\u200B$2\u200B_")
@@ -298,4 +298,19 @@ func SendRequest(FullPrompt []openai.ChatCompletionMessage, chatItem ChatState) 
 		SendToUser(gOwner, gErr[17][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_INFO, 0)
 	}
 	return resp
+}
+
+func BotWaiting(ChatID int64, tm int) {
+	SetCurOperation("BotWaiting", 0)
+	act := tgbotapi.NewChatAction(ChatID, tgbotapi.ChatTyping)
+	gBot.Send(act)
+	for {
+		currentTime := time.Now()
+		elapsedTime := currentTime.Sub(gLastRequest)
+		time.Sleep(time.Second)
+		if elapsedTime >= 3*time.Second {
+			break
+		}
+	}
+	gLastRequest = time.Now()
 }
