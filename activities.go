@@ -77,6 +77,7 @@ func ProcessInitiative() {
 }
 
 func isMyReaction(messages []openai.ChatCompletionMessage, History []openai.ChatCompletionMessage) bool {
+	SetCurOperation("Определение реакции", 0)
 	var FullPromt []openai.ChatCompletionMessage
 	var resp openai.ChatCompletionResponse
 	var err error
@@ -115,6 +116,7 @@ func needFunction(messages []openai.ChatCompletionMessage) byte {
 	var FullPromt []openai.ChatCompletionMessage
 	var resp openai.ChatCompletionResponse
 	var result byte
+	SetCurOperation("Выбор функции", 0)
 	result = DONOTHING
 	FullPromt = nil
 	FullPromt = append(FullPromt, messages[len(messages)-1])
@@ -178,6 +180,7 @@ func DoBotFunction(BotReaction byte, ChatMessages []openai.ChatCompletionMessage
 		return
 	}
 }
+
 func ProcessWebPage(LastMessages, hist []openai.ChatCompletionMessage) []openai.ChatCompletionMessage {
 	var resp openai.ChatCompletionResponse
 	var answer []openai.ChatCompletionMessage
@@ -185,8 +188,9 @@ func ProcessWebPage(LastMessages, hist []openai.ChatCompletionMessage) []openai.
 	var err error
 	var URI string
 	var data string
+	SetCurOperation("Чтение вебстраницы", 0)
 	FullPromt = append(FullPromt, hist...)
-	if len(LastMessages) > 3 {
+	if len(LastMessages) >= 3 {
 		FullPromt = append(FullPromt, LastMessages[len(LastMessages)-3:]...)
 	} else {
 		FullPromt = append(FullPromt, LastMessages...)

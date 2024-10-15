@@ -194,7 +194,12 @@ func ProcessMessage(update tgbotapi.Update) {
 						FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...)
 						FullPromt = append(FullPromt, gHsGender[gBotGender].Prompt[gLocale]...)
 						FullPromt = append(FullPromt, CharPrmt[gLocale]...)
-						FullPromt = append(FullPromt, ChatMessages[len(ChatMessages)-4:]...)
+						if len(LastMessages) >= 4 {
+							FullPromt = append(FullPromt, ChatMessages[len(ChatMessages)-4:]...)
+						} else {
+							FullPromt = append(FullPromt, ChatMessages...)
+						}
+
 						time.Sleep(5 * time.Second)
 						resp = SendRequest(FullPromt, chatItem)
 					}
