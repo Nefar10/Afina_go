@@ -47,6 +47,7 @@ func ParseChatKeyID(key string) int64 {
 	var s string
 	var n int64
 	var err error
+	SetCurOperation("Determining chat ID", 1)
 	if len(key) <= 0 {
 		return 0
 	}
@@ -222,6 +223,7 @@ func CheckChatRights(update tgbotapi.Update) {
 }
 
 func isNow(currentTime time.Time) [][]openai.ChatCompletionMessage {
+	SetCurOperation("Determining current time", 0)
 	var lHsTime [][]openai.ChatCompletionMessage
 	timeString := currentTime.Format("Monday, 2006-01-02 15:04:05")
 	lHsTime = append(lHsTime, []openai.ChatCompletionMessage{{Role: openai.ChatMessageRoleUser, Content: "Current time is " + timeString + "."}})
@@ -259,6 +261,7 @@ func convTgmMarkdown(input string) string {
 
 func sendHistory(chatID int64, ChatMessages []openai.ChatCompletionMessage) {
 	var buffer bytes.Buffer
+	SetCurOperation("Processing history", 0)
 	if len(ChatMessages) > 0 {
 		for _, msg := range ChatMessages {
 			_, err := fmt.Fprintf(&buffer, "%s: %s\n", msg.Role, msg.Content)
@@ -282,8 +285,9 @@ func SendRequest(FullPrompt []openai.ChatCompletionMessage, chatItem ChatState) 
 	var resp openai.ChatCompletionResponse
 	var err error
 	//log.Println(FullPrompt)
+	SetCurOperation("Request to AI", 0)
 	gLastRequest = time.Now() //Запомним текущее время
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 	resp, err = gClient.CreateChatCompletion(
 		ctx,

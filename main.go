@@ -89,6 +89,7 @@ func init() {
 	} else {
 		gRedisDB = db //Storing DB ID
 	}
+	//gRedisDB = 9
 
 	//Redis client init
 	gRedisClient = redis.NewClient(&redis.Options{

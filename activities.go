@@ -8,9 +8,6 @@ import (
 	"strings"
 	"time"
 
-	//cu "github.com/Davincible/chromedp-undetected"
-	//"github.com/PuerkitoBio/goquery"
-	//"github.com/chromedp/chromedp"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/gocolly/colly/v2"
 	openai "github.com/sashabaranov/go-openai"
@@ -119,6 +116,8 @@ func needFunction(messages []openai.ChatCompletionMessage) byte {
 	SetCurOperation("Выбор функции", 0)
 	result = DONOTHING
 	FullPromt = nil
+	log.Println(messages)
+	log.Println(len(messages))
 	FullPromt = append(FullPromt, messages[len(messages)-1])
 	FullPromt = append(FullPromt, gHsReaction[1].Prompt[gLocale]...)
 	//	log.Println(FullPromt)
@@ -148,6 +147,7 @@ func needFunction(messages []openai.ChatCompletionMessage) byte {
 }
 
 func DoBotFunction(BotReaction byte, ChatMessages []openai.ChatCompletionMessage, update tgbotapi.Update) {
+	SetCurOperation("Запуск функции", 0)
 	switch BotReaction {
 	case DOSHOWMENU:
 		{
@@ -236,157 +236,3 @@ func ProcessWebPage(LastMessages, hist []openai.ChatCompletionMessage) []openai.
 		return answer
 	}
 }
-
-/*
-	os := runtime.GOOS
-	switch os {
-	case "windows":
-		ctx, cancel, err = cu.New(cu.NewConfig(
-			//cu.WithHeadless(),
-			cu.WithTimeout(60 * time.Second),
-		))
-	case "linux":
-		ctx, cancel, err = cu.New(cu.NewConfig(
-			cu.WithHeadless(),
-			cu.WithTimeout(60*time.Second),
-		))
-	default:
-		SendToUser(gOwner, "Неизвестная ОС", ERROR, 2)
-		return answer
-	}
-	if err != nil {
-		panic(err)
-	}
-	defer cancel()
-	if err := chromedp.Run(ctx,
-		chromedp.Navigate(URI),
-		chromedp.OuterHTML("html", &pageContent),
-	); err != nil {
-		panic(err)
-	}
-	// Загружаем HTML из строки
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(pageContent))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	var data ParsedData
-
-	// звлечение текста из всех блоко
-		doc.Find("p, div").Each(func(i int, s *goquery.Selection) {
-			s.Contents().Each(func(j int, child *goquery.Selection) {
-				node := child.Get(0) // Получаем текущий узел
-
-				if node.Type == 1 && node.Data == "a" { // Если это ссылка
-					href, exists := child.Attr("href")
-					if exists {
-						data.Content = append(data.Content, fmt.Sprintf("[%s](%s)", child.Text(), href))
-					}
-				} else if node.Type == 3 { // Если это текстовый узел
-					text := child.Text()
-					if text != "" {
-						data.Content = append(data.Content, text)
-					}
-				}
-			})
-		})
-
-	fmt.Println(data)
-	return answer
-}
-
-/*
-	var answer []openai.ChatCompletionMessage
-	answer = nil
-	resp, err := http.Get(URI)
-	if err != nil {
-		fmt.Println("Ошибка при получении страницы:", err)
-		return answer
-	}
-	defer resp.Body.Close()
-
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
-	if err != nil {
-		fmt.Println("Ошибка при загрузке документа:", err)
-		return answer
-	}
-	html, err := doc.Html()
-	if err != nil {
-		fmt.Println("Ошибка при получении HTML:", err)
-		return answer
-	}
-	log.Println(html)
-	answer = []openai.ChatCompletionMessage{
-		{Role: openai.ChatMessageRoleUser, Content: html},
-		{Role: openai.ChatMessageRoleUser, Content: "Проанализируй содержимое представленного контента не обращая внимания на HTML разметку. Предоставь ссылки на выбранные тобой темы."}}
-	return answer
-}
-/*
-unc main() {
-	// Запускаем Selenium сервер
-	const (
-	 seleniumPath = "path/to/selenium-server-standalone.jar" // Укажите путь к JAR-файлу
-	 chromeDriverPath = "path/to/chromedriver" // Укажите путь к Chromedriver
-	 port = 8080
-	)
-
-	// Запуск Selenium сервер
-	opts := []selenium.ServiceOption{
-	 selenium.StartFrameBuffer(), // Запуск в headless режиме
-	 selenium.ChromeDriver(chromeDriverPath), // Путь к Chromedriver
-	}
-	srv, err := selenium.NewSeleniumService(seleniumPath, port, opts...)
-	if err != nil {
-	 log.Fatalf("Error starting the Selenium server: %s", err)
-	}
-	defer srv.Stop()
-
-	// Подключение к Selenium
-	caps := selenium.Capabilities{"browserName": "chrome"}
-	caps.Add("goog:chromeOptions", map[string]interface{}{
-	 "args": []string{"--headless", "--no-sandbox", "--disable-dev-shm-usage"},
-	})
-
-	webDriver, err := selenium.NewRemote(caps, fmt.Sprintf("http://localhost:%d/wd/hub", port))
-	if err != nil {
-	 log.Fatalf("Error connecting to the remote server: %s", err)
-	}
-	defer webDriver.Quit()
-
-	// Открываем страницу
-	if err := webDriver.Get("http://example.com"); err != nil { // Укажите URL-адрес
-	 log.Fatalf("Error opening page: %s", err)
-	}
-
-	// Получаем текст страницы
-	pageSource, err := webDriver.PageSource()
-	if err != nil {
-	 log.Fatalf("Error getting page source: %s", err)
-	}
-
-	// Извлекаем текст и ссылки
-	text := extractText(pageSource)
-	links := extractLinks(pageSource)
-
-	fmt.Println("Текст страницы:")
-	fmt.Println(text)
-	fmt.Println("\nСсылки:")
-	for _, link := range links {
-	 fmt.Println(link)
-	}
-   }
-
-   // Функция для извлечения текста
-   func extractText(source string) string {
-	// Здесь можно добавить логику для извлечения текста
-	// Например, удалив теги HTML
-	return strings.Join(strings.Fields(source), " ")
-   }
-
-   // Функция для извлечения ссылок
-   func extractLinks(source string) []string {
-	// Здесь можно добавить логику для извлечения ссылок
-	// Например, используя регулярные выражения
-	return []string{"http://example.com/link1", "http://example.com/link2"} // Замените на логику извлечения ссылок
-   }
-*/

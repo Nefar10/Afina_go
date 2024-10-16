@@ -10,7 +10,7 @@ import (
 
 func redisPing(client redis.Client) error {
 	var err error
-	gCurProcName = "Check DB connection"
+	SetCurOperation("Check DB connection", 0)
 	_, err = client.Ping().Result()
 	if err != nil {
 		return err
@@ -62,6 +62,7 @@ func FlushCache() {
 }
 
 func DBWrite(key string, value string, expiration time.Duration) error {
+	SetCurOperation("Writting to DB", 0)
 	var err = gRedisClient.Set(key, value, expiration).Err()
 	if err != nil {
 		SendToUser(gOwner, gErr[10][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
@@ -70,6 +71,7 @@ func DBWrite(key string, value string, expiration time.Duration) error {
 }
 
 func DestroyChat(ID string) error {
+	SetCurOperation("Clean DB", 0)
 	err := gRedisClient.Del("ChatState:" + ID).Err()
 	if err != nil {
 		SendToUser(gOwner, gErr[10][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)

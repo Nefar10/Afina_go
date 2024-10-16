@@ -150,6 +150,7 @@ func SetBotModel(update tgbotapi.Update) {
 func SetChatSettings(chatItem ChatState, update tgbotapi.Update) {
 	var temp float64
 	var err error
+	SetCurOperation("Set chat settings", 0)
 	if chatItem.ChatID != 0 {
 		switch chatItem.SetState {
 		case HISTORY:
