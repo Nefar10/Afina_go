@@ -232,7 +232,7 @@ func isNow(currentTime time.Time) [][]openai.ChatCompletionMessage {
 }
 
 func convTgmMarkdown(input string) string {
-	var clean, itPat, bdPat *regexp.Regexp
+	var clean, bdPat *regexp.Regexp
 	var err error
 	SetCurOperation("Fomatting message", 0)
 	if len(input) <= 0 {
@@ -243,10 +243,10 @@ func convTgmMarkdown(input string) string {
 		if err == nil {
 			input = clean.ReplaceAllString(input, "")
 		}
-		itPat, err = regexp.Compile(`(\n|\s)\*([^*].+?)\*`)
-		if err == nil {
-			input = itPat.ReplaceAllString(input, "$1\u200B_\u200B$2\u200B_")
-		}
+		//itPat, err = regexp.Compile(`(\n|\s)\*([^*].+?)\*`)
+		//if err == nil {
+		//	input = itPat.ReplaceAllString(input, "$1\u200B_\u200B$2\u200B_")
+		//}
 		bdPat, err = regexp.Compile(`\*\*(.+?)\*\*`)
 		if err == nil {
 			input = bdPat.ReplaceAllString(input, "*$1*")

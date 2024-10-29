@@ -50,12 +50,15 @@ func ProcessInitiative() {
 							LastMessages = append(LastMessages, gIntFacts[chatItem.InterFacts].Prompt[gLocale][gRand.Intn(len(gIntFacts[chatItem.InterFacts].Prompt[gLocale]))])
 						}
 						FullPromt = append(FullPromt, LastMessages...)
+
 						BotReaction = needFunction(LastMessages)
 						ChatMessages = GetDialog("Dialog:" + strconv.FormatInt(chatItem.ChatID, 10))
 						switch BotReaction {
 						case DOREADSITE:
 							tmpMSGs := ProcessWebPage(LastMessages, chatItem.History)
+							FullPromt = append(FullPromt, chatItem.History...)
 							FullPromt = append(FullPromt, tmpMSGs...)
+							log.Println(FullPromt)
 							ChatMessages = append(ChatMessages, tmpMSGs...)
 							resp = SendRequest(FullPromt, chatItem)
 						default:
@@ -63,9 +66,9 @@ func ProcessInitiative() {
 						}
 						if resp.Choices != nil || len(resp.Choices) > 0 {
 							SendToUser(chatItem.ChatID, resp.Choices[0].Message.Content, MSG_NOTHING, 0)
+							ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content})
+							UpdateDialog(chatItem.ChatID, ChatMessages)
 						}
-						ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content})
-						UpdateDialog(chatItem.ChatID, ChatMessages)
 					}
 				}
 			}
@@ -227,7 +230,7 @@ func ProcessWebPage(LastMessages, hist []openai.ChatCompletionMessage) []openai.
 		if len(data) > 255 {
 			answer = append(answer, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "Содержимое сайта " + URI + "\n" + data})
 			answer = append(answer, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "На базе представленного на сайте содержимого " +
-				"собери информацию на моем языке с точными гиперссылками на контент. Используй markdown разметку, но не сообщай об этом."}) // в markdown разметке, только не в виде кода"})
+				"собери информацию на моем языке. Формируй точные гиперссылки на контент. Используй markdown разметку, но не сообщай об этом."}) // в markdown разметке, только не в виде кода"})
 		} else {
 			answer = append(answer, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "Сообщи, что информацию с сайта" + URI + "получить не удалось"})
 		}
