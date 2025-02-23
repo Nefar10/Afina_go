@@ -1,0 +1,78 @@
+[
+  [
+    "Telegram bot API key not forund in OS environment",
+    "Не найден API ключ телеграмм бота в переменных окружения"
+  ],
+  [
+    "Telegram bot API key not forund in OS environment",
+    "Не найден API ключ телеграмм бота в переменных окружения"
+  ],
+  [
+    "Owner's chat ID not found or not valid in os environment",
+    "Не найден ID чата владельца в переменных окружения"
+  ],
+  [
+    "DB server IP address and port not found in OS environment",
+    "Адрес сервера базы данных не найден в переменных окружения"
+  ],
+  [
+    "DB password not found in OS environment",
+    "Пароль к базе данных не найден в переменных окружения"
+  ],
+  [
+    "DB ID not forind or not valid in OS environment",
+    "Идентификатор базы не найден в переменных окружения"
+  ],
+  [
+    "Telegram bot initialization error",
+    "Ошибка инициализации телеграмм бота"
+  ],
+  [
+    "OpenAI API tocken not found in OS environment",
+    "API ключ OpenAI не найден в перменных окружения"
+  ],
+  [
+    "Error initializing work dir",
+    "Ошибка инициализации рабочей директории"
+  ],
+  [
+    "DB connection error",
+    "Ошибка подключения к базе данных"
+  ],
+  [
+    "Error writting to DB",
+    "Ошибка записи в базу данных"
+  ],
+  [
+    "Error json marshaling",
+    "Ошибка преобразования в json"
+  ],
+  [
+    "Error reading keys from DB",
+    "Ошибка чтения ключа из базы данных"
+  ],
+  [
+    "Error reading key value from DB",
+    "Ошибка чтения знаяения ключа из базы данных"
+  ],
+  [
+    "Error json unmarshaling",
+    "Ошибка парсинга Json"
+  ],
+  [
+    "Error convetring string to int",
+    "Ошибка преобразования строки в число"
+  ],
+  [
+    "Unknown Error",
+    "Неизвестная ошибка "
+  ],
+  [
+    "ChatCompletion error: %v\n",
+    "Ошибка обработки запроса к нейросети: %v\n"
+  ],
+  [
+    "Error retrieving models:",
+    "Ошибка получения списка моделей"
+  ]
+]

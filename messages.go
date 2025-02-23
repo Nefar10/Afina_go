@@ -139,6 +139,7 @@ func ProcessMessage(update tgbotapi.Update) {
 		case len(ChatMessages) > 1000:
 			{
 				ChatMessages = ChatMessages[len(ChatMessages)-1000:]
+				LastMessages = ChatMessages[len(ChatMessages)-20:]
 			}
 		case len(ChatMessages) > 20:
 			{

@@ -1,0 +1,134 @@
+[
+  [
+    "Process has been stoped",
+    "Процесс был остановлен"
+  ],
+  [
+    "Bot name(s) not found or not valid in OS environment.\n Name Afina will be used. ",
+    "Имя бота не найдено или не корректно в переменных окружения.\n Будет использовано имя Afina. "
+  ],
+  [
+    "Bot gender not found or not valid in OS environment.\n Neutral gender will be used. ",
+    "Пол бота не найден или некорректен среди переменных окружения.\n Будет использован средний род. "
+  ],
+  [
+    "I'm back!",
+    "Я снова с Вами!"
+  ],
+  [
+    "All DB data has been remowed. I'll reboot now ",
+    "Все данные в бахе данных будут удалены. Проиводится перезагрузка "
+  ],
+  [
+    "I'll be back ",
+    "Я еще вернусь "
+  ],
+  [
+    "Access granted ",
+    "Доступ разрешен "
+  ],
+  [
+    "I was allowed to communicate with you! ",
+    "Мне было разрешено с вами общаться "
+  ],
+  [
+    "Access denied ",
+    "Доступ запрещен "
+  ],
+  [
+    "I apologize, but to continue the conversation, it is necessary to administrator's approvance. ",
+    "Простите, но для продолжения общения мне требуется разрешение администратора. "
+  ],
+  [
+    "Access bocked ",
+    "Доступ заблокирован "
+  ],
+  [
+    "Congratulations! You have been added to the pranksters list! ",
+    "Поздравляю! Вы были добавлены в список проказников! "
+  ],
+  [
+    "Please select what needs to be done. ",
+    "Пожалуйста, выберите, что необходимо выполнить. "
+  ],
+  [
+    "Current version is 0.30.201 ",
+    "Текущая версия 0.30.201 "
+  ],
+  [
+    "Choose a topic. ",
+    " Выберите тему "
+  ],
+  [
+    "Topic has been changed. ",
+    "Тема изменена "
+  ],
+  [
+    "Write - as soon as you are ready to start the game. ",
+    "Пишите - как только будете готовы начать игру. "
+  ],
+  [
+    "Choose a style. ",
+    " Выберите стиль общения "
+  ],
+  [
+    " ",
+    ""
+  ],
+  [
+    " ",
+    ""
+  ],
+  [
+    " ",
+    ""
+  ],
+  [
+    " ",
+    ""
+  ],
+  [
+    " ",
+    ""
+  ],
+  [
+    " ",
+    ""
+  ],
+  [
+    " ",
+    ""
+  ],
+  [
+    " ",
+    ""
+  ],
+  [
+    " ",
+    ""
+  ],
+  [
+    " ",
+    ""
+  ],
+  [
+    " ",
+    ""
+  ],
+  [
+    " in process ",
+    " в процессе "
+  ],
+  [
+    "Authorized on account ",
+    "Авторизовано с "
+  ],
+  [
+    "Chats initialization",
+    "Инициализация чатов"
+  ],
+  [
+    "Parsing message to send",
+    "Обработка сообщения перед отправкой"
+  ]
+]

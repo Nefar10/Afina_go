@@ -289,18 +289,21 @@ func SendRequest(FullPrompt []openai.ChatCompletionMessage, chatItem ChatState) 
 	gLastRequest = time.Now() //Запомним текущее время
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
+	gAImutex.Lock()
 	resp, err = gClient.CreateChatCompletion(
 		ctx,
 		openai.ChatCompletionRequest{
-			Model:       chatItem.Model,
+			Model:       chatItem.Model, //"deepseek/deepseek-r1:free",
 			Temperature: chatItem.Temperature,
 			Messages:    FullPrompt,
 		},
 	)
+	gAImutex.Unlock()
 	if err != nil {
 		SendToUser(gOwner, gErr[17][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_INFO, 0)
 	}
 	return resp
+
 }
 
 func BotWaiting(ChatID int64, tm int) {
@@ -316,4 +319,74 @@ func BotWaiting(ChatID int64, tm int) {
 		}
 	}
 	gLastRequest = time.Now()
+}
+
+/*
+	func saveCustomPrompts(filename string, prompts []sCustomPrompt) error {
+		data, err := json.MarshalIndent(prompts, "", "  ")
+		if err != nil {
+			return err
+		}
+
+		err = os.WriteFile(filename, data, 0644)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+*/
+func loadCustomPrompts(filename string) ([]sCustomPrompt, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	var prompts []sCustomPrompt
+	if err := json.Unmarshal(data, &prompts); err != nil {
+		return nil, err
+	}
+
+	return prompts, nil
+}
+
+/*
+	func saveMsgs(filename string, msgs [][2]string) error {
+		data, err := json.MarshalIndent(msgs, "", "  ")
+		if err != nil {
+			return err
+		}
+
+		err = os.WriteFile(filename, data, 0644)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+*/
+func loadMsgs(filename string) ([][2]string, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	var msgs [][2]string
+	if err := json.Unmarshal(data, &msgs); err != nil {
+		return nil, err
+	}
+
+	return msgs, nil
 }

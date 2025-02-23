@@ -37,6 +37,19 @@ func init() {
 		gLocale = 0
 	}
 
+	//Prompts init
+	//saveCustomPrompts("prompts\\gHsReaction", gHsReaction)
+	gHsGender, _ = loadCustomPrompts("prompts\\gHsGender.json")
+	gConversationStyle, _ = loadCustomPrompts("prompts\\gConversationStyle.json")
+	gIntFacts, _ = loadCustomPrompts("prompts\\gIntFacts.json")
+	gHsGame, _ = loadCustomPrompts("prompts\\gHsGame.json")
+	gHsReaction, _ = loadCustomPrompts("prompts\\gHsReaction.json")
+	//saveMsgs("msgs\\gBotReaction", gBotReaction)
+	gErr, _ = loadMsgs("msgs\\gErr.json")
+	gIm, _ = loadMsgs("msgs\\gIm.json")
+	gMenu, _ = loadMsgs("msgs\\gMenu.json")
+	gBotReaction, _ = loadMsgs("msgs\\gBotReaction.json")
+
 	//Read bot API key from OS env
 	gToken = os.Getenv(BOT_API_KEY_IN_OS)
 	if gToken == "" {
@@ -104,12 +117,6 @@ func init() {
 		SendToUser(gOwner, gErr[9][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
 	}
 
-	//Read OpenAI API token from OS env
-	gAIToken = os.Getenv(AI_API_KEY_IN_OS)
-	if gAIToken == "" {
-		SendToUser(gOwner, gErr[7][gLocale]+AI_API_KEY_IN_OS+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
-	}
-
 	//Read bot names from OS env
 	gBotNames = strings.Split(os.Getenv(BOT_NAME_IN_OS), ",")
 	if gBotNames[0] == "" {
@@ -141,9 +148,20 @@ func init() {
 		gBotGender = FEMALE
 	}
 
+	//Read OpenAI API token from OS env
+	gAIToken = os.Getenv(AI_API_KEY_IN_OS)
+	//gAIToken = "sk-3a9f443f68e646faa645f060a4561ea1" //<>
+	//gAIToken = "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"<>
+	if gAIToken == "" {
+		SendToUser(gOwner, gErr[7][gLocale]+AI_API_KEY_IN_OS+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+	}
+
 	//OpenAI client init
 	config := openai.DefaultConfig(gAIToken)
 	config.BaseURL = "https://api.proxyapi.ru/openai/v1"
+	//config.BaseURL = "https://api.openai.com/v1"
+	//config.BaseURL = "https://api.deepseek.com"рев
+	//config.BaseURL = "https://openrouter.ai/api/v1"
 	gClient = openai.NewClientWithConfig(config)
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
@@ -153,14 +171,15 @@ func init() {
 		SendToUser(gOwner, gErr[18][gLocale], MSG_INFO, 1)
 	} else {
 		for _, model := range models.Models {
-			if (strings.Contains(strings.ToLower(model.ID), "o1")) || (strings.Contains(strings.ToLower(model.ID), "4o")) {
-				gModels = append(gModels, model.ID)
-			}
+			//if (strings.Contains(strings.ToLower(model.ID), "o1")) || (strings.Contains(strings.ToLower(model.ID), "4o")) || (strings.Contains(strings.ToLower(model.ID), "o3")) {
+			gModels = append(gModels, model.ID)
+			//}
 		}
 	}
 	gClient_is_busy = false
 	//Send init complete message to owner
 	SendToUser(gOwner, gIm[3][gLocale]+" "+gIm[13][gLocale], MSG_INFO, 5)
+
 }
 
 func ProcessMessages(update tgbotapi.Update) {
@@ -192,9 +211,12 @@ func ProcessMessages(update tgbotapi.Update) {
 
 func main() {
 	var updateQueue []tgbotapi.Update
+	//var logQueue []string
+	//var logCSmutex sync.Mutex
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = UPDATE_CONFIG_TIMEOUT
 	updates := gBot.GetUpdatesChan(updateConfig)
+
 	go func() {
 		for update := range updates {
 			updateQueue = append(updateQueue, update)
@@ -212,6 +234,7 @@ func main() {
 			}
 		}
 	}()
+
 	for {
 		time.Sleep(time.Minute)
 		ProcessInitiative()

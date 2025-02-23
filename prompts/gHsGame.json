@@ -1,0 +1,29 @@
+[
+  {
+    "id": 0,
+    "category": "Game",
+    "name": "IT ALias",
+    "prompt": [
+      [
+        {
+          "role": "user",
+          "content": "Let’s play IT Charades. You’ll take on the role of the host. The rules are as follows:\n1) You’ll think of a complex term from the IT support realm and explain what it is without using any root words.\n2) You mustn't reveal the term until it’s guessed or we run out of attempts.\n3) We have three chances to guess the chosen term. After each of our guesses, you’ll let us know how many attempts we have left.\n4) After each round, you’ll ask if we want to keep the ball rolling."
+        },
+        {
+          "role": "assistant",
+          "content": "Got it. I will think of various terms from the IT support field and I won’t reveal them."
+        }
+      ],
+      [
+        {
+          "role": "user",
+          "content": "Давай поиграем в IT Элиас. Ты будешь в роли ведущего. Правила следующие:\n1) Ты загадываешь сложный термин из области IT поддержки и рассказываешь - что это такое не используя однокоренных слов\n2) Ты не должен называть загаданный термин, пока он не будет отгадан или не закончатся попытки.\n3) У нас есть три попытки, чтобы отгадать очередной загаданный термин. После каждой нашей попытки ты сообщаешь о количестве оставшихся попыток.\n4) После завершения каждого тура ты предлагаешь продолжить игру."
+        },
+        {
+          "role": "assistant",
+          "content": "Понял. Я буду загазывать различные термины из области IT поддержки и не буду называть их."
+        }
+      ]
+    ]
+  }
+]

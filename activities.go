@@ -43,14 +43,13 @@ func ProcessInitiative() {
 						FullPromt = append(FullPromt, isNow(time.Now())[gLocale]...)
 						FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...)
 						FullPromt = append(FullPromt, gHsGender[gBotGender].Prompt[gLocale]...)
-						log.Println(FullPromt)
+						//log.Println(FullPromt)
 						if gRand.Intn(5) == 0 {
 							LastMessages = append(LastMessages, gIntFacts[0].Prompt[gLocale][gRand.Intn(len(gIntFacts[0].Prompt[gLocale]))])
 						} else {
 							LastMessages = append(LastMessages, gIntFacts[chatItem.InterFacts].Prompt[gLocale][gRand.Intn(len(gIntFacts[chatItem.InterFacts].Prompt[gLocale]))])
 						}
 						FullPromt = append(FullPromt, LastMessages...)
-
 						BotReaction = needFunction(LastMessages)
 						ChatMessages = GetDialog("Dialog:" + strconv.FormatInt(chatItem.ChatID, 10))
 						switch BotReaction {
@@ -58,12 +57,28 @@ func ProcessInitiative() {
 							tmpMSGs := ProcessWebPage(LastMessages, chatItem.History)
 							FullPromt = append(FullPromt, chatItem.History...)
 							FullPromt = append(FullPromt, tmpMSGs...)
-							log.Println(FullPromt)
 							ChatMessages = append(ChatMessages, tmpMSGs...)
 							resp = SendRequest(FullPromt, chatItem)
 						default:
+							switch {
+							case len(ChatMessages) > 1000:
+								{
+									ChatMessages = ChatMessages[len(ChatMessages)-1000:]
+									LastMessages = ChatMessages[len(ChatMessages)-10:]
+								}
+							case len(ChatMessages) > 10:
+								{
+									LastMessages = ChatMessages[len(ChatMessages)-10:]
+								}
+							default:
+								{
+									LastMessages = ChatMessages
+								}
+							}
+							FullPromt = append(LastMessages, FullPromt...)
 							resp = SendRequest(FullPromt, chatItem)
 						}
+						//log.Println(FullPromt)
 						if resp.Choices != nil || len(resp.Choices) > 0 {
 							SendToUser(chatItem.ChatID, resp.Choices[0].Message.Content, MSG_NOTHING, 0)
 							ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content})
@@ -119,8 +134,8 @@ func needFunction(messages []openai.ChatCompletionMessage) byte {
 	SetCurOperation("Выбор функции", 0)
 	result = DONOTHING
 	FullPromt = nil
-	log.Println(messages)
-	log.Println(len(messages))
+	//log.Println(messages)
+	//log.Println(len(messages))
 	FullPromt = append(FullPromt, messages[len(messages)-1])
 	FullPromt = append(FullPromt, gHsReaction[1].Prompt[gLocale]...)
 	//	log.Println(FullPromt)
@@ -136,8 +151,8 @@ func needFunction(messages []openai.ChatCompletionMessage) byte {
 			result = DOSHOWHIST
 		case strings.Contains(resp.Choices[0].Message.Content, "Чистка"):
 			result = DOCLEARHIST
-		case strings.Contains(resp.Choices[0].Message.Content, "Игра"):
-			result = DOGAME
+		//case strings.Contains(resp.Choices[0].Message.Content, "Игра"):
+		//result = DOGAME
 		case strings.Contains(resp.Choices[0].Message.Content, "Сайт"):
 			result = DOREADSITE
 		case strings.Contains(resp.Choices[0].Message.Content, "Поиск"):
@@ -199,7 +214,7 @@ func ProcessWebPage(LastMessages, hist []openai.ChatCompletionMessage) []openai.
 		FullPromt = append(FullPromt, LastMessages...)
 	}
 	FullPromt = append(FullPromt, []openai.ChatCompletionMessage{
-		{Role: openai.ChatMessageRoleUser, Content: "Исходя из контекста правильно сформируй, с указанием протокола, только url на запрошенную в предыдущем сообщении веб-страницу.\n" +
+		{Role: openai.ChatMessageRoleUser, Content: "Исходя из контекста, сфомируй корректный url на запрошенную в предыдущем сообщении веб-страницу.\n" +
 			"Без разметки и комметнариев."}}...)
 	resp = SendRequest(FullPromt, ChatState{Model: BASEGPTMODEL, Temperature: 0})
 	if resp.Choices != nil {
@@ -226,11 +241,11 @@ func ProcessWebPage(LastMessages, hist []openai.ChatCompletionMessage) []openai.
 		if err != nil {
 			log.Println(err)
 		}
-		fmt.Println(data)
+		//fmt.Println(data)
 		if len(data) > 255 {
 			answer = append(answer, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "Содержимое сайта " + URI + "\n" + data})
 			answer = append(answer, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "На базе представленного на сайте содержимого " +
-				"собери информацию на моем языке. Формируй точные гиперссылки на контент. Используй markdown разметку, но не сообщай об этом."}) // в markdown разметке, только не в виде кода"})
+				"собери запрошенную мной информацию. Формируй корректные гиперссылки на контент. Используй markdown разметку, но не сообщай об этом."}) // в markdown разметке, только не в виде кода"})
 		} else {
 			answer = append(answer, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "Сообщи, что информацию с сайта" + URI + "получить не удалось"})
 		}

@@ -1,0 +1,232 @@
+
+			go func() {
+			addr := net.UDPAddr{
+				Port: 27027,
+				IP:   net.ParseIP("192.168.88.16"),
+			}
+			conn, err := net.ListenUDP("udp", &addr)
+			if err != nil {
+				Log("Error creating UDP listener", ERR, err)
+				os.Exit(1)
+			}
+			defer conn.Close()
+			Log("Listening on "+addr.String(), NOERR, nil)
+			buffer := make([]byte, 1024)
+			for {
+				n, _, err := conn.ReadFromUDP(buffer)
+				if err != nil {
+					fmt.Println("Error reading data:", ERR, err)
+					continue
+				}
+				//log.Println(string(buffer[33:n]))
+				logCSmutex.Lock()
+				logQueue = append(logQueue, string(buffer[33:n]))
+				logCSmutex.Unlock()
+
+			}
+		}()
+		go func() {
+			var FullPromt []openai.ChatCompletionMessage
+			var TaskPrmt [2][]openai.ChatCompletionMessage
+			var tourStage = 0
+			var halfTour byte = 0
+			var tourLog, roundLog string
+			var flushLog bool = false
+			var chatItem ChatState
+			var logLine, prevLogLine string
+			var mapName string
+
+			for {
+				logCSmutex.Lock()
+				if len(logQueue) > 0 {
+					logLine = logQueue[0]
+					logQueue = logQueue[1:]
+					log.Println(logLine, "--", tourStage)
+					logCSmutex.Unlock()
+					if strings.Contains(logLine, `entered the game`) && !(strings.Contains(logLine, `BOT`) || strings.Contains(logLine, `HLTV`)) {
+						TaskPrmt = [2][]openai.ChatCompletionMessage{
+							{
+								{Role: openai.ChatMessageRoleUser, Content: " Counter Strike\n"},
+							},
+							{
+								{Role: openai.ChatMessageRoleUser, Content: "Объяви участника, который только что присоединился к игре - " + strings.Split(logLine, "<")[0] +
+									"\nПредоставь его характеристику, роль и название его команды.  Затем, в своем стиле, расскажи коротко о его суперспособностях в игре Counter Strike. Не озаглавливай свои ответы."},
+							},
+						}
+						flushLog = true
+					}
+					if strings.Contains(logLine, `Started map`) && tourStage != 3 {
+						mapName = logLine
+						TaskPrmt = [2][]openai.ChatCompletionMessage{
+							{
+								{Role: openai.ChatMessageRoleUser, Content: " Counter Strike\n"},
+							},
+							{
+								{Role: openai.ChatMessageRoleUser, Content: "Объяви о смене карты. Как бывалый, профессиолнальный игрок с многолетним опытом, расскажи об особенностях карты " +
+									mapName + ",  дай тактические советы."},
+							},
+						}
+						flushLog = true
+					}
+
+					if strings.Contains(logLine, `"mp_logdetail" = "5"`) && !strings.Contains(prevLogLine, `"mp_limitteams" = "0"`) {
+						if tourLog != "" {
+							TaskPrmt = [2][]openai.ChatCompletionMessage{
+								{
+									{Role: openai.ChatMessageRoleUser, Content: " Counter Strike\n" + tourLog},
+								},
+								{
+									{Role: openai.ChatMessageRoleUser, Content: tourLog + "\nОбъяви начало нового матча Counter Strike. Идет разогрев команд. Как профессиолнальный игрок с многолетним опытом," +
+										" дай напутствие командам основываясь на результатах последнего матча.\n"},
+								},
+							}
+						} else {
+							TaskPrmt = [2][]openai.ChatCompletionMessage{
+								{
+									{Role: openai.ChatMessageRoleUser, Content: " Counter Strike\n" + tourLog},
+								},
+								{
+									{Role: openai.ChatMessageRoleUser, Content: "Объяви начало нового матча Counter Strike. Идет разогрев команд. Как профессиолнальный игрок с многолетним опытом," +
+										" дай напутствие командам."},
+								},
+							}
+						}
+						tourStage = 1
+						tourLog = "Матч стартовал! \n Начинается разогрев команд.\n"
+						flushLog = true
+					}
+					if (strings.Contains(logLine, `Started map`) && tourStage == 3) || (strings.Contains(logLine, `"mp_logdetail" = "0"`) && tourStage == 3) {
+						if tourStage != 0 {
+							tourLog = tourLog + "Матч окончен\n"
+							TaskPrmt = [2][]openai.ChatCompletionMessage{
+								{
+									{Role: openai.ChatMessageRoleUser, Content: " Counter Strike\n" + tourLog},
+								},
+								{
+									{Role: openai.ChatMessageRoleUser, Content: tourLog + "\nРасскажи в своем стиле о ярких моментах прошедшего матча по Counter Strike.\n"},
+								},
+							}
+							flushLog = true
+							tourStage = 0
+							halfTour = 0
+						}
+
+					}
+					if tourStage == 1 {
+						if strings.Contains(logLine, `Team`) && strings.Contains(logLine, `triggered`) {
+							tourLog = tourLog + logLine
+						}
+						if strings.Contains(logLine, `Server cvar "sv_restartround" = "3"`) {
+							tourLog = tourLog + "Разогрев команд завершен!\n"
+							TaskPrmt = [2][]openai.ChatCompletionMessage{
+								{
+									{Role: openai.ChatMessageRoleUser, Content: " Counter Strike\n" + tourLog},
+								},
+								{
+									{Role: openai.ChatMessageRoleUser, Content: tourLog + "\nПрокомментируй в своем стиле результаты разогрева текущего матча по Counter Strike.\n" +
+										"Выдели фаворитов и дай им характеристику. Объяви ножевой раунд на право выбора стороны.\n"},
+								},
+							}
+							tourStage = 2
+							flushLog = true
+						}
+					}
+					if tourStage == 2 {
+						if strings.Contains(logLine, `Spawned_With_The_Bomb`) {
+							roundLog = "Начинается ножевой раунд на право выбора стороны"
+						}
+						roundLog = roundLog + logLine
+						if strings.Contains(logLine, `World triggered "Round_End"`) {
+							roundLog = roundLog + "Ножевой раунд завершен! \n"
+							TaskPrmt = [2][]openai.ChatCompletionMessage{
+								{
+									{Role: openai.ChatMessageRoleUser, Content: " Counter Strike\n" + roundLog},
+								},
+								{
+									{Role: openai.ChatMessageRoleUser, Content: roundLog + "\nБез приветствия. Дай в своем стиле комментарий ходу текущего ножевого раунда по Counter Strike." +
+										"Объяви победившую команду. Победившая команда выбирает сторону"},
+								},
+							}
+							tourStage = 3
+							flushLog = true
+						}
+
+					}
+					if tourStage == 3 {
+						if strings.Contains(logLine, `Ammunition has been unrestricted`) && halfTour == 1 {
+							halfTour = 2
+							TaskPrmt = [2][]openai.ChatCompletionMessage{
+								{
+									{Role: openai.ChatMessageRoleUser, Content: " Counter Strike\n" + roundLog},
+								},
+								{
+									{Role: openai.ChatMessageRoleUser, Content: roundLog + "\nОбъяви о начале второй половины матча Counter Strike. Команды меняются сторонами."},
+								},
+							}
+							flushLog = true
+						}
+						if strings.Contains(logLine, `Ammunition has been unrestricted`) && halfTour == 0 {
+							halfTour = 1
+							TaskPrmt = [2][]openai.ChatCompletionMessage{
+								{
+									{Role: openai.ChatMessageRoleUser, Content: " Counter Strike\n" + roundLog},
+								},
+								{
+									{Role: openai.ChatMessageRoleUser, Content: roundLog + "\nОбъяви о начале первой половины матча Counter Strike."},
+								},
+							}
+							flushLog = true
+						}
+						if strings.Contains(logLine, `Spawned_With_The_Bomb`) {
+
+							roundLog = "Начинается очередной раунд."
+						}
+						roundLog = roundLog + logLine
+						if strings.Contains(logLine, `Round_End`) {
+							TaskPrmt = [2][]openai.ChatCompletionMessage{
+								{
+									{Role: openai.ChatMessageRoleUser, Content: " Counter Strike\n" + roundLog},
+								},
+								{
+									{Role: openai.ChatMessageRoleUser, Content: roundLog + "\n\n Без приветствия. Как профессиолнальный игрок с многолетним опытом, дай в своем стиле подобный комментарий " +
+										"о прошедшем раунде по Counter Strike. Распиши все подробно, соблюдая хронологию. При описании действий учитывай характеристики участников и названия команд."},
+								},
+							}
+							flushLog = true
+						}
+					}
+					if flushLog {
+						chatItem = GetChatStateDB(-1002205274389)
+						CharPrmt := [2][]openai.ChatCompletionMessage{
+							{
+								{Role: openai.ChatMessageRoleUser, Content: "Important! Your personality type is " + gCT[chatItem.CharType-1]},
+							},
+							{
+								{Role: openai.ChatMessageRoleUser, Content: "Важно! Твой тип характера - " + gCT[chatItem.CharType-1]},
+							},
+						}
+						FullPromt = nil
+						FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...)
+						FullPromt = append(FullPromt, gHsGender[gBotGender].Prompt[gLocale]...)
+						FullPromt = append(FullPromt, CharPrmt[gLocale]...)
+						FullPromt = append(FullPromt, chatItem.History...)
+						FullPromt = append(FullPromt, TaskPrmt[gLocale]...)
+						resp := SendRequest(FullPromt, chatItem)
+						log.Println(FullPromt)
+						//log.Println(resp.Choices[0].Message.Content)
+						if len(resp.Choices) > 0 {
+							msg := tgbotapi.NewMessage(-1002205274389, convTgmMarkdown(resp.Choices[0].Message.Content))
+							msg.Text = convTgmMarkdown(msg.Text)
+							gBot.Send(msg)
+							tourLog = tourLog + resp.Choices[0].Message.Content
+						}
+						flushLog = false
+					}
+				} else {
+					logCSmutex.Unlock()
+				}
+				prevLogLine = logLine
+			}
+
+		}()
+	
