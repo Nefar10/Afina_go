@@ -37,7 +37,7 @@ func init() {
 	default:
 		gLocale = 0
 	}
-
+	SetCurOperation("Environment initialization | Prompts", 0)
 	//Prompts init
 	//saveCustomPrompts("prompts\\gHsReaction", gHsReaction)
 	gHsGender, _ = loadCustomPrompts("prompts\\gHsGender.json")
@@ -51,13 +51,13 @@ func init() {
 	gIm, _ = loadMsgs("msgs\\gIm.json")
 	gMenu, _ = loadMsgs("msgs\\gMenu.json")
 	gBotReaction, _ = loadMsgs("msgs\\gBotReaction.json")
-
+	SetCurOperation("Environment initialization | T_API", 0)
 	//Read bot API key from OS env
 	gToken = os.Getenv(BOT_API_KEY_IN_OS)
 	if gToken == "" {
 		Log(gErr[1][gLocale]+BOT_API_KEY_IN_OS+gIm[29][gLocale]+GetCurOperation(), CRIT, nil)
 	}
-
+	SetCurOperation("Environment initialization | Owner", 0)
 	//Read owner's chatID from OS env
 	owner, err = strconv.ParseInt(os.Getenv(OWNER_IN_OS), 10, 64)
 	if err != nil {
@@ -66,7 +66,7 @@ func init() {
 		gOwner = int64(owner) //Storing owner's chat ID in variable
 		gChangeSettings = 0
 	}
-
+	SetCurOperation("Environment initialization | Telegram connect", 0)
 	//Telegram bot init
 	gBot, err = tgbotapi.NewBotAPI(gToken)
 	if err != nil {
@@ -86,6 +86,7 @@ func init() {
 
 	//Read redis connector options from OS env
 	//Redis IP
+	SetCurOperation("Environment initialization | Check DB", 0)
 	gRedisIP = os.Getenv(REDIS_IN_OS)
 	if gRedisIP == "" {
 		SendToUser(gOwner, gErr[3][gLocale]+REDIS_IN_OS+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
@@ -118,7 +119,7 @@ func init() {
 	if err != nil {
 		SendToUser(gOwner, gErr[9][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
 	}
-
+	SetCurOperation("Environment initialization | Bot name", 0)
 	//Read bot names from OS env
 	gBotNames = strings.Split(os.Getenv(BOT_NAME_IN_OS), ",")
 	if gBotNames[0] == "" {
@@ -137,7 +138,7 @@ func init() {
 			{Role: openai.ChatMessageRoleAssistant, Content: "Принято! Мое имя " + gBotNames[0] + "."},
 		},
 	}
-
+	SetCurOperation("Environment initialization | Bot gender", 0)
 	//Read bot gender from OS env adn character comletion with gender information
 	switch os.Getenv(BOT_GENDER_IN_OS) {
 	case "Male":
@@ -149,7 +150,7 @@ func init() {
 	default:
 		gBotGender = FEMALE
 	}
-
+	SetCurOperation("Environment initialization | AI settings", 0)
 	//Read OpenAI API token from OS env and creating connections
 	names := strings.Split(os.Getenv(AI_NAMES_IN_OS), ",")
 	tokens := strings.Split(os.Getenv(AI_API_KEYS_IN_OS), ",")
