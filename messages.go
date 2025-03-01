@@ -29,7 +29,7 @@ func ProcessCallbacks(update tgbotapi.Update) {
 			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 			if err != nil {
-				SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+				SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
 			}
 			ClearContext(chatID)
 		}
@@ -38,7 +38,7 @@ func ProcessCallbacks(update tgbotapi.Update) {
 			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 			if err != nil {
-				SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+				SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
 			}
 			GameAlias(chatID)
 		}
@@ -159,7 +159,7 @@ func ProcessMessage(update tgbotapi.Update) {
 			}
 		}
 		if !toBotFlag && gUpdatesQty == 0 {
-			toBotFlag = isMyReaction(ChatMessages, chatItem.History)
+			toBotFlag = isMyReaction(ChatMessages, chatItem)
 		}
 		//Определяем требуется ли выполнить функцию
 		if toBotFlag {
@@ -183,7 +183,7 @@ func ProcessMessage(update tgbotapi.Update) {
 			}
 			FullPromt = append(FullPromt, chatItem.History...) //История группы
 			FullPromt = append(FullPromt, LastMessages...)     //Последние сообщения
-			BotReaction = needFunction(LastMessages)
+			BotReaction = needFunction(LastMessages, chatItem)
 			switch BotReaction {
 			case DOCALCULATE:
 				{
@@ -208,7 +208,7 @@ func ProcessMessage(update tgbotapi.Update) {
 			case DOSHOWMENU, DOSHOWHIST, DOCLEARHIST, DOGAME:
 				DoBotFunction(BotReaction, ChatMessages, update)
 			case DOREADSITE:
-				tmpMSGs := ProcessWebPage(LastMessages, chatItem.History)
+				tmpMSGs := ProcessWebPage(LastMessages, chatItem)
 				FullPromt = append(FullPromt, tmpMSGs...)
 				ChatMessages = append(ChatMessages, tmpMSGs...)
 				resp = SendRequest(FullPromt, chatItem)

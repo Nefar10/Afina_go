@@ -13,12 +13,15 @@ import (
 
 const (
 	//Bot options from ENV
-	BOT_LOCALE_IN_OS  = "AFINA_LOCALE"  //Localization
-	BOT_API_KEY_IN_OS = "TB_API_KEY"    //Bot API key
-	AI_API_KEY_IN_OS  = "AFINA_API_KEY" //OpenAI API key
-	OWNER_IN_OS       = "OWNER"         //Owner's chat ID
-	BOT_NAME_IN_OS    = "AFINA_NAMES"   //Bot's names
-	BOT_GENDER_IN_OS  = "AFINA_GENDER"  //Bot's gender
+	BOT_LOCALE_IN_OS  = "AFINA_LOCALE" //Localization
+	BOT_API_KEY_IN_OS = "TB_API_KEY"   //Bot API key
+	AI_API_KEYS_IN_OS = "AI_KEYS"      //API keys
+	AI_NAMES_IN_OS    = "AI_NAMES"     //AI names
+	AI_URLS_IN_OS     = "AI_URLS"      //AI names
+	AI_BM_IN_OS       = "AI_BM"        //AI base models
+	OWNER_IN_OS       = "OWNER"        //Owner's chat ID
+	BOT_NAME_IN_OS    = "AFINA_NAMES"  //Bot's names
+	BOT_GENDER_IN_OS  = "AFINA_GENDER" //Bot's gender
 	//DB connectore settings
 	REDIS_IN_OS      = "REDIS_IP"   //Redis ip address and port
 	REDIS_DB_IN_OS   = "REDIS_DB"   //Number DB in redis
@@ -64,8 +67,7 @@ const (
 	//LOCALES
 	RU = 1
 	EN = 0
-	//BASE MODEL
-	BASEGPTMODEL = "gpt-4o-mini" //"deepseek/deepseek-r1:free"
+
 	//PARAMETERS
 	NO_ONE        = 0
 	HISTORY       = 1
@@ -86,7 +88,7 @@ const (
 	DOREADSITE  = 6
 	DOSEARCH    = 7
 	//VERSION
-	VER = "0.30.201"
+	VER = "0.31.203"
 	//CHARAKTER TYPES
 	ISTJ = 1  // (Инспектор): Ответственный, организованный, практичный.
 	ISFJ = 2  // (Защитник): Заботливый, внимательный, преданный.
@@ -202,6 +204,7 @@ type ChatState struct {
 	CharType    byte                           //Character type by myers-Briggs
 	Profession  byte
 	TimeZone    int //timeZone
+	AI_ID       int
 }
 
 // Quest operating structure for processing rights
@@ -239,19 +242,31 @@ type sCustomPrompt struct {
 
 var gHsBasePrompt = [][]openai.ChatCompletionMessage{
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "You do not insert your name in the responses.\n" +
+		{Role: openai.ChatMessageRoleUser, Content: "You do not insert your name in the responses.\n Your program version is " + VER +
 			"You ask for clarification if the last message has any discrepancies with the real world.\n" +
 			"You do not interfere in conversations between other participants unless it concerns the facts described below.\n" +
 			"You always try to neutralize conflicts between participants, even if it seems like a joke.\n" +
 			"Important: you do not use the typical pattern 'I will answer any questions' and similar phrases in your responses.\n"},
 	},
 	{
-		{Role: openai.ChatMessageRoleUser, Content: "Ты не подставляешь свое имя в ответы.\n" +
+		{Role: openai.ChatMessageRoleUser, Content: "Ты не подставляешь свое имя в ответы.\n Версия твоей программы " + VER +
 			"Ты просишь уточннить запрос, если последнее сообщение имеет любые несоответсвия с действительнмы миром.\n" +
 			"Ты не вмешиваешься в разговор других участников между собой, если он не касается описанных далее фактов.\n" +
 			"Ты всегда пытаешься нейтрализовать конфликт между участниками, даже если он кажется шуткой.\n" +
 			"Важно: ты не используешь типовой паттерн gpt, 'отвечу на любые вопросы' и ему подобные в своих ответах.\n"},
 	},
+}
+
+type AI_params struct {
+	AI_Name      string
+	AI_Token     string
+	AI_URL       string
+	AI_BaseModel string
+}
+
+type AI_Models struct {
+	AI_ID         int
+	AI_model_name string
 }
 
 var gHsGender []sCustomPrompt
@@ -261,7 +276,7 @@ var gHsGame []sCustomPrompt
 var gHsReaction []sCustomPrompt
 
 var gBot *tgbotapi.BotAPI      //Pointer to initialized bot.
-var gClient *openai.Client     //OpenAI client init
+var gClient []*openai.Client   //OpenAI client init
 var gClient_is_busy bool       //Request to API is active
 var gLocale byte               //Localization
 var gToken string              //Bot API token
@@ -270,7 +285,7 @@ var gBotNames []string         //Bot names for calling he in group chats
 var gBotGender int             //Bot's gender
 var gRedisIP string            //DB server address and port
 var gRedisDB int               //DB number in redis
-var gAIToken string            //OpenAI API key
+var gAI []AI_params            //OpenAI API key
 var gRedisPass string          //Password for redis connect
 var gRedisClient *redis.Client //Pointer for redis client
 // var gDir string                //Current dir in OS
@@ -279,11 +294,12 @@ var gRand *rand.Rand       //New Rand generator
 // var gContextLength int         //Max context length
 var gCurProcName string //Name of curren process
 var gUpdatesQty int     //Updates qty
-var gModels []string    //Reached models
+var gModels []AI_Models //Reached models
 var gVerboseLevel byte  //Logging level
 // var gBotLocation UserLocation
 var gChangeSettings int64
-var gAImutex sync.Mutex
+var gAIMutex sync.Mutex
+var gSysMutex sync.Mutex
 
 // Bot defaults
 var gDefBotNames = []string{"Athena", "Афина"}
@@ -296,7 +312,8 @@ var gDefChatState = ChatState{
 	UserName:    "NoName",
 	Type:        "NoType",
 	Title:       "NoTitle",
-	Model:       BASEGPTMODEL,
+	AI_ID:       0,
+	Model:       "gpt-4o-mini",
 	Temperature: 0.5,
 	Inity:       0,
 	History:     nil,

@@ -18,7 +18,7 @@ func SetChatStateDB(item ChatState) {
 	}
 	jsonData, err = json.Marshal(item)
 	if err != nil {
-		SendToUser(gOwner, gErr[11][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+		SendToUser(gOwner, gErr[11][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
 	} else {
 		DBWrite("ChatState:"+strconv.FormatInt(item.ChatID, 10), string(jsonData), 0)
 	}
@@ -55,7 +55,7 @@ func SetBotCharacter(update tgbotapi.Update) {
 	if chatItem.ChatID != 0 {
 		intVal, err := strconv.Atoi(charValue)
 		if err != nil {
-			SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+			SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
 		}
 		chatItem.CharType = byte(intVal)
 		SetChatStateDB(chatItem)
@@ -137,13 +137,24 @@ func SetChatFacts(update tgbotapi.Update) {
 
 func SetBotModel(update tgbotapi.Update) {
 	var chatItem ChatState
+	var err error
+	var modelID int
 	SetCurOperation("Select gpt model", 0)
-	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
+	chatIDstr := strings.Split(update.CallbackQuery.Data, ":")[3]
 	chatItem = GetChatStateDB(ParseChatKeyID("ChatState:" + chatIDstr))
 	if chatItem.ChatID != 0 {
-		chatItem.Model = strings.Split(update.CallbackQuery.Data, ":")[1]
-		SetChatStateDB(chatItem)
-		SendToUser(gOwner, "Модель изменена на "+chatItem.Model, MSG_INFO, 1)
+		modelID, err = strconv.Atoi(strings.Split(update.CallbackQuery.Data, ":")[1])
+		if err != nil {
+			SendToUser(gOwner, "Ошибка определения ID модели", MSG_ERROR, 1)
+		}
+		chatItem.Model = gModels[modelID].AI_model_name
+		chatItem.AI_ID, err = strconv.Atoi(strings.Split(update.CallbackQuery.Data, ":")[2])
+		if err == nil {
+			SetChatStateDB(chatItem)
+			SendToUser(gOwner, "Модель изменена на "+chatItem.Model+" от "+gAI[chatItem.AI_ID].AI_Name, MSG_INFO, 1)
+		} else {
+			SendToUser(gOwner, "Ошибка определения ID нейросети", MSG_ERROR, 1)
+		}
 	}
 }
 
@@ -163,8 +174,8 @@ func SetChatSettings(chatItem ChatState, update tgbotapi.Update) {
 			{
 				temp, err = strconv.ParseFloat(update.Message.Text, 64)
 				if err != nil {
-					SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
-					//log.Fatalln(err, E15[gLocale]+IM29[gLocale]+gCurProcName)
+					SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
+					//log.Fatalln(err, E15[gLocale]+IM29[gLocale]+GetCurOperation())
 				} else {
 					chatItem.Temperature = float32(temp)
 				}
@@ -178,8 +189,8 @@ func SetChatSettings(chatItem ChatState, update tgbotapi.Update) {
 			{
 				chatItem.Inity, err = strconv.Atoi(update.Message.Text)
 				if err != nil {
-					SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
-					//log.Fatalln(err, E15[gLocale]+IM29[gLocale]+gCurProcName)
+					SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
+					//log.Fatalln(err, E15[gLocale]+IM29[gLocale]+GetCurOperation())
 				}
 				if chatItem.Inity < 0 || chatItem.Inity > 1000 {
 					chatItem.Inity = 0

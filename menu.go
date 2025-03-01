@@ -149,10 +149,10 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, chatID ...int
 		{
 			msg.Text = "Выберите модель"
 			var buttons []tgbotapi.InlineKeyboardButton
-			for _, model := range gModels {
-				if model != "" {
-					buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData(model, "SEL_MODEL:"+model+": "+strconv.FormatInt(chatID[0], 10)))
-				}
+
+			for i, model := range gModels {
+				buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData(model.AI_model_name+" - "+gAI[model.AI_ID].AI_Name, "SEL_MODEL:"+
+					strconv.FormatInt(int64(i), 10)+":"+strconv.FormatInt(int64(model.AI_ID), 10)+":"+strconv.FormatInt(chatID[0], 10)))
 			}
 
 			var rows [][]tgbotapi.InlineKeyboardButton
@@ -251,7 +251,7 @@ func SelectBotStyle(update tgbotapi.Update) {
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 	if err != nil {
-		SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+		SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
 	}
 	SendToUser(gOwner, gIm[12][gLocale], MENU_SET_STYLE, 1, chatID)
 }
@@ -272,7 +272,7 @@ func SelectBotModel(update tgbotapi.Update) {
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 	if err != nil {
-		SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+		SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
 	}
 	SendToUser(gOwner, "Выберите модель"+chatIDstr, MENU_SET_MODEL, 2, chatID)
 }
@@ -285,7 +285,7 @@ func SelectChat(update tgbotapi.Update) {
 	SetCurOperation("processing callback WB lists", 0)
 	keys, err = gRedisClient.Keys("ChatState:*").Result()
 	if err != nil {
-		SendToUser(gOwner, gErr[12][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+		SendToUser(gOwner, gErr[12][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
 	}
 	//keys processing
 	msgString = ""
@@ -323,7 +323,7 @@ func SelectChatRights(update tgbotapi.Update) {
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 	if err != nil {
-		SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+		SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
 	}
 	SendToUser(gOwner, "разрешить общение в этом чате?"+chatIDstr, MENU_GET_ACCESS, 2, chatID)
 }
@@ -353,13 +353,13 @@ func DoWithChat(update tgbotapi.Update) {
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 	if err != nil {
-		SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+		SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
 	}
 	SendToUser(update.CallbackQuery.From.ID, "Выберите действие c чатом "+chatIDstr, MENU_TUNE_CHAT, 1, chatID)
 }
 
 func Menu() {
-	gCurProcName = "Menu show"
+	SetCurOperation("Menu show", 1)
 	SendToUser(gOwner, gIm[12][gLocale], MENU_SHOW_MENU, 1)
 }
 
@@ -377,7 +377,7 @@ func UserMenu(update tgbotapi.Update) {
 		chatID = update.Message.Chat.ID
 	}
 	if err != nil {
-		SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+		SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
 	}
 	chatItem = GetChatStateDB(ParseChatKeyID("ChatState:" + chatIDstr))
 	if chatItem.ChatID != 0 {

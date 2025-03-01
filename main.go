@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -44,6 +45,7 @@ func init() {
 	gIntFacts, _ = loadCustomPrompts("prompts\\gIntFacts.json")
 	gHsGame, _ = loadCustomPrompts("prompts\\gHsGame.json")
 	gHsReaction, _ = loadCustomPrompts("prompts\\gHsReaction.json")
+	//log.Println(gHsReaction)
 	//saveMsgs("msgs\\gBotReaction", gBotReaction)
 	gErr, _ = loadMsgs("msgs\\gErr.json")
 	gIm, _ = loadMsgs("msgs\\gIm.json")
@@ -53,13 +55,13 @@ func init() {
 	//Read bot API key from OS env
 	gToken = os.Getenv(BOT_API_KEY_IN_OS)
 	if gToken == "" {
-		Log(gErr[1][gLocale]+BOT_API_KEY_IN_OS+gIm[29][gLocale]+gCurProcName, CRIT, nil)
+		Log(gErr[1][gLocale]+BOT_API_KEY_IN_OS+gIm[29][gLocale]+GetCurOperation(), CRIT, nil)
 	}
 
 	//Read owner's chatID from OS env
 	owner, err = strconv.ParseInt(os.Getenv(OWNER_IN_OS), 10, 64)
 	if err != nil {
-		Log(gErr[2][gLocale]+OWNER_IN_OS+gIm[29][gLocale]+gCurProcName, CRIT, err)
+		Log(gErr[2][gLocale]+OWNER_IN_OS+gIm[29][gLocale]+GetCurOperation(), CRIT, err)
 	} else {
 		gOwner = int64(owner) //Storing owner's chat ID in variable
 		gChangeSettings = 0
@@ -68,7 +70,7 @@ func init() {
 	//Telegram bot init
 	gBot, err = tgbotapi.NewBotAPI(gToken)
 	if err != nil {
-		Log(gErr[6][gLocale]+gIm[29][gLocale]+gCurProcName, CRIT, err)
+		Log(gErr[6][gLocale]+gIm[29][gLocale]+GetCurOperation(), CRIT, err)
 	} else {
 		if gVerboseLevel > 1 {
 			gBot.Debug = true
@@ -79,26 +81,26 @@ func init() {
 	//Current dir init
 	//gDir, err = os.Getwd()
 	//if err != nil {
-	//	SendToUser(gOwner, gErr[8][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+	//	SendToUser(gOwner, gErr[8][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
 	//}
 
 	//Read redis connector options from OS env
 	//Redis IP
 	gRedisIP = os.Getenv(REDIS_IN_OS)
 	if gRedisIP == "" {
-		SendToUser(gOwner, gErr[3][gLocale]+REDIS_IN_OS+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+		SendToUser(gOwner, gErr[3][gLocale]+REDIS_IN_OS+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
 	}
 
 	//Redis password
 	gRedisPass = os.Getenv(REDIS_PASS_IN_OS)
 	if gRedisPass == "" {
-		SendToUser(gOwner, gErr[4][gLocale]+REDIS_PASS_IN_OS+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+		SendToUser(gOwner, gErr[4][gLocale]+REDIS_PASS_IN_OS+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
 	}
 
 	//DB ID
 	db, err = strconv.Atoi(os.Getenv(REDIS_DB_IN_OS))
 	if err != nil {
-		SendToUser(gOwner, gErr[5][gLocale]+REDIS_DB_IN_OS+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+		SendToUser(gOwner, gErr[5][gLocale]+REDIS_DB_IN_OS+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
 	} else {
 		gRedisDB = db //Storing DB ID
 	}
@@ -114,14 +116,14 @@ func init() {
 	//Chek redis connection
 	err = redisPing(*gRedisClient)
 	if err != nil {
-		SendToUser(gOwner, gErr[9][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+		SendToUser(gOwner, gErr[9][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
 	}
 
 	//Read bot names from OS env
 	gBotNames = strings.Split(os.Getenv(BOT_NAME_IN_OS), ",")
 	if gBotNames[0] == "" {
 		gBotNames = gDefBotNames
-		SendToUser(gOwner, gIm[1][gLocale]+BOT_NAME_IN_OS+gIm[29][gLocale]+gCurProcName, MSG_INFO, 0)
+		SendToUser(gOwner, gIm[1][gLocale]+BOT_NAME_IN_OS+gIm[29][gLocale]+GetCurOperation(), MSG_INFO, 0)
 	}
 
 	//Bot naming prompt
@@ -148,34 +150,36 @@ func init() {
 		gBotGender = FEMALE
 	}
 
-	//Read OpenAI API token from OS env
-	gAIToken = os.Getenv(AI_API_KEY_IN_OS)
-	//gAIToken = "sk-3a9f443f68e646faa645f060a4561ea1" //<>
-	//gAIToken = "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"<>
-	if gAIToken == "" {
-		SendToUser(gOwner, gErr[7][gLocale]+AI_API_KEY_IN_OS+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
-	}
-
-	//OpenAI client init
-	config := openai.DefaultConfig(gAIToken)
-	config.BaseURL = "https://api.proxyapi.ru/openai/v1"
-	//config.BaseURL = "https://api.openai.com/v1"
-	//config.BaseURL = "https://api.deepseek.com"рев
-	//config.BaseURL = "https://openrouter.ai/api/v1"
-	gClient = openai.NewClientWithConfig(config)
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
+	//Read OpenAI API token from OS env and creating connections
+	names := strings.Split(os.Getenv(AI_NAMES_IN_OS), ",")
+	tokens := strings.Split(os.Getenv(AI_API_KEYS_IN_OS), ",")
+	urls := strings.Split(os.Getenv(AI_URLS_IN_OS), ",")
+	basemodels := strings.Split(os.Getenv(AI_BM_IN_OS), ",")
 	gModels = nil
-	models, err := gClient.ListModels(ctx)
-	if err != nil {
-		SendToUser(gOwner, gErr[18][gLocale], MSG_INFO, 1)
-	} else {
-		for _, model := range models.Models {
-			//if (strings.Contains(strings.ToLower(model.ID), "o1")) || (strings.Contains(strings.ToLower(model.ID), "4o")) || (strings.Contains(strings.ToLower(model.ID), "o3")) {
-			gModels = append(gModels, model.ID)
-			//}
+	for i, _ := range names {
+		gAI = append(gAI, AI_params{AI_Name: names[i], AI_Token: tokens[i], AI_URL: urls[i], AI_BaseModel: basemodels[i]})
+		config := openai.DefaultConfig(tokens[i])
+		config.BaseURL = urls[i]
+		gClient = append(gClient, openai.NewClientWithConfig(config))
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		defer cancel()
+
+		models, err := gClient[i].ListModels(ctx)
+		if err != nil {
+			SendToUser(gOwner, gErr[18][gLocale], MSG_INFO, 1)
+		} else {
+			for _, model := range models.Models {
+				if (strings.Contains(strings.ToLower(model.ID), "o1")) || (strings.Contains(strings.ToLower(model.ID), "4o")) ||
+					(strings.Contains(strings.ToLower(model.ID), "o3")) || (strings.Contains(strings.ToLower(model.ID), "deep")) {
+					gModels = append(gModels, AI_Models{AI_ID: i, AI_model_name: model.ID})
+				}
+			}
 		}
 	}
+	if len(names) == 0 {
+		SendToUser(gOwner, gErr[7][gLocale]+AI_API_KEYS_IN_OS+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
+	}
+
 	gClient_is_busy = false
 	//Send init complete message to owner
 	SendToUser(gOwner, gIm[3][gLocale]+" "+gIm[13][gLocale], MSG_INFO, 5)
@@ -211,26 +215,29 @@ func ProcessMessages(update tgbotapi.Update) {
 
 func main() {
 	var updateQueue []tgbotapi.Update
-	//var logQueue []string
-	//var logCSmutex sync.Mutex
+	var updateMutex sync.Mutex
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = UPDATE_CONFIG_TIMEOUT
 	updates := gBot.GetUpdatesChan(updateConfig)
 
 	go func() {
 		for update := range updates {
+			updateMutex.Lock()
 			updateQueue = append(updateQueue, update)
+			updateMutex.Unlock()
 		}
 	}()
 	go func() {
 		for {
 			if len(updateQueue) > 0 {
+				updateMutex.Lock()
 				update := updateQueue[0]
 				updateQueue = updateQueue[1:]
 				gUpdatesQty = len(updateQueue)
+				updateMutex.Unlock()
 				ProcessMessages(update)
 			} else {
-				time.Sleep(3000 * time.Millisecond)
+				time.Sleep(2000 * time.Millisecond)
 			}
 		}
 	}()

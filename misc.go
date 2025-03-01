@@ -17,15 +17,26 @@ import (
 	"github.com/sashabaranov/go-openai"
 )
 
+// storing current operation for logging and debugging
 func SetCurOperation(msg string, log_level byte) {
 	if len(msg) > 0 {
+		gSysMutex.Lock()
 		gCurProcName = msg
+		gSysMutex.Unlock()
 		if gVerboseLevel > log_level {
 			Log(msg, NOERR, nil)
 		}
 	} else {
 		return
 	}
+}
+
+// reading current operation for logging and debugging
+func GetCurOperation() string {
+	gSysMutex.Lock()
+	curOp := gCurProcName
+	gSysMutex.Unlock()
+	return curOp
 }
 
 func Log(msg string, lvl byte, err error) {
@@ -55,18 +66,18 @@ func ParseChatKeyID(key string) int64 {
 		s = strings.Split(key, ":")[1]
 	} else {
 		if gVerboseLevel > 1 {
-			SendToUser(gOwner, "Ошибка парсинга ID чата "+key, MSG_ERROR, 2)
+			SendToUser(gOwner, "Ошибка парсинга при извлечении ID чата из строки "+key, MSG_ERROR, 2)
 		} else {
-			Log("Ошибка парсинга ID чата "+key, ERR, nil)
+			Log("Ошибка парсинга при извлечении ID чата из строки "+key, ERR, nil)
 		}
 		return 0
 	}
 	n, err = strconv.ParseInt(s, 10, 64)
 	if err != nil {
 		if gVerboseLevel > 1 {
-			SendToUser(gOwner, "Ошибка парсинга ID чата "+s, MSG_ERROR, 2)
+			SendToUser(gOwner, "Ошибка парсинга ID чата при преобразовании в int "+s, MSG_ERROR, 2)
 		} else {
-			Log("Ошибка парсинга ID чата "+s, ERR, err)
+			Log("Ошибка парсинга ID чата при преобразовании в int "+s, ERR, err)
 		}
 		return 0
 	} else {
@@ -86,7 +97,7 @@ func GetChatStateDB(chatID int64) ChatState {
 	} else {
 		err = json.Unmarshal([]byte(jsonStr), &chatItem)
 		if err != nil {
-			SendToUser(gOwner, gErr[14][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+			SendToUser(gOwner, gErr[14][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
 			return ChatState{AllowState: CHAT_IN_PROCESS, ChatID: 0}
 		} else {
 			return chatItem
@@ -100,7 +111,7 @@ func UpdateDialog(chatID int64, ChatMessages []openai.ChatCompletionMessage) {
 	chatIDstr = strconv.FormatInt(chatID, 10)
 	jsonData, err := json.Marshal(ChatMessages)
 	if err != nil {
-		SendToUser(gOwner, gErr[11][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+		SendToUser(gOwner, gErr[11][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
 		return
 	} else {
 		DBWrite("Dialog:"+chatIDstr, string(jsonData), 0)
@@ -117,13 +128,13 @@ func GetDialog(key string) []openai.ChatCompletionMessage {
 		if err == redis.Nil {
 			Log("Не найдена запись в БД", ERR, err)
 		} else {
-			SendToUser(gOwner, gErr[13][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+			SendToUser(gOwner, gErr[13][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
 		}
 		return []openai.ChatCompletionMessage{}
 	} else {
 		err = json.Unmarshal([]byte(msgString), &ChatMessages)
 		if err != nil {
-			SendToUser(gOwner, gErr[14][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+			SendToUser(gOwner, gErr[14][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
 			return []openai.ChatCompletionMessage{}
 		} else {
 			return ChatMessages
@@ -160,11 +171,13 @@ func ShowChatInfo(update tgbotapi.Update) {
 			msgString = "Название чата: " + chatItem.Title + "\n" +
 				"Модель поведения: " + gConversationStyle[chatItem.Bstyle].Name + "\n" +
 				"Тип характера: " + gCTDescr[gLocale][chatItem.CharType-1] + "\n" +
-				"Нейронная сеть: " + chatItem.Model + "\n" +
+				"Нейронная сеть: " + chatItem.Model + " от " + gAI[chatItem.AI_ID].AI_Name + "\n" +
+				"Модель принятия решений: " + gAI[chatItem.AI_ID].AI_BaseModel + "\n" +
 				"Экспрессия: " + strconv.FormatFloat(float64(chatItem.Temperature*100), 'f', -1, 32) + "%\n" +
 				"Инициативность: " + strconv.Itoa(chatItem.Inity*10) + "%\n" +
 				"Тема интересных фактов: " + gIntFacts[chatItem.InterFacts].Name + "\n" +
-				"Текущая версия: " + VER
+				"Текущая версия: " + VER + "\n" +
+				"ID чата: " + chatIDstr
 			SendToUser(chatItem.ChatID, msgString, MSG_INFO, 2)
 		}
 	}
@@ -181,15 +194,15 @@ func CheckChatRights(update tgbotapi.Update) {
 	if err == nil {
 		jsonStr, err = gRedisClient.Get("QuestState:" + ansItem.CallbackID.String()).Result()
 		if err != nil {
-			SendToUser(gOwner, gErr[13][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+			SendToUser(gOwner, gErr[13][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
 			if err == redis.Nil {
-				SendToUser(gOwner, gErr[16][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_INFO, 0)
+				SendToUser(gOwner, gErr[16][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_INFO, 0)
 			}
 			return
 		} else {
 			err = json.Unmarshal([]byte(jsonStr), &questItem)
 			if err != nil {
-				SendToUser(gOwner, gErr[14][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+				SendToUser(gOwner, gErr[14][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
 				return
 			}
 			if questItem.State == QUEST_IN_PROGRESS {
@@ -289,18 +302,18 @@ func SendRequest(FullPrompt []openai.ChatCompletionMessage, chatItem ChatState) 
 	gLastRequest = time.Now() //Запомним текущее время
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
-	gAImutex.Lock()
-	resp, err = gClient.CreateChatCompletion(
+	gAIMutex.Lock()
+	resp, err = gClient[chatItem.AI_ID].CreateChatCompletion(
 		ctx,
 		openai.ChatCompletionRequest{
-			Model:       chatItem.Model, //"deepseek/deepseek-r1:free",
+			Model:       chatItem.Model, //"deepseek-chat", //"deepseek/deepseek-r1:free",
 			Temperature: chatItem.Temperature,
 			Messages:    FullPrompt,
 		},
 	)
-	gAImutex.Unlock()
+	gAIMutex.Unlock()
 	if err != nil {
-		SendToUser(gOwner, gErr[17][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_INFO, 0)
+		SendToUser(gOwner, gErr[17][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_INFO, 0)
 	}
 	return resp
 

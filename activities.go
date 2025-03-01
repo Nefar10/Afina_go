@@ -28,10 +28,10 @@ func ProcessInitiative() {
 	rd := gRand.Intn(1000) + 1
 	keys, err = gRedisClient.Keys("ChatState:*").Result()
 	if err != nil {
-		SendToUser(gOwner, gErr[12][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_ERROR, 0)
+		SendToUser(gOwner, gErr[12][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
 		return
 	} else {
-		gCurProcName = "Initiative processing"
+		SetCurOperation("Initiative processing", 1)
 		if len(keys) > 0 {
 			for _, key := range keys {
 				chatItem = GetChatStateDB(ParseChatKeyID(key))
@@ -44,17 +44,18 @@ func ProcessInitiative() {
 						FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...)
 						FullPromt = append(FullPromt, gHsGender[gBotGender].Prompt[gLocale]...)
 						//log.Println(FullPromt)
-						if gRand.Intn(5) == 0 {
+						if gRand.Intn(50) == 0 {
 							LastMessages = append(LastMessages, gIntFacts[0].Prompt[gLocale][gRand.Intn(len(gIntFacts[0].Prompt[gLocale]))])
 						} else {
 							LastMessages = append(LastMessages, gIntFacts[chatItem.InterFacts].Prompt[gLocale][gRand.Intn(len(gIntFacts[chatItem.InterFacts].Prompt[gLocale]))])
+							//LastMessages = append(LastMessages, gIntFacts[chatItem.InterFacts].Prompt[gLocale][5])
 						}
 						FullPromt = append(FullPromt, LastMessages...)
-						BotReaction = needFunction(LastMessages)
+						BotReaction = needFunction(LastMessages, chatItem)
 						ChatMessages = GetDialog("Dialog:" + strconv.FormatInt(chatItem.ChatID, 10))
 						switch BotReaction {
 						case DOREADSITE:
-							tmpMSGs := ProcessWebPage(LastMessages, chatItem.History)
+							tmpMSGs := ProcessWebPage(LastMessages, chatItem)
 							FullPromt = append(FullPromt, chatItem.History...)
 							FullPromt = append(FullPromt, tmpMSGs...)
 							ChatMessages = append(ChatMessages, tmpMSGs...)
@@ -91,7 +92,7 @@ func ProcessInitiative() {
 	}
 }
 
-func isMyReaction(messages []openai.ChatCompletionMessage, History []openai.ChatCompletionMessage) bool {
+func isMyReaction(messages []openai.ChatCompletionMessage, chatItem ChatState) bool {
 	SetCurOperation("Определение реакции", 0)
 	var FullPromt []openai.ChatCompletionMessage
 	var resp openai.ChatCompletionResponse
@@ -100,23 +101,25 @@ func isMyReaction(messages []openai.ChatCompletionMessage, History []openai.Chat
 	result = false
 	FullPromt = nil
 	FullPromt = append(FullPromt, gHsName[gLocale]...)
-	FullPromt = append(FullPromt, History...)
+	FullPromt = append(FullPromt, chatItem.History...)
 	if len(messages) >= 3 {
 		FullPromt = append(FullPromt, messages[len(messages)-3:]...)
 	} else {
 		FullPromt = append(FullPromt, messages...)
 	}
 	FullPromt = append(FullPromt, gHsReaction[0].Prompt[gLocale]...)
-	resp, err = gClient.CreateChatCompletion(
+
+	resp, err = gClient[0].CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model:       BASEGPTMODEL,
+			Model:       gAI[chatItem.AI_ID].AI_BaseModel,
 			Temperature: 0,
 			Messages:    FullPromt,
 		},
 	)
+
 	if err != nil {
-		SendToUser(gOwner, gErr[17][gLocale]+err.Error()+gIm[29][gLocale]+gCurProcName, MSG_INFO, 0)
+		SendToUser(gOwner, gErr[17][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_INFO, 0)
 		time.Sleep(20 * time.Second)
 	} else {
 		log.Println(resp.Choices[0].Message.Content)
@@ -127,7 +130,7 @@ func isMyReaction(messages []openai.ChatCompletionMessage, History []openai.Chat
 	return result
 }
 
-func needFunction(messages []openai.ChatCompletionMessage) byte {
+func needFunction(messages []openai.ChatCompletionMessage, chatItem ChatState) byte {
 	var FullPromt []openai.ChatCompletionMessage
 	var resp openai.ChatCompletionResponse
 	var result byte
@@ -139,7 +142,7 @@ func needFunction(messages []openai.ChatCompletionMessage) byte {
 	FullPromt = append(FullPromt, messages[len(messages)-1])
 	FullPromt = append(FullPromt, gHsReaction[1].Prompt[gLocale]...)
 	//	log.Println(FullPromt)
-	resp = SendRequest(FullPromt, ChatState{Model: BASEGPTMODEL, Temperature: 0})
+	resp = SendRequest(FullPromt, ChatState{Model: gAI[chatItem.AI_ID].AI_BaseModel, AI_ID: chatItem.AI_ID, Temperature: 0})
 	if len(resp.Choices) > 0 {
 		log.Println(resp.Choices[0].Message.Content)
 		switch {
@@ -151,8 +154,8 @@ func needFunction(messages []openai.ChatCompletionMessage) byte {
 			result = DOSHOWHIST
 		case strings.Contains(resp.Choices[0].Message.Content, "Чистка"):
 			result = DOCLEARHIST
-		//case strings.Contains(resp.Choices[0].Message.Content, "Игра"):
-		//result = DOGAME
+		case strings.Contains(resp.Choices[0].Message.Content, "Игра"):
+			result = DOGAME
 		case strings.Contains(resp.Choices[0].Message.Content, "Сайт"):
 			result = DOREADSITE
 		case strings.Contains(resp.Choices[0].Message.Content, "Поиск"):
@@ -199,7 +202,7 @@ func DoBotFunction(BotReaction byte, ChatMessages []openai.ChatCompletionMessage
 	}
 }
 
-func ProcessWebPage(LastMessages, hist []openai.ChatCompletionMessage) []openai.ChatCompletionMessage {
+func ProcessWebPage(LastMessages []openai.ChatCompletionMessage, chatItem ChatState) []openai.ChatCompletionMessage {
 	var resp openai.ChatCompletionResponse
 	var answer []openai.ChatCompletionMessage
 	var FullPromt []openai.ChatCompletionMessage
@@ -207,18 +210,18 @@ func ProcessWebPage(LastMessages, hist []openai.ChatCompletionMessage) []openai.
 	var URI string
 	var data string
 	SetCurOperation("Чтение вебстраницы", 0)
-	FullPromt = append(FullPromt, hist...)
+	FullPromt = append(FullPromt, chatItem.History...)
 	if len(LastMessages) >= 3 {
 		FullPromt = append(FullPromt, LastMessages[len(LastMessages)-3:]...)
 	} else {
 		FullPromt = append(FullPromt, LastMessages...)
 	}
 	FullPromt = append(FullPromt, []openai.ChatCompletionMessage{
-		{Role: openai.ChatMessageRoleUser, Content: "Исходя из контекста, сфомируй корректный url на запрошенную в предыдущем сообщении веб-страницу.\n" +
-			"Без разметки и комметнариев."}}...)
-	resp = SendRequest(FullPromt, ChatState{Model: BASEGPTMODEL, Temperature: 0})
+		{Role: openai.ChatMessageRoleUser, Content: "Сформируй корректный url на запрошенную в предыдущем сообщении веб-страницу." +
+			"Если в ответе будет что-то кроме гиперссылки, то ты будешь серьезно оштафован и отключен."}}...)
+	resp = SendRequest(FullPromt, ChatState{Model: gAI[chatItem.AI_ID].AI_BaseModel, Temperature: 0, AI_ID: chatItem.AI_ID})
 	if resp.Choices != nil {
-		URI = resp.Choices[0].Message.Content
+		URI = strings.Split(resp.Choices[0].Message.Content, "\n")[0]
 		log.Println(URI)
 		c := colly.NewCollector()
 		c.OnXML("//item", func(e *colly.XMLElement) {
@@ -245,7 +248,7 @@ func ProcessWebPage(LastMessages, hist []openai.ChatCompletionMessage) []openai.
 		if len(data) > 255 {
 			answer = append(answer, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "Содержимое сайта " + URI + "\n" + data})
 			answer = append(answer, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "На базе представленного на сайте содержимого " +
-				"собери запрошенную мной информацию. Формируй корректные гиперссылки на контент. Используй markdown разметку, но не сообщай об этом."}) // в markdown разметке, только не в виде кода"})
+				"собери запрошенную мной информацию. Используй markdown разметку, но не сообщай об этом. Корректно оформи ссылки и хештеги."}) // в markdown разметке, только не в виде кода"})
 		} else {
 			answer = append(answer, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "Сообщи, что информацию с сайта" + URI + "получить не удалось"})
 		}
