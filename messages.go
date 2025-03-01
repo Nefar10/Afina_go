@@ -190,7 +190,8 @@ func ProcessMessage(update tgbotapi.Update) {
 					resp = SendRequest(FullPromt, chatItem)
 					if resp.Choices != nil {
 						ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content})
-						ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: "Ответ не верный. Подумай лучше, учти все детали задачи, и дай правильный ответ без комментариев, в своём стиле."})
+						ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{
+							Role: openai.ChatMessageRoleUser, Content: "Найди способ решить это корректно. Дай ответ в своем стиле, не комментируя свою ошибку."})
 						FullPromt = nil
 						FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...)
 						FullPromt = append(FullPromt, gHsGender[gBotGender].Prompt[gLocale]...)

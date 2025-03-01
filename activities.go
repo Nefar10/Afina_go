@@ -222,6 +222,7 @@ func ProcessWebPage(LastMessages []openai.ChatCompletionMessage, chatItem ChatSt
 	resp = SendRequest(FullPromt, ChatState{Model: gAI[chatItem.AI_ID].AI_BaseModel, Temperature: 0, AI_ID: chatItem.AI_ID})
 	if resp.Choices != nil {
 		URI = strings.Split(resp.Choices[0].Message.Content, "\n")[0]
+		URI = strings.Split(URI, " ")[0]
 		log.Println(URI)
 		c := colly.NewCollector()
 		c.OnXML("//item", func(e *colly.XMLElement) {
