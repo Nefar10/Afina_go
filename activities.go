@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"strconv"
@@ -96,7 +95,6 @@ func isMyReaction(messages []openai.ChatCompletionMessage, chatItem ChatState) b
 	SetCurOperation("Определение реакции", 0)
 	var FullPromt []openai.ChatCompletionMessage
 	var resp openai.ChatCompletionResponse
-	var err error
 	var result bool
 	result = false
 	FullPromt = nil
@@ -108,24 +106,10 @@ func isMyReaction(messages []openai.ChatCompletionMessage, chatItem ChatState) b
 		FullPromt = append(FullPromt, messages...)
 	}
 	FullPromt = append(FullPromt, gHsReaction[0].Prompt[gLocale]...)
-
-	resp, err = gClient[0].CreateChatCompletion(
-		context.Background(),
-		openai.ChatCompletionRequest{
-			Model:       gAI[chatItem.AI_ID].AI_BaseModel,
-			Temperature: 0,
-			Messages:    FullPromt,
-		},
-	)
-
-	if err != nil {
-		SendToUser(gOwner, gErr[17][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_INFO, 0)
-		time.Sleep(20 * time.Second)
-	} else {
-		log.Println(resp.Choices[0].Message.Content)
-		if strings.Contains(resp.Choices[0].Message.Content, gBotReaction[0][gLocale]) {
-			result = true
-		}
+	resp = SendRequest(FullPromt, ChatState{Model: gAI[chatItem.AI_ID].AI_BaseModel, AI_ID: chatItem.AI_ID, Temperature: 0})
+	log.Println(resp.Choices[0].Message.Content)
+	if strings.Contains(resp.Choices[0].Message.Content, gBotReaction[0][gLocale]) {
+		result = true
 	}
 	return result
 }
