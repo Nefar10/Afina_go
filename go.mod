@@ -24,6 +24,7 @@ require (
 	github.com/stretchr/testify v1.5.1 // indirect
 	github.com/temoto/robotstxt v1.1.1 // indirect
 	golang.org/x/net v0.28.0 // indirect
+	golang.org/x/sys v0.30.1-0.20250214214803-74cfc93a99be // indirect
 	golang.org/x/text v0.17.0 // indirect
 	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect

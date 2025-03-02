@@ -274,6 +274,7 @@ func ProcessMember(update tgbotapi.Update) {
 	var chatItem ChatState
 	SetCurOperation("Chat member processing", 0)
 	chatItem = gDefChatState
+	chatItem.Model = gAI[chatItem.AI_ID].AI_BaseModel
 	if update.MyChatMember != nil {
 		if update.MyChatMember.NewChatMember.Status == "member" || update.MyChatMember.NewChatMember.Status == "administrator" {
 			SetCurOperation("Chat initialization", 0)

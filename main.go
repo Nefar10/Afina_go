@@ -157,8 +157,8 @@ func init() {
 	urls := strings.Split(os.Getenv(AI_URLS_IN_OS), ",")
 	basemodels := strings.Split(os.Getenv(AI_BM_IN_OS), ",")
 	gModels = nil
-	for i, _ := range names {
-		gAI = append(gAI, AI_params{AI_Name: names[i], AI_Token: tokens[i], AI_URL: urls[i], AI_BaseModel: basemodels[i]})
+	for i, name := range names {
+		gAI = append(gAI, AI_params{AI_Name: name, AI_Token: tokens[i], AI_URL: urls[i], AI_BaseModel: basemodels[i]})
 		config := openai.DefaultConfig(tokens[i])
 		config.BaseURL = urls[i]
 		gClient = append(gClient, openai.NewClientWithConfig(config))
