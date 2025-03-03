@@ -9,7 +9,6 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/google/uuid"
 	openai "github.com/sashabaranov/go-openai"
-	"github.com/sheeiavellie/go-yandexgpt"
 )
 
 const (
@@ -89,7 +88,7 @@ const (
 	DOREADSITE  = 6
 	DOSEARCH    = 7
 	//VERSION
-	VER = "0.31.204"
+	VER = "0.31.205"
 	//CHARAKTER TYPES
 	ISTJ = 1  // (Инспектор): Ответственный, организованный, практичный.
 	ISFJ = 2  // (Защитник): Заботливый, внимательный, преданный.
@@ -278,7 +277,7 @@ var gHsReaction []sCustomPrompt
 
 var gBot *tgbotapi.BotAPI    //Pointer to initialized bot.
 var gClient []*openai.Client //OpenAI client init
-var gYaClient *yandexgpt.YandexGPTClient
+// var gYaClient *yandexgpt.YandexGPTClient
 var gClient_is_busy bool       //Request to API is active
 var gLocale byte               //Localization
 var gToken string              //Bot API token
