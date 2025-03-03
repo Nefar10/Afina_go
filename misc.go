@@ -294,11 +294,37 @@ func sendHistory(chatID int64, ChatMessages []openai.ChatCompletionMessage) {
 	}
 }
 
-func SendRequest(FullPrompt []openai.ChatCompletionMessage, chatItem ChatState) openai.ChatCompletionResponse {
+func SendRequest(FullPrompt []openai.ChatCompletionMessage, chatItem ChatState) string {
 	var resp openai.ChatCompletionResponse
 	var err error
+	//var YaFullprompt []yandexgpt.YandexGPTMessage
+	//var prmt openai.ChatCompletionMessage
 	//log.Println(FullPrompt)
 	SetCurOperation("Request to AI", 0)
+	/*
+		if chatItem.ChatID == gOwner {
+			SetCurOperation("Request to Yandex AI", 0)
+			for _, prmt = range FullPrompt {
+				YaFullprompt = append(YaFullprompt, yandexgpt.YandexGPTMessage{Role: yandexgpt.YandexGPTMessageRoleSystem, Text: prmt.Content})
+			}
+			request := yandexgpt.YandexGPTRequest{
+				ModelURI: yandexgpt.MakeModelURI("b1g9hte57kfq967nevga", yandexgpt.YandexGPT4Model),
+				CompletionOptions: yandexgpt.YandexGPTCompletionOptions{
+					Stream:      false,
+					Temperature: chatItem.Temperature,
+					MaxTokens:   2000,
+				},
+				Messages: YaFullprompt,
+			}
+
+			response, err := gYaClient.GetCompletion(context.Background(), request)
+			if err != nil {
+				fmt.Println("Request error", err.Error())
+				return ""
+			}
+			return response.Result.Alternatives[0].Message.Text
+		}
+	*/
 	gLastRequest = time.Now() //Запомним текущее время
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -314,8 +340,9 @@ func SendRequest(FullPrompt []openai.ChatCompletionMessage, chatItem ChatState) 
 	gAIMutex.Unlock()
 	if err != nil {
 		SendToUser(gOwner, gErr[17][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_INFO, 0)
+		return ""
 	}
-	return resp
+	return resp.Choices[0].Message.Content
 
 }
 

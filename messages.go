@@ -105,7 +105,7 @@ func ProcessMessage(update tgbotapi.Update) {
 	var ChatMessages []openai.ChatCompletionMessage //Current prompt
 	var LastMessages []openai.ChatCompletionMessage //Current prompt
 	var FullPromt []openai.ChatCompletionMessage    //Messages to send
-	var resp openai.ChatCompletionResponse
+	var resp string
 	SetCurOperation("Update message processing", 0)
 	chatItem = GetChatStateDB(update.Message.Chat.ID)
 	if update.Message.Chat.ID == gOwner && gChangeSettings != gOwner && gChangeSettings != 0 {
@@ -188,8 +188,8 @@ func ProcessMessage(update tgbotapi.Update) {
 			case DOCALCULATE:
 				{
 					resp = SendRequest(FullPromt, chatItem)
-					if resp.Choices != nil {
-						ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content})
+					if resp != "" {
+						ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: resp})
 						ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{
 							Role: openai.ChatMessageRoleUser, Content: "Найди способ решить это корректно. Дай ответ в своем стиле, не комментируя свою ошибку."})
 						FullPromt = nil
@@ -216,8 +216,8 @@ func ProcessMessage(update tgbotapi.Update) {
 			default:
 				resp = SendRequest(FullPromt, chatItem)
 			}
-			if (BotReaction <= DOCALCULATE || BotReaction == DOREADSITE) && resp.Choices != nil {
-				msg.Text = resp.Choices[0].Message.Content
+			if (BotReaction <= DOCALCULATE || BotReaction == DOREADSITE) && resp != "" {
+				msg.Text = resp
 				ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: msg.Text})
 				UpdateDialog(update.Message.Chat.ID, ChatMessages)
 				msg.Text = convTgmMarkdown(msg.Text)

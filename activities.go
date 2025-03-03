@@ -22,7 +22,7 @@ func ProcessInitiative() {
 	var FullPromt []openai.ChatCompletionMessage
 	var LastMessages []openai.ChatCompletionMessage
 	var BotReaction byte
-	var resp openai.ChatCompletionResponse
+	var resp string
 	SetCurOperation("Processing initiative get chats settings", 1)
 	rd := gRand.Intn(1000) + 1
 	keys, err = gRedisClient.Keys("ChatState:*").Result()
@@ -43,11 +43,11 @@ func ProcessInitiative() {
 						FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...)
 						FullPromt = append(FullPromt, gHsGender[gBotGender].Prompt[gLocale]...)
 						//log.Println(FullPromt)
-						if gRand.Intn(50) == 0 {
+						if gRand.Intn(10) == 0 {
 							LastMessages = append(LastMessages, gIntFacts[0].Prompt[gLocale][gRand.Intn(len(gIntFacts[0].Prompt[gLocale]))])
 						} else {
 							LastMessages = append(LastMessages, gIntFacts[chatItem.InterFacts].Prompt[gLocale][gRand.Intn(len(gIntFacts[chatItem.InterFacts].Prompt[gLocale]))])
-							//LastMessages = append(LastMessages, gIntFacts[chatItem.InterFacts].Prompt[gLocale][5])
+							//LastMessages = append(LastMessages, gIntFacts[chatItem.InterFacts].Prompt[gLocale][17])
 						}
 						FullPromt = append(FullPromt, LastMessages...)
 						BotReaction = needFunction(LastMessages, chatItem)
@@ -79,9 +79,9 @@ func ProcessInitiative() {
 							resp = SendRequest(FullPromt, chatItem)
 						}
 						//log.Println(FullPromt)
-						if resp.Choices != nil || len(resp.Choices) > 0 {
-							SendToUser(chatItem.ChatID, resp.Choices[0].Message.Content, MSG_NOTHING, 0)
-							ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content})
+						if resp != "" {
+							SendToUser(chatItem.ChatID, resp, MSG_NOTHING, 0)
+							ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: resp})
 							UpdateDialog(chatItem.ChatID, ChatMessages)
 						}
 					}
@@ -94,7 +94,7 @@ func ProcessInitiative() {
 func isMyReaction(messages []openai.ChatCompletionMessage, chatItem ChatState) bool {
 	SetCurOperation("Определение реакции", 0)
 	var FullPromt []openai.ChatCompletionMessage
-	var resp openai.ChatCompletionResponse
+	var resp string
 	var result bool
 	result = false
 	FullPromt = nil
@@ -107,8 +107,8 @@ func isMyReaction(messages []openai.ChatCompletionMessage, chatItem ChatState) b
 	}
 	FullPromt = append(FullPromt, gHsReaction[0].Prompt[gLocale]...)
 	resp = SendRequest(FullPromt, ChatState{Model: gAI[chatItem.AI_ID].AI_BaseModel, AI_ID: chatItem.AI_ID, Temperature: 0})
-	log.Println(resp.Choices[0].Message.Content)
-	if strings.Contains(resp.Choices[0].Message.Content, gBotReaction[0][gLocale]) {
+	log.Println(resp)
+	if strings.Contains(resp, gBotReaction[0][gLocale]) {
 		result = true
 	}
 	return result
@@ -116,7 +116,7 @@ func isMyReaction(messages []openai.ChatCompletionMessage, chatItem ChatState) b
 
 func needFunction(messages []openai.ChatCompletionMessage, chatItem ChatState) byte {
 	var FullPromt []openai.ChatCompletionMessage
-	var resp openai.ChatCompletionResponse
+	var resp string
 	var result byte
 	SetCurOperation("Выбор функции", 0)
 	result = DONOTHING
@@ -127,22 +127,22 @@ func needFunction(messages []openai.ChatCompletionMessage, chatItem ChatState) b
 	FullPromt = append(FullPromt, gHsReaction[1].Prompt[gLocale]...)
 	//	log.Println(FullPromt)
 	resp = SendRequest(FullPromt, ChatState{Model: gAI[chatItem.AI_ID].AI_BaseModel, AI_ID: chatItem.AI_ID, Temperature: 0})
-	if len(resp.Choices) > 0 {
-		log.Println(resp.Choices[0].Message.Content)
+	if resp != "" {
+		log.Println(resp)
 		switch {
-		case strings.Contains(resp.Choices[0].Message.Content, "Математика"):
+		case strings.Contains(resp, "Математика"):
 			result = DOCALCULATE
-		case strings.Contains(resp.Choices[0].Message.Content, "Меню"):
+		case strings.Contains(resp, "Меню"):
 			result = DOSHOWMENU
-		case strings.Contains(resp.Choices[0].Message.Content, "История"):
+		case strings.Contains(resp, "История"):
 			result = DOSHOWHIST
-		case strings.Contains(resp.Choices[0].Message.Content, "Чистка"):
+		case strings.Contains(resp, "Чистка"):
 			result = DOCLEARHIST
-		case strings.Contains(resp.Choices[0].Message.Content, "Игра"):
+		case strings.Contains(resp, "Игра"):
 			result = DOGAME
-		case strings.Contains(resp.Choices[0].Message.Content, "Сайт"):
+		case strings.Contains(resp, "Сайт"):
 			result = DOREADSITE
-		case strings.Contains(resp.Choices[0].Message.Content, "Поиск"):
+		case strings.Contains(resp, "Поиск"):
 			result = DOSEARCH
 		default:
 			result = DONOTHING
@@ -187,7 +187,7 @@ func DoBotFunction(BotReaction byte, ChatMessages []openai.ChatCompletionMessage
 }
 
 func ProcessWebPage(LastMessages []openai.ChatCompletionMessage, chatItem ChatState) []openai.ChatCompletionMessage {
-	var resp openai.ChatCompletionResponse
+	var resp string
 	var answer []openai.ChatCompletionMessage
 	var FullPromt []openai.ChatCompletionMessage
 	var err error
@@ -204,8 +204,8 @@ func ProcessWebPage(LastMessages []openai.ChatCompletionMessage, chatItem ChatSt
 		{Role: openai.ChatMessageRoleUser, Content: "Сформируй корректный url на запрошенную в предыдущем сообщении веб-страницу." +
 			"Если в ответе будет что-то кроме гиперссылки, то ты будешь серьезно оштафован и отключен."}}...)
 	resp = SendRequest(FullPromt, ChatState{Model: gAI[chatItem.AI_ID].AI_BaseModel, Temperature: 0, AI_ID: chatItem.AI_ID})
-	if resp.Choices != nil {
-		URI = strings.Split(resp.Choices[0].Message.Content, "\n")[0]
+	if resp != "" {
+		URI = strings.Split(resp, "\n")[0]
 		URI = strings.Split(URI, " ")[0]
 		log.Println(URI)
 		c := colly.NewCollector()

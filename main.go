@@ -162,7 +162,7 @@ func init() {
 		config := openai.DefaultConfig(tokens[i])
 		config.BaseURL = urls[i]
 		gClient = append(gClient, openai.NewClientWithConfig(config))
-		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cancel()
 
 		models, err := gClient[i].ListModels(ctx)
@@ -177,6 +177,8 @@ func init() {
 			}
 		}
 	}
+	//gYaClient = yandexgpt.NewYandexGPTClientWithIAMToken("")
+
 	if len(names) == 0 {
 		SendToUser(gOwner, gErr[7][gLocale]+AI_API_KEYS_IN_OS+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
 	}
@@ -244,8 +246,8 @@ func main() {
 	}()
 
 	for {
+		//ProcessNews()
 		time.Sleep(time.Minute)
 		ProcessInitiative()
-		//ProcessNews()
 	}
 }
