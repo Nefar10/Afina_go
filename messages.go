@@ -1,14 +1,275 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/google/uuid"
+	"github.com/h2non/filetype"
 	openai "github.com/sashabaranov/go-openai"
 )
+
+func SendToUser(toChat int64, mesText string, quest int, ttl byte, useAI bool, chatID ...int64) { //отправка сообщения владельцу
+	var jsonData []byte      //Для оперативного хранения
+	var jsonDataAllow []byte //Для формирования uuid ответа ДА
+	var jsonDataDeny []byte  //Для формирования uuid ответа НЕТ
+	var jsonDataBlock []byte //Для формирования uuid ответа Блок
+	var item QuestState      //Для хранения состояния колбэка
+	var ans Answer           //Для формирования uuid колбэка
+	var ChatMessages []openai.ChatCompletionMessage
+	var FullPromt []openai.ChatCompletionMessage
+	var chatItem ChatState
+	if useAI {
+		ChatMessages = GetDialog("Dialog:" + strconv.FormatInt(toChat, 10))
+		chatItem = GetChatStateDB(toChat)
+		FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...)
+
+		if len(ChatMessages) >= 3 {
+			FullPromt = append(FullPromt, ChatMessages[len(ChatMessages)-3:]...)
+		} else {
+			FullPromt = append(FullPromt, ChatMessages...)
+		}
+		FullPromt = append(FullPromt, []openai.ChatCompletionMessage{{Role: "user",
+			Content: "Опиши в своем стиле: " + mesText}}...)
+		//log.Println(FullPromt)
+		mesText = SendRequest(FullPromt, chatItem)
+		ChatMessages = append(ChatMessages, []openai.ChatCompletionMessage{{Role: "assistant", Content: mesText}}...)
+		UpdateDialog(toChat, ChatMessages)
+	}
+	msg := tgbotapi.NewMessage(toChat, mesText) //инициализируем сообщение
+	SetCurOperation(gIm[32][gLocale], 1)
+
+	//Message type definition
+	switch quest {
+	case MSG_ERROR:
+		{
+			msg.Text = mesText + "\n" + gIm[0][gLocale]
+			Log(mesText, ERR, nil)
+		}
+	case MSG_INFO:
+		{
+			msg.Text = mesText
+			Log(mesText, NOERR, nil)
+		}
+	case MENU_GET_ACCESS: //В случае, если стоит вопрос доступа формируем меню запроса
+		{
+			callbackID := uuid.New()         //создаем уникальный идентификатор запроса
+			item.ChatID = chatID[0]          //указываем ID чата источника
+			item.Question = quest            //указывам тип запроса
+			item.CallbackID = callbackID     //запоминаем уникальнй ID
+			item.State = QUEST_IN_PROGRESS   //соотояние обработки, которое запишем в БД
+			item.Time = time.Now()           //запомним текущее время
+			jsonData, _ = json.Marshal(item) //конвертируем структуру в json
+			DBWrite("QuestState:"+callbackID.String(), string(jsonData), 24*time.Hour)
+			ans.CallbackID = item.CallbackID //Генерируем вариант ответа "разрешить" для callback
+			ans.State = CHAT_ALLOW
+			jsonDataAllow, _ = json.Marshal(ans) //генерируем вариант ответа "запретить" для callback
+			ans.State = CHAT_DISALLOW
+			jsonDataDeny, _ = json.Marshal(ans) //генерируем вариант ответа "заблокировать" для callback
+			ans.State = CHAT_BLACKLIST
+			jsonDataBlock, _ = json.Marshal(ans)
+			numericKeyboard := tgbotapi.NewInlineKeyboardMarkup( //формируем меню для ответа
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[1][gLocale], string(jsonDataAllow)),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[2][gLocale], string(jsonDataDeny)),
+				),
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[3][gLocale], string(jsonDataBlock)),
+				))
+			msg.ReplyMarkup = numericKeyboard
+
+		}
+	case MENU_SHOW_MENU: //Вызвано меню администратора
+		{
+			var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup( //формируем меню для ответа
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[4][gLocale], "WHITELIST"),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[5][gLocale], "BLACKLIST"),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[6][gLocale], "INPROCESS"),
+				),
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[10][gLocale], "TUNE_CHAT: "+strconv.FormatInt(toChat, 10)),
+					tgbotapi.NewInlineKeyboardButtonData("Информация", "INFO: "+strconv.FormatInt(toChat, 10)),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[11][gLocale], "CLEAR_CONTEXT: "+strconv.FormatInt(toChat, 10)),
+				),
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[7][gLocale], "RESETTODEFAULTS"),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[8][gLocale], "FLUSHCACHE"),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[9][gLocale], "RESTART"),
+				),
+
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[12][gLocale], "GAME_IT_ALIAS: "+strconv.FormatInt(toChat, 10)),
+				))
+			msg.ReplyMarkup = numericKeyboard
+		}
+	case MENU_SHOW_USERMENU: //Меню подписчика
+		{
+			var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup( //формируем меню для ответа
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("Информация", "INFO: "+strconv.FormatInt(toChat, 10)),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[11][gLocale], "CLEAR_CONTEXT: "+strconv.FormatInt(toChat, 10)),
+				),
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[12][gLocale], "GAME_IT_ALIAS: "+strconv.FormatInt(toChat, 10)),
+				))
+			msg.ReplyMarkup = numericKeyboard
+		}
+	case MENU_SEL_CHAT:
+		{
+			msg.Text = "Выберите чат для настройки"
+			chats := strings.Split(mesText, "\n")
+			var buttons []tgbotapi.InlineKeyboardButton
+			for _, chat := range chats {
+				if chat != "" {
+					buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData(chat, strings.Split(chat, "~")[0]))
+				}
+			}
+			var rows [][]tgbotapi.InlineKeyboardButton
+			for _, button := range buttons {
+				row := []tgbotapi.InlineKeyboardButton{button}
+				rows = append(rows, row)
+			}
+			numericKeyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
+			msg.ReplyMarkup = numericKeyboard
+		}
+	case MENU_SHOW_CHAR:
+		{
+			msg.Text = mesText
+			var buttons []tgbotapi.InlineKeyboardButton
+			for i := 0; i <= 15; i++ {
+				buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData(gCT[i]+" "+gCTDescr[gLocale][i], strconv.Itoa(i+1)+"_CT: "+strconv.FormatInt(chatID[0], 10)))
+			}
+			var rows [][]tgbotapi.InlineKeyboardButton
+			for _, button := range buttons {
+				row := []tgbotapi.InlineKeyboardButton{button}
+				rows = append(rows, row)
+			}
+			numericKeyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
+			msg.ReplyMarkup = numericKeyboard
+		}
+	case MENU_SET_TIMEZONE:
+		{
+			msg.Text = mesText
+			var buttons []tgbotapi.InlineKeyboardButton
+			for i := 0; i <= 26; i++ {
+				buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData(gTimezones[i], strconv.Itoa(i)+"_TZ: "+strconv.FormatInt(chatID[0], 10)))
+			}
+			var rows [][]tgbotapi.InlineKeyboardButton
+			for _, button := range buttons {
+				row := []tgbotapi.InlineKeyboardButton{button}
+				rows = append(rows, row)
+			}
+			numericKeyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
+			msg.ReplyMarkup = numericKeyboard
+		}
+	case MENU_SET_MODEL:
+		{
+			msg.Text = "Выберите модель"
+			var buttons []tgbotapi.InlineKeyboardButton
+
+			for i, model := range gModels {
+				buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData(model.AI_model_name+" - "+gAI[model.AI_ID].AI_Name, "SEL_MODEL:"+
+					strconv.FormatInt(int64(i), 10)+":"+strconv.FormatInt(int64(model.AI_ID), 10)+":"+strconv.FormatInt(chatID[0], 10)))
+			}
+
+			var rows [][]tgbotapi.InlineKeyboardButton
+			var row []tgbotapi.InlineKeyboardButton
+
+			for i, button := range buttons {
+				row = append(row, button)
+				// Если количество кнопок в строке достигло 3, добавляем строку в rows и сбрасываем row
+				if (i+1)%2 == 0 {
+					rows = append(rows, row)
+					row = []tgbotapi.InlineKeyboardButton{} // сброс временного среза
+				}
+			}
+
+			// Если остались кнопки в последней строке, добавляем их
+			if len(row) > 0 {
+				rows = append(rows, row)
+			}
+
+			numericKeyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
+			msg.ReplyMarkup = numericKeyboard
+		}
+	case MENU_TUNE_CHAT: //меню настройки чата
+		{
+			var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup( //формируем меню для ответа
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[13][gLocale], "STYLE: "+strconv.FormatInt(chatID[0], 10)),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[14][gLocale], "MODEL_TEMP: "+strconv.FormatInt(chatID[0], 10)),
+					tgbotapi.NewInlineKeyboardButtonData("Нейромодель", "GPT_MODEL: "+strconv.FormatInt(chatID[0], 10)),
+				),
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("Инициатива", "INITIATIVE: "+strconv.FormatInt(chatID[0], 10)),
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[17][gLocale], "CHAT_FACTS: "+strconv.FormatInt(chatID[0], 10)),
+					tgbotapi.NewInlineKeyboardButtonData("Тип характера", "CHAT_CHARACTER: "+strconv.FormatInt(chatID[0], 10)),
+				),
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[16][gLocale], "CHAT_HISTORY: "+strconv.FormatInt(chatID[0], 10)),
+					tgbotapi.NewInlineKeyboardButtonData("Часовой пояс", "CH_TIMEZONE: "+strconv.FormatInt(chatID[0], 10)),
+				),
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[18][gLocale], "RIGHTS: "+strconv.FormatInt(chatID[0], 10)),
+				),
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData(gMenu[19][gLocale], "MENU"),
+				))
+			msg.ReplyMarkup = numericKeyboard
+		}
+	case MENU_SET_IF: //меню настройки чата
+		{
+			msg.Text = mesText
+			var buttons []tgbotapi.InlineKeyboardButton
+			for _, facts := range gIntFacts {
+				buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData(facts.Name, strconv.Itoa(int(facts.Id))+"_IF: "+strconv.FormatInt(chatID[0], 10)))
+			}
+			var rows [][]tgbotapi.InlineKeyboardButton
+			for _, button := range buttons {
+				row := []tgbotapi.InlineKeyboardButton{button}
+				rows = append(rows, row)
+			}
+			numericKeyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
+			msg.ReplyMarkup = numericKeyboard
+		}
+	case MENU_SET_STYLE:
+		{
+			msg.Text = mesText
+			var buttons []tgbotapi.InlineKeyboardButton
+			for _, style := range gConversationStyle {
+				buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData(style.Name, strconv.Itoa(int(style.Id))+"_ST: "+strconv.FormatInt(chatID[0], 10)))
+			}
+			var rows [][]tgbotapi.InlineKeyboardButton
+			for _, button := range buttons {
+				row := []tgbotapi.InlineKeyboardButton{button}
+				rows = append(rows, row)
+			}
+			numericKeyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
+			msg.ReplyMarkup = numericKeyboard
+		}
+	}
+
+	msg.Text = convTgmMarkdown(msg.Text)
+	msg.ParseMode = "markdown"
+	sentMsg, _ := gBot.Send(msg) //отправляем сообщение
+	if ttl != 0 {
+		go func() {
+			time.Sleep(time.Duration(ttl) * time.Minute)
+			deleteMsgConfig := tgbotapi.DeleteMessageConfig{
+				ChatID:    toChat,
+				MessageID: sentMsg.MessageID,
+			}
+			gBot.Send(deleteMsgConfig)
+		}()
+	}
+}
 
 func ProcessCallbacks(update tgbotapi.Update) {
 	SetCurOperation("Callback processing", 0)
@@ -29,7 +290,7 @@ func ProcessCallbacks(update tgbotapi.Update) {
 			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 			if err != nil {
-				SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
+				SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
 			}
 			ClearContext(chatID)
 		}
@@ -38,7 +299,7 @@ func ProcessCallbacks(update tgbotapi.Update) {
 			chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 			chatID, err := strconv.ParseInt(chatIDstr, 10, 64)
 			if err != nil {
-				SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0)
+				SendToUser(gOwner, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
 			}
 			GameAlias(chatID)
 		}
@@ -89,9 +350,9 @@ func ProcessCommand(update tgbotapi.Update) {
 	switch command {
 	case "menu":
 		if update.Message.Chat.ID == gOwner {
-			SendToUser(gOwner, gIm[12][gLocale], MENU_SHOW_MENU, 1)
+			SendToUser(gOwner, gIm[12][gLocale], MENU_SHOW_MENU, 1, false)
 		} else {
-			SendToUser(update.Message.Chat.ID, gIm[12][gLocale], MENU_SHOW_USERMENU, 1)
+			SendToUser(update.Message.Chat.ID, gIm[12][gLocale], MENU_SHOW_USERMENU, 1, false)
 		}
 	case "start":
 		ProcessMember(update)
@@ -242,9 +503,9 @@ func ProcessMessage(update tgbotapi.Update) {
 	case CHAT_DISALLOW:
 		{
 			if update.Message.Chat.Type == "private" {
-				SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.From.UserName+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться с этим пользователем?", MENU_GET_ACCESS, 0, update.Message.Chat.ID)
+				SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.From.UserName+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться с этим пользователем?", MENU_GET_ACCESS, 0, false, update.Message.Chat.ID)
 			} else {
-				SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.Chat.Title+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться в этом чате?", MENU_GET_ACCESS, 0, update.Message.Chat.ID)
+				SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.Chat.Title+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться в этом чате?", MENU_GET_ACCESS, 0, false, update.Message.Chat.ID)
 
 			}
 		}
@@ -258,11 +519,11 @@ func ProcessMessage(update tgbotapi.Update) {
 	case CHAT_IN_PROCESS:
 		{
 			if update.Message.Chat.Type == "private" {
-				SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.From.UserName+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться с этим пользователем?", MENU_GET_ACCESS, 0, update.Message.Chat.ID)
+				SendToUser(gOwner, "Пользователь "+update.Message.From.FirstName+" "+update.Message.From.UserName+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться с этим пользователем?", MENU_GET_ACCESS, 0, false, update.Message.Chat.ID)
 				log.Println("Запрос диалога от " + update.Message.From.FirstName + " " + update.Message.From.UserName + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
 				ProcessMember(update)
 			} else {
-				SendToUser(gOwner, "В группововм чате "+update.Message.From.FirstName+" "+update.Message.Chat.Title+" открыли диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться в этом чате?", MENU_GET_ACCESS, 0, update.Message.Chat.ID)
+				SendToUser(gOwner, "В группововм чате "+update.Message.From.FirstName+" "+update.Message.Chat.Title+" открыли диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться в этом чате?", MENU_GET_ACCESS, 0, false, update.Message.Chat.ID)
 				log.Println("Запрос диалога от " + update.Message.From.FirstName + " " + update.Message.Chat.Title + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
 			}
 		}
@@ -277,7 +538,7 @@ func ProcessMember(update tgbotapi.Update) {
 	chatItem.Model = gAI[chatItem.AI_ID].AI_BaseModel
 	if update.MyChatMember != nil {
 		if update.MyChatMember.NewChatMember.Status == "member" || update.MyChatMember.NewChatMember.Status == "administrator" {
-			SetCurOperation("Chat initialization", 0)
+			SetCurOperation("Chat initialization", 1)
 			chatItem.ChatID = update.MyChatMember.Chat.ID
 			chatItem.UserName = update.MyChatMember.From.UserName
 			chatItem.Type = update.MyChatMember.Chat.Type
@@ -285,12 +546,12 @@ func ProcessMember(update tgbotapi.Update) {
 			SetChatStateDB(chatItem)
 		} else if update.MyChatMember.NewChatMember.Status == "left" {
 			DestroyChat(strconv.FormatInt(update.MyChatMember.Chat.ID, 10))
-			SendToUser(gOwner, "Чат был закрыт, информация о нем удалена из БД", MSG_INFO, 1)
+			SendToUser(gOwner, "Чат был закрыт, информация о нем удалена из БД", MSG_INFO, 1, false)
 		}
 	}
 	if update.Message != nil {
 		if update.Message.Command() == "start" {
-			SetCurOperation("Chat initialization", 0)
+			SetCurOperation("Chat initialization", 1)
 			chatItem.ChatID = update.Message.Chat.ID
 			chatItem.UserName = update.Message.From.UserName
 			chatItem.Type = update.Message.Chat.Type
@@ -302,4 +563,99 @@ func ProcessMember(update tgbotapi.Update) {
 
 func ProcessLocation(update tgbotapi.Update) {
 
+}
+
+func ProcessDocument(update tgbotapi.Update) {
+	var fileID string
+	var filePath string
+	var fullFilePath string
+	var realName string
+	switch {
+	case update.Message.Photo != nil:
+		fileID = update.Message.Photo[len(update.Message.Photo)-1].FileID
+		realName = update.Message.Caption
+	default:
+		fileID = update.Message.Document.FileID
+		realName = update.Message.Document.FileName
+		if update.Message.Document.FileSize > 10*1024*1024 {
+			if update.Message.Chat.Type == "private" {
+				SendToUser(update.Message.Chat.ID, "Файл был получен, но не будет обработан, т.к. превышает допустимый размер 10 Мб", MSG_INFO, 1, true)
+			}
+			return
+		}
+	}
+
+	file, err := gBot.GetFile(tgbotapi.FileConfig{FileID: fileID})
+	if err != nil {
+		log.Println(err)
+	}
+
+	// Download the file
+	resp, err := gBot.GetFileDirectURL(file.FileID)
+	if err != nil {
+		log.Println(err)
+	}
+
+	// Создание директории, если её нет
+	filePath = fmt.Sprintf("./downloads/%s", strconv.FormatInt(update.Message.Chat.ID, 10))
+	if err := os.MkdirAll(filePath, os.ModePerm); err != nil {
+		log.Fatalf("Ошибка при создании директории: %v", err)
+	}
+
+	// Save file locally
+	fullFilePath = fmt.Sprintf("%s/%s", filePath, fileID)
+	err = downloadFile(resp, fullFilePath)
+	if err != nil {
+		log.Println(err)
+	}
+
+	// Открываем, чтобы определить тип
+	tfile, err := os.Open(fullFilePath)
+	if err != nil {
+		log.Println(err)
+	}
+
+	tfile.Seek(0, 0) // Сбрасываем указатель файла в начало
+	kind, err := filetype.MatchReader(tfile)
+	if err != nil {
+		log.Println(err)
+
+	}
+	log.Println(kind, realName)
+	/*
+		switch {
+		case kind == filetype.Unknown:
+			ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: "user", Content: "Был загружен документ" + realName})
+		default:
+			ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: "user", Content: "Был загружен документ" + realName + kind.Extension})
+		}
+
+		//запись информации о файле в БД
+		//DBWrite("File:"+fileID, fmt.Sprintf("%s/%s", filePath, realName), 0)
+
+		// Check file type
+		/*
+			switch {
+			case isTextFile(realName):
+				{
+					content, err := os.ReadFile(fullFilePath)
+					if err != nil {
+						log.Println(err)
+					}
+					ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: "user", Content: "Содержимое документа " +
+						update.Message.Document.FileName + "\n\n" + string(content)})
+				}
+			default:
+				{
+
+				}
+			}
+			UpdateDialog(update.Message.Chat.ID, ChatMessages)
+			if update.Message.Chat.Type == "private" {
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Получен документ %s.", update.Message.Document.FileName))
+				gBot.Send(msg)
+			}
+			// Clean up the downloaded file
+			os.Remove(filePath)
+	*/
 }

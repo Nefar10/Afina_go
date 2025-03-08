@@ -67,6 +67,11 @@ const (
 	//LOCALES
 	RU = 1
 	EN = 0
+	//TASKS
+	TASK_NEW         = 0
+	TASK_IN_PROGRESS = 1
+	TASK_IS_DONE     = 2
+	TASK_ERROR       = -1
 
 	//PARAMETERS
 	NO_ONE        = 0
@@ -205,6 +210,7 @@ type ChatState struct {
 	Profession  byte
 	TimeZone    int //timeZone
 	AI_ID       int
+	//Geo
 }
 
 // Quest operating structure for processing rights
@@ -269,6 +275,24 @@ type AI_Models struct {
 	AI_model_name string
 }
 
+type ParsedData struct {
+	Content []string `json:"content"` // Массив для хранения текста и ссылок
+}
+
+type Task struct {
+	ID                int64
+	Description       string
+	Prompt            string
+	CreatedAt         time.Time
+	LastExecutedAt    time.Time
+	ChatID            int64
+	IsRecurring       bool
+	Interval          time.Duration
+	NextExecutionTime time.Time
+	Priority          int
+	Status            int
+}
+
 var gHsGender []sCustomPrompt
 var gConversationStyle []sCustomPrompt
 var gIntFacts []sCustomPrompt
@@ -301,6 +325,7 @@ var gVerboseLevel byte  //Logging level
 var gChangeSettings int64
 var gAIMutex sync.Mutex
 var gSysMutex sync.Mutex
+var gSheduler []Task
 
 // Bot defaults
 var gDefBotNames = []string{"Athena", "Афина"}
@@ -323,8 +348,4 @@ var gDefChatState = ChatState{
 	SetState:    NO_ONE,
 	CharType:    ESTJ,
 	TimeZone:    15,
-}
-
-type ParsedData struct {
-	Content []string `json:"content"` // Массив для хранения текста и ссылок
 }

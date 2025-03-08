@@ -6,4 +6,4 @@
   cp /go/Afina_go/init.sh /go/init.sh
   cd Afina_go
   go build -o main
-  ./main
+  ./main -v
