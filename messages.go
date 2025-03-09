@@ -684,7 +684,7 @@ func ProcessDocument(update tgbotapi.Update) {
 
 	}
 	ChatMessages = GetDialog("Dialog:" + strconv.FormatInt(update.Message.Chat.ID, 10))
-	DBWrite("File:"+fileID, fmt.Sprintf("%s/%s", filePath, realName), 0)
+	DBWrite("File:"+filePath+"/"+fileID, realName, 0)
 	switch kind.MIME.Type {
 	default:
 		if (update.Message.Chat.Type == "private") && !strings.HasSuffix(realName, ".txt") {

@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -56,6 +57,17 @@ func FlushCache() {
 		chatItem = GetChatStateDB(ParseChatKeyID(key))
 		if chatItem.AllowState == CHAT_IN_PROCESS {
 			DestroyChat(strconv.FormatInt(chatItem.ChatID, 10))
+		}
+	}
+	keys, err = gRedisClient.Keys("File:*").Result()
+	if err != nil {
+		SendToUser(gOwner, 0, gErr[12][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
+	}
+	for _, key := range keys {
+		os.Remove(strings.Split(key, ":")[1])
+		err := gRedisClient.Del(key).Err()
+		if err != nil {
+			SendToUser(gOwner, 0, gErr[10][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
 		}
 	}
 	SendToUser(gOwner, 0, "Кеш очищен.", MSG_INFO, 0, false)
