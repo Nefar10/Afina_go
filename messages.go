@@ -611,7 +611,7 @@ func ProcessPhoto(update tgbotapi.Update) {
 			},
 		},
 	)
-	log.Println(r, err)
+	log.Println(err)
 	ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: "assistant", Content: "Получено изображение от " + update.Message.From.FirstName +
 		" со следующим содержимым :" + r.Choices[0].Message.Content})
 	UpdateDialog(update.Message.Chat.ID, ChatMessages)
@@ -702,7 +702,7 @@ func ProcessDocument(update tgbotapi.Update) {
 		ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: "user", Content: "Содержимое документа " +
 			update.Message.Document.FileName + "от " + update.Message.From.FirstName + "\n\n" + string(content)})
 		UpdateDialog(update.Message.Chat.ID, ChatMessages)
-		log.Println(ChatMessages)
+		//log.Println(ChatMessages)
 		if update.Message.Chat.Type == "private" && gUpdatesQty == 0 {
 			SendToUser(update.Message.Chat.ID, 0, "Что необходимо сделать с полученным документом?", MSG_INFO, 1, true)
 			return
