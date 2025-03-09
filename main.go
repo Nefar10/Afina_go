@@ -111,19 +111,19 @@ func init() {
 	SetCurOperation("Environment initialization | Reading DB connection credentials data", 1)
 	gRedisIP = os.Getenv(REDIS_IN_OS)
 	if gRedisIP == "" {
-		SendToUser(gOwner, gErr[3][gLocale]+REDIS_IN_OS+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
+		SendToUser(gOwner, 0, gErr[3][gLocale]+REDIS_IN_OS+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
 	}
 
 	//Redis password
 	gRedisPass = os.Getenv(REDIS_PASS_IN_OS)
 	if gRedisPass == "" {
-		SendToUser(gOwner, gErr[4][gLocale]+REDIS_PASS_IN_OS+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
+		SendToUser(gOwner, 0, gErr[4][gLocale]+REDIS_PASS_IN_OS+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
 	}
 
 	//DB ID
 	db, err = strconv.Atoi(os.Getenv(REDIS_DB_IN_OS))
 	if err != nil {
-		SendToUser(gOwner, gErr[5][gLocale]+REDIS_DB_IN_OS+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
+		SendToUser(gOwner, 0, gErr[5][gLocale]+REDIS_DB_IN_OS+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
 	} else {
 		gRedisDB = db //Storing DB ID
 	}
@@ -140,7 +140,7 @@ func init() {
 	//Chek redis connection
 	err = redisPing(*gRedisClient)
 	if err != nil {
-		SendToUser(gOwner, gErr[9][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
+		SendToUser(gOwner, 0, gErr[9][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
 	}
 
 	SetCurOperation("Environment initialization | Determining bot's name", 1)
@@ -148,7 +148,7 @@ func init() {
 	gBotNames = strings.Split(os.Getenv(BOT_NAME_IN_OS), ",")
 	if gBotNames[0] == "" {
 		gBotNames = gDefBotNames
-		SendToUser(gOwner, gIm[1][gLocale]+BOT_NAME_IN_OS+gIm[29][gLocale]+GetCurOperation(), MSG_INFO, 0, false)
+		SendToUser(gOwner, 0, gIm[1][gLocale]+BOT_NAME_IN_OS+gIm[29][gLocale]+GetCurOperation(), MSG_INFO, 0, false)
 	}
 
 	//Read bot gender from OS env adn character comletion with gender information
@@ -193,7 +193,7 @@ func init() {
 
 		models, err := gClient[i].ListModels(ctx)
 		if err != nil {
-			SendToUser(gOwner, gErr[18][gLocale], MSG_INFO, 1, false)
+			SendToUser(gOwner, 0, gErr[18][gLocale], MSG_INFO, 1, false)
 		} else {
 			for _, model := range models.Models {
 				if (strings.Contains(strings.ToLower(model.ID), "o1")) || (strings.Contains(strings.ToLower(model.ID), "4o")) ||
@@ -204,13 +204,13 @@ func init() {
 		}
 	}
 	if len(ainames) == 0 {
-		SendToUser(gOwner, gErr[7][gLocale]+AI_API_KEYS_IN_OS+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
+		SendToUser(gOwner, 0, gErr[7][gLocale]+AI_API_KEYS_IN_OS+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
 	}
 	//gYaClient = yandexgpt.NewYandexGPTClientWithIAMToken("")
 
 	gClient_is_busy = false
 	//Send init complete message to owner
-	SendToUser(gOwner, fmt.Sprintf(gIm[3][gLocale]+" "+gIm[13][gLocale], VER), MSG_INFO, 5, true)
+	SendToUser(gOwner, 0, fmt.Sprintf(gIm[3][gLocale]+" "+gIm[13][gLocale], VER), MSG_INFO, 5, true)
 
 }
 
@@ -228,7 +228,7 @@ func ProcessMessages(update tgbotapi.Update) {
 		case update.Message.Document != nil:
 			ProcessDocument(update)
 		case update.Message.Photo != nil:
-			ProcessDocument(update)
+			ProcessPhoto(update)
 		case update.Message.Location != nil:
 			//ProcessLocation(update)
 		default:

@@ -27,7 +27,7 @@ func ProcessInitiative() {
 	rd := gRand.Intn(1000) + 1
 	keys, err = gRedisClient.Keys("ChatState:*").Result()
 	if err != nil {
-		SendToUser(gOwner, gErr[12][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
+		SendToUser(gOwner, 0, gErr[12][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
 		return
 	} else {
 		SetCurOperation("Processing initiative", 1)
@@ -80,7 +80,7 @@ func ProcessInitiative() {
 						}
 						//log.Println(FullPromt)
 						if resp != "" {
-							SendToUser(chatItem.ChatID, resp, MSG_NOTHING, 0, false)
+							SendToUser(chatItem.ChatID, 0, resp, MSG_NOTHING, 0, false)
 							ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: resp})
 							UpdateDialog(chatItem.ChatID, ChatMessages)
 						}
@@ -167,7 +167,7 @@ func DoBotFunction(BotReaction byte, ChatMessages []openai.ChatCompletionMessage
 			if update.Message.From.ID == gOwner {
 				sendHistory(update.Message.Chat.ID, ChatMessages)
 			} else {
-				SendToUser(update.Message.Chat.ID, "Извините, у вас нет доступа.", MSG_INFO, 0, false)
+				SendToUser(update.Message.Chat.ID, 0, "Извините, у вас нет доступа.", MSG_INFO, 0, false)
 			}
 		}
 	case DOCLEARHIST:
@@ -175,7 +175,7 @@ func DoBotFunction(BotReaction byte, ChatMessages []openai.ChatCompletionMessage
 			if update.Message.From.ID == gOwner {
 				ClearContext(update.Message.Chat.ID)
 			} else {
-				SendToUser(update.Message.Chat.ID, "Извините, у вас нет доступа.", MSG_INFO, 0, false)
+				SendToUser(update.Message.Chat.ID, 0, "Извините, у вас нет доступа.", MSG_INFO, 0, false)
 			}
 		}
 	case DOGAME:

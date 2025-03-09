@@ -9,5 +9,5 @@ func GameAlias(chatID int64) {
 	SetCurOperation("Game started", 1)
 	ChatMessages = append(ChatMessages, gHsGame[0].Prompt[gLocale]...)
 	UpdateDialog(chatID, ChatMessages)
-	SendToUser(chatID, gIm[16][gLocale], MSG_NOTHING, 0, false)
+	SendToUser(chatID, 0, gIm[16][gLocale], MSG_NOTHING, 0, false)
 }
