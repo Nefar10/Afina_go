@@ -93,7 +93,7 @@ const (
 	DOREADSITE  = 6
 	DOSEARCH    = 7
 	//VERSION
-	VER = "0.31.205"
+	VER = "0.32.206"
 	//CHARAKTER TYPES
 	ISTJ = 1  // (Инспектор): Ответственный, организованный, практичный.
 	ISFJ = 2  // (Защитник): Заботливый, внимательный, преданный.
@@ -246,23 +246,6 @@ type sCustomPrompt struct {
 	Prompt   [][]openai.ChatCompletionMessage `json:"prompt"`
 }
 
-var gHsBasePrompt = [][]openai.ChatCompletionMessage{
-	{
-		{Role: openai.ChatMessageRoleUser, Content: "You do not insert your name in the responses.\n Your program version is " + VER +
-			"You ask for clarification if the last message has any discrepancies with the real world.\n" +
-			"You do not interfere in conversations between other participants unless it concerns the facts described below.\n" +
-			"You always try to neutralize conflicts between participants, even if it seems like a joke.\n" +
-			"Important: you do not use the typical pattern 'I will answer any questions' and similar phrases in your responses.\n"},
-	},
-	{
-		{Role: openai.ChatMessageRoleUser, Content: "Ты не подставляешь свое имя в ответы.\n Версия твоей программы " + VER +
-			"Ты просишь уточннить запрос, если последнее сообщение имеет любые несоответсвия с действительнмы миром.\n" +
-			"Ты не вмешиваешься в разговор других участников между собой, если он не касается описанных далее фактов.\n" +
-			"Ты всегда пытаешься нейтрализовать конфликт между участниками, даже если он кажется шуткой.\n" +
-			"Важно: ты не используешь типовой паттерн gpt, 'отвечу на любые вопросы' и ему подобные в своих ответах.\n"},
-	},
-}
-
 type AI_params struct {
 	AI_Name      string
 	AI_Token     string
@@ -298,6 +281,7 @@ var gConversationStyle []sCustomPrompt
 var gIntFacts []sCustomPrompt
 var gHsGame []sCustomPrompt
 var gHsReaction []sCustomPrompt
+var gHsBasePrompt []sCustomPrompt
 
 var gBot *tgbotapi.BotAPI    //Pointer to initialized bot.
 var gClient []*openai.Client //OpenAI client init

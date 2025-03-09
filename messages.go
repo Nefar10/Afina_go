@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -15,7 +17,7 @@ import (
 	openai "github.com/sashabaranov/go-openai"
 )
 
-func SendToUser(toChat int64, mesText string, quest int, ttl byte, useAI bool, chatID ...int64) { //отправка сообщения владельцу
+func SendToUser(toChat int64, mesText string, quest int, ttl byte, useAI bool, chatID ...int64) {
 	var jsonData []byte      //Для оперативного хранения
 	var jsonDataAllow []byte //Для формирования uuid ответа ДА
 	var jsonDataDeny []byte  //Для формирования uuid ответа НЕТ
@@ -29,14 +31,8 @@ func SendToUser(toChat int64, mesText string, quest int, ttl byte, useAI bool, c
 		ChatMessages = GetDialog("Dialog:" + strconv.FormatInt(toChat, 10))
 		chatItem = GetChatStateDB(toChat)
 		FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...)
-
-		if len(ChatMessages) >= 3 {
-			FullPromt = append(FullPromt, ChatMessages[len(ChatMessages)-3:]...)
-		} else {
-			FullPromt = append(FullPromt, ChatMessages...)
-		}
 		FullPromt = append(FullPromt, []openai.ChatCompletionMessage{{Role: "user",
-			Content: "Опиши в своем стиле: " + mesText}}...)
+			Content: "Кратко конвертируй следующее сообщение в свой стиль: " + mesText}}...)
 		//log.Println(FullPromt)
 		mesText = SendRequest(FullPromt, chatItem)
 		ChatMessages = append(ChatMessages, []openai.ChatCompletionMessage{{Role: "assistant", Content: mesText}}...)
@@ -440,7 +436,7 @@ func ProcessMessage(update tgbotapi.Update) {
 			FullPromt = append(FullPromt, gHsGender[gBotGender].Prompt[gLocale]...)                                                  //Пол
 			FullPromt = append(FullPromt, CharPrmt[gLocale]...)                                                                      //Стиль общения
 			if chatItem.Type != "channel" && chatItem.Type != "private" {
-				FullPromt = append(FullPromt, gHsBasePrompt[gLocale]...) //Включить базовый промпт для группы
+				FullPromt = append(FullPromt, gHsBasePrompt[0].Prompt[gLocale]...) //Включить базовый промпт для группы
 			}
 			FullPromt = append(FullPromt, chatItem.History...) //История группы
 			FullPromt = append(FullPromt, LastMessages...)     //Последние сообщения
@@ -570,6 +566,9 @@ func ProcessDocument(update tgbotapi.Update) {
 	var filePath string
 	var fullFilePath string
 	var realName string
+	var err error
+	var file tgbotapi.File
+	var ChatMessages []openai.ChatCompletionMessage
 	switch {
 	case update.Message.Photo != nil:
 		fileID = update.Message.Photo[len(update.Message.Photo)-1].FileID
@@ -579,83 +578,115 @@ func ProcessDocument(update tgbotapi.Update) {
 		realName = update.Message.Document.FileName
 		if update.Message.Document.FileSize > 10*1024*1024 {
 			if update.Message.Chat.Type == "private" {
-				SendToUser(update.Message.Chat.ID, "Файл был получен, но не будет обработан, т.к. превышает допустимый размер 10 Мб", MSG_INFO, 1, true)
+				SendToUser(update.Message.Chat.ID, "Файл "+realName+" был получен, но не будет обработан, т.к. превышает допустимый размер 10 Мб", MSG_ERROR, 1, true)
 			}
 			return
 		}
 	}
 
-	file, err := gBot.GetFile(tgbotapi.FileConfig{FileID: fileID})
+	filePath = fmt.Sprintf("./downloads/%s", strconv.FormatInt(update.Message.Chat.ID, 10))
+	err = os.MkdirAll(filePath, os.ModePerm)
 	if err != nil {
-		log.Println(err)
+		if update.Message.Chat.Type == "private" {
+			SendToUser(update.Message.Chat.ID, "Не удалось найти место для размещения файла "+err.Error(), MSG_ERROR, 1, true)
+		}
+		return
 	}
 
-	// Download the file
+	file, err = gBot.GetFile(tgbotapi.FileConfig{FileID: fileID})
+	if err != nil {
+		if update.Message.Chat.Type == "private" {
+			SendToUser(update.Message.Chat.ID, "Не удалось получить идентификатор файла "+err.Error(), MSG_ERROR, 1, true)
+		}
+		return
+	}
+
 	resp, err := gBot.GetFileDirectURL(file.FileID)
 	if err != nil {
-		log.Println(err)
+		if update.Message.Chat.Type == "private" {
+			SendToUser(update.Message.Chat.ID, "Не удалось получить прямую ссылку для загрузки "+err.Error(), MSG_ERROR, 1, true)
+		}
+		return
 	}
 
-	// Создание директории, если её нет
-	filePath = fmt.Sprintf("./downloads/%s", strconv.FormatInt(update.Message.Chat.ID, 10))
-	if err := os.MkdirAll(filePath, os.ModePerm); err != nil {
-		log.Fatalf("Ошибка при создании директории: %v", err)
-	}
-
-	// Save file locally
 	fullFilePath = fmt.Sprintf("%s/%s", filePath, fileID)
 	err = downloadFile(resp, fullFilePath)
 	if err != nil {
-		log.Println(err)
+		if update.Message.Chat.Type == "private" {
+			SendToUser(update.Message.Chat.ID, "Во время загрузки файла произошла ошибка "+err.Error(), MSG_ERROR, 1, true)
+		}
+		return
 	}
 
-	// Открываем, чтобы определить тип
 	tfile, err := os.Open(fullFilePath)
 	if err != nil {
-		log.Println(err)
+		if update.Message.Chat.Type == "private" {
+			SendToUser(update.Message.Chat.ID, "Файл был получен, но его не удается прочитать "+err.Error(), MSG_ERROR, 1, true)
+		}
+		return
 	}
+	defer tfile.Close()
 
-	tfile.Seek(0, 0) // Сбрасываем указатель файла в начало
+	tfile.Seek(0, 0)
 	kind, err := filetype.MatchReader(tfile)
 	if err != nil {
-		log.Println(err)
+		if update.Message.Chat.Type == "private" {
+			SendToUser(update.Message.Chat.ID, "Возникла ошибка при попытке определения типа файла "+err.Error(), MSG_ERROR, 1, true)
+		}
+		return
 
 	}
-	log.Println(kind, realName)
-	/*
-		switch {
-		case kind == filetype.Unknown:
-			ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: "user", Content: "Был загружен документ" + realName})
-		default:
-			ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: "user", Content: "Был загружен документ" + realName + kind.Extension})
+	DBWrite("File:"+fileID, fmt.Sprintf("%s/%s", filePath, realName), 0)
+	switch kind.MIME.Type {
+	case "image":
+		//processImage(fullFilePath)
+		// Кодируем изображение в base64
+		imageFile, err := os.ReadFile(fullFilePath)
+		if err != nil {
+			return
 		}
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		defer cancel()
+		resp, err := gClient[0].CreateChatCompletion(
+			ctx,
+			openai.ChatCompletionRequest{
+				Model: openai.GPT4VisionPreview,
+				Messages: []openai.ChatCompletionMessage{
+					{
+						Role:    "user",
+						Content: "Что на этом изображении?",
+					},
+					{
+						Role:    "user",
+						Content: fmt.Sprintf("data:image/jpeg;base64,%s", base64.StdEncoding.EncodeToString(imageFile)),
+					},
+				},
+				MaxTokens: 300, // Переместили сюда
+			},
+		)
+		if err != nil {
+			log.Fatalf("Ошибка при кодировании изображения: %v", err)
+		}
+		SendToUser(update.Message.Chat.ID, resp.Choices[0].Message.Content, MSG_INFO, 1, true)
 
-		//запись информации о файле в БД
-		//DBWrite("File:"+fileID, fmt.Sprintf("%s/%s", filePath, realName), 0)
-
-		// Check file type
-		/*
-			switch {
-			case isTextFile(realName):
-				{
-					content, err := os.ReadFile(fullFilePath)
-					if err != nil {
-						log.Println(err)
-					}
-					ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: "user", Content: "Содержимое документа " +
-						update.Message.Document.FileName + "\n\n" + string(content)})
-				}
-			default:
-				{
-
-				}
-			}
-			UpdateDialog(update.Message.Chat.ID, ChatMessages)
-			if update.Message.Chat.Type == "private" {
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Получен документ %s.", update.Message.Document.FileName))
-				gBot.Send(msg)
-			}
-			// Clean up the downloaded file
+	default:
+		if (update.Message.Chat.Type == "private") && !strings.HasSuffix(realName, ".txt") {
+			SendToUser(update.Message.Chat.ID, "Обработка типа полученного файла еще не предусмотрена", MSG_ERROR, 1, true)
 			os.Remove(filePath)
-	*/
+			return
+		}
+		content, err := os.ReadFile(fullFilePath)
+		if err != nil {
+			SendToUser(update.Message.Chat.ID, "Не удается прочитать содержимое файла "+err.Error(), MSG_ERROR, 1, true)
+			os.Remove(filePath)
+		}
+		ChatMessages = GetDialog("Dialog:" + strconv.FormatInt(update.Message.Chat.ID, 10))
+		ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: "user", Content: "Содержимое документа " +
+			update.Message.Document.FileName + "\n\n" + string(content)})
+		UpdateDialog(update.Message.Chat.ID, ChatMessages)
+		log.Println(ChatMessages)
+		if update.Message.Chat.Type == "private" {
+			SendToUser(update.Message.Chat.ID, "Что необходимо сделать с полученным документом?", MSG_INFO, 1, true)
+		}
+	}
 }

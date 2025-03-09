@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math/rand"
 	"os"
@@ -53,12 +54,15 @@ func init() {
 
 	//Prompts init
 	SetCurOperation("Environment initialization | Loading prompts", 1)
-	//saveCustomPrompts("prompts\\gHsReaction", gHsReaction)
+	//saveCustomPrompts("prompts\\gHsBasePrompt.json", gHsBasePrompt)
 	gHsGender, _ = loadCustomPrompts("prompts/gHsGender.json")
+	gHsBasePrompt, _ = loadCustomPrompts("prompts/gHsBasePrompt.json")
 	gConversationStyle, _ = loadCustomPrompts("prompts/gConversationStyle.json")
 	gIntFacts, _ = loadCustomPrompts("prompts/gIntFacts.json")
 	gHsGame, _ = loadCustomPrompts("prompts/gHsGame.json")
 	gHsReaction, _ = loadCustomPrompts("prompts/gHsReaction.json")
+	gHsBasePrompt[0].Prompt[0][0].Content = fmt.Sprintf(gHsBasePrompt[0].Prompt[0][0].Content, VER)
+	gHsBasePrompt[0].Prompt[1][0].Content = fmt.Sprintf(gHsBasePrompt[0].Prompt[1][0].Content, VER)
 	//log.Println(gHsReaction)
 	//saveMsgs("msgs\\gBotReaction", gBotReaction)
 	gErr, _ = loadMsgs("msgs/gErr.json")
@@ -206,7 +210,7 @@ func init() {
 
 	gClient_is_busy = false
 	//Send init complete message to owner
-	SendToUser(gOwner, gIm[3][gLocale]+" "+gIm[13][gLocale], MSG_INFO, 5, false)
+	SendToUser(gOwner, fmt.Sprintf(gIm[3][gLocale]+" "+gIm[13][gLocale], VER), MSG_INFO, 5, true)
 
 }
 

@@ -364,21 +364,20 @@ func BotWaiting(ChatID int64, tm int) {
 	gAIMutex.Unlock()
 }
 
-/*
-	func saveCustomPrompts(filename string, prompts []sCustomPrompt) error {
-		data, err := json.MarshalIndent(prompts, "", "  ")
-		if err != nil {
-			return err
-		}
-
-		err = os.WriteFile(filename, data, 0644)
-		if err != nil {
-			return err
-		}
-
-		return nil
+func saveCustomPrompts(filename string, prompts []sCustomPrompt) error {
+	data, err := json.MarshalIndent(prompts, "", "  ")
+	if err != nil {
+		return err
 	}
-*/
+
+	err = os.WriteFile(filename, data, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func loadCustomPrompts(filename string) ([]sCustomPrompt, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -399,21 +398,20 @@ func loadCustomPrompts(filename string) ([]sCustomPrompt, error) {
 	return prompts, nil
 }
 
-/*
-	func saveMsgs(filename string, msgs [][2]string) error {
-		data, err := json.MarshalIndent(msgs, "", "  ")
-		if err != nil {
-			return err
-		}
-
-		err = os.WriteFile(filename, data, 0644)
-		if err != nil {
-			return err
-		}
-
-		return nil
+func saveMsgs(filename string, msgs [][2]string) error {
+	data, err := json.MarshalIndent(msgs, "", "  ")
+	if err != nil {
+		return err
 	}
-*/
+
+	err = os.WriteFile(filename, data, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func loadMsgs(filename string) ([][2]string, error) {
 	file, err := os.Open(filename)
 	if err != nil {
