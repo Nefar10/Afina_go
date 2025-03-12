@@ -55,7 +55,7 @@ func FlushCache() {
 	}
 	for _, key := range keys {
 		chatItem = GetChatStateDB(ParseChatKeyID(key))
-		if chatItem.AllowState == CHAT_IN_PROCESS {
+		if chatItem.AllowState == ChatInProcess {
 			DestroyChat(strconv.FormatInt(chatItem.ChatID, 10))
 		}
 	}

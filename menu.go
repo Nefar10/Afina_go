@@ -53,21 +53,21 @@ func SelectChat(update tgbotapi.Update) {
 	for _, key := range keys {
 		chatItem = GetChatStateDB(ParseChatKeyID(key))
 		if chatItem.ChatID != 0 {
-			if chatItem.AllowState == CHAT_ALLOW && update.CallbackQuery.Data == "WHITELIST" {
+			if chatItem.AllowState == ChatAllow && update.CallbackQuery.Data == "WHITELIST" {
 				if chatItem.Type != "private" {
 					msgString = msgString + "ID: " + strconv.FormatInt(chatItem.ChatID, 10) + " ~ " + chatItem.Title + "\n"
 				} else {
 					msgString = msgString + "ID: " + strconv.FormatInt(chatItem.ChatID, 10) + " ~ " + chatItem.UserName + "\n"
 				}
 			}
-			if (chatItem.AllowState == CHAT_DISALLOW || chatItem.AllowState == CHAT_BLACKLIST) && update.CallbackQuery.Data == "BLACKLIST" {
+			if (chatItem.AllowState == ChatDisallow || chatItem.AllowState == ChatBlacklist) && update.CallbackQuery.Data == "BLACKLIST" {
 				if chatItem.Type != "private" {
 					msgString = msgString + "ID: " + strconv.FormatInt(chatItem.ChatID, 10) + " ~ " + chatItem.Title + "\n"
 				} else {
 					msgString = msgString + "ID: " + strconv.FormatInt(chatItem.ChatID, 10) + " ~ " + chatItem.UserName + "\n"
 				}
 			}
-			if chatItem.AllowState == CHAT_IN_PROCESS && update.CallbackQuery.Data == "INPROCESS" {
+			if chatItem.AllowState == ChatInProcess && update.CallbackQuery.Data == "INPROCESS" {
 				if chatItem.Type != "private" {
 					msgString = msgString + "ID: " + strconv.FormatInt(chatItem.ChatID, 10) + " ~ " + chatItem.Title + "\n"
 				} else {

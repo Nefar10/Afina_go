@@ -62,16 +62,16 @@ func SendToUser(toChat int64, replyTo int, mesText string, quest int, ttl byte, 
 			item.ChatID = chatID[0]          //указываем ID чата источника
 			item.Question = quest            //указывам тип запроса
 			item.CallbackID = callbackID     //запоминаем уникальнй ID
-			item.State = QUEST_IN_PROGRESS   //соотояние обработки, которое запишем в БД
+			item.State = QuestInProgress     //соотояние обработки, которое запишем в БД
 			item.Time = time.Now()           //запомним текущее время
 			jsonData, _ = json.Marshal(item) //конвертируем структуру в json
 			DBWrite("QuestState:"+callbackID.String(), string(jsonData), 24*time.Hour)
 			ans.CallbackID = item.CallbackID //Генерируем вариант ответа "разрешить" для callback
-			ans.State = CHAT_ALLOW
+			ans.State = ChatAllow
 			jsonDataAllow, _ = json.Marshal(ans) //генерируем вариант ответа "запретить" для callback
-			ans.State = CHAT_DISALLOW
+			ans.State = ChatDisallow
 			jsonDataDeny, _ = json.Marshal(ans) //генерируем вариант ответа "заблокировать" для callback
-			ans.State = CHAT_BLACKLIST
+			ans.State = ChatBlacklist
 			jsonDataBlock, _ = json.Marshal(ans)
 			numericKeyboard := tgbotapi.NewInlineKeyboardMarkup( //формируем меню для ответа
 				tgbotapi.NewInlineKeyboardRow(
@@ -377,7 +377,7 @@ func ProcessMessage(update tgbotapi.Update) {
 		SetChatSettings(chatItem, update)
 		return
 	}
-	if chatItem.ChatID != 0 && chatItem.BotState == BOT_RUN && chatItem.AllowState == CHAT_ALLOW { //Если доступ предоставлен
+	if chatItem.ChatID != 0 && chatItem.BotState == BotRun && chatItem.AllowState == ChatAllow { //Если доступ предоставлен
 		ChatMessages = nil                                     //Формируем новый диалог
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "") //Формирум новый ответ
 		if update.Message.Chat.Type != "private" {             //Если чат не приватный, то ставим отметку - на какое соощение отвечаем
@@ -499,7 +499,7 @@ func ProcessMessage(update tgbotapi.Update) {
 	}
 	//Обработаем иные состояния чата
 	switch chatItem.AllowState {
-	case CHAT_DISALLOW:
+	case ChatDisallow:
 		{
 			if update.Message.Chat.Type == "private" {
 				SendToUser(gOwner, 0, "Пользователь "+update.Message.From.FirstName+" "+update.Message.From.UserName+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться с этим пользователем?", MENU_GET_ACCESS, 0, false, update.Message.Chat.ID)
@@ -508,14 +508,14 @@ func ProcessMessage(update tgbotapi.Update) {
 
 			}
 		}
-	case CHAT_BLACKLIST:
+	case ChatBlacklist:
 		if update.Message.Chat.Type == "private" {
 			log.Println("Запрос заблокированного диалога от " + update.Message.From.FirstName + " " + update.Message.From.UserName + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
 		} else {
 			log.Println("Запрос заблокированного диалога от " + update.Message.From.FirstName + " " + update.Message.Chat.Title + " " + strconv.FormatInt(update.Message.Chat.ID, 10))
 		}
 
-	case CHAT_IN_PROCESS:
+	case ChatInProcess:
 		{
 			if update.Message.Chat.Type == "private" {
 				SendToUser(gOwner, 0, "Пользователь "+update.Message.From.FirstName+" "+update.Message.From.UserName+" открыл диалог.\nCообщение пользователя \n```\n"+update.Message.Text+"\n```\nРазрешите мне общаться с этим пользователем?", MENU_GET_ACCESS, 0, false, update.Message.Chat.ID)

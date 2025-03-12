@@ -9,7 +9,7 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/gocolly/colly/v2"
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/sashabaranov/go-openai"
 )
 
 func ProcessInitiative() {
@@ -35,7 +35,7 @@ func ProcessInitiative() {
 			for _, key := range keys {
 				chatItem = GetChatStateDB(ParseChatKeyID(key))
 				if chatItem.ChatID != 0 {
-					if rd <= chatItem.Inity && chatItem.AllowState == CHAT_ALLOW {
+					if rd <= chatItem.Inity && chatItem.AllowState == ChatAllow {
 						SetCurOperation("Processing initiative | go task", 0)
 						BotWaiting(chatItem.ChatID, 3)
 						FullPromt = nil

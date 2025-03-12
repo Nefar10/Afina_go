@@ -95,12 +95,12 @@ func GetChatStateDB(chatID int64) ChatState {
 	jsonStr, err = gRedisClient.Get("ChatState:" + strconv.FormatInt(chatID, 10)).Result()
 	if err != nil {
 		Log("Ошибка", ERR, err)
-		return ChatState{AllowState: CHAT_IN_PROCESS, ChatID: 0}
+		return ChatState{AllowState: ChatInProcess, ChatID: 0}
 	} else {
 		err = json.Unmarshal([]byte(jsonStr), &chatItem)
 		if err != nil {
 			SendToUser(gOwner, 0, gErr[14][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
-			return ChatState{AllowState: CHAT_IN_PROCESS, ChatID: 0}
+			return ChatState{AllowState: ChatInProcess, ChatID: 0}
 		} else {
 			return chatItem
 		}
@@ -207,25 +207,25 @@ func CheckChatRights(update tgbotapi.Update) {
 				SendToUser(gOwner, 0, gErr[14][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
 				return
 			}
-			if questItem.State == QUEST_IN_PROGRESS {
+			if questItem.State == QuestInProgress {
 				chatItem = GetChatStateDB(questItem.ChatID)
 				if chatItem.ChatID != 0 {
 					switch ansItem.State {
-					case CHAT_ALLOW:
+					case ChatAllow:
 						{
-							chatItem.AllowState = CHAT_ALLOW
+							chatItem.AllowState = ChatAllow
 							SendToUser(gOwner, 0, gIm[6][gLocale], MSG_INFO, 0, false)
 							SendToUser(chatItem.ChatID, 0, gIm[7][gLocale], MSG_INFO, 1, false)
 						}
-					case CHAT_DISALLOW:
+					case ChatDisallow:
 						{
-							chatItem.AllowState = CHAT_DISALLOW
+							chatItem.AllowState = ChatDisallow
 							SendToUser(gOwner, 0, gIm[8][gLocale], MSG_INFO, 0, false)
 							SendToUser(chatItem.ChatID, 0, gIm[9][gLocale], MSG_INFO, 1, false)
 						}
-					case CHAT_BLACKLIST:
+					case ChatBlacklist:
 						{
-							chatItem.AllowState = CHAT_BLACKLIST
+							chatItem.AllowState = ChatBlacklist
 							SendToUser(gOwner, 0, gIm[10][gLocale], MSG_INFO, 0, false)
 							SendToUser(chatItem.ChatID, 0, gIm[11][gLocale], MSG_INFO, 1, false)
 						}

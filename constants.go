@@ -8,40 +8,64 @@ import (
 	"github.com/go-redis/redis"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/google/uuid"
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/sashabaranov/go-openai"
 )
 
 const (
-	//Bot options from ENV
-	BOT_LOCALE_IN_OS  = "AFINA_LOCALE" //Localization
-	BOT_API_KEY_IN_OS = "TB_API_KEY"   //Bot API key
-	AI_API_KEYS_IN_OS = "AI_KEYS"      //API keys
-	AI_NAMES_IN_OS    = "AI_NAMES"     //AI names
-	AI_URLS_IN_OS     = "AI_URLS"      //AI names
-	AI_BM_IN_OS       = "AI_BM"        //AI base models
-	OWNER_IN_OS       = "OWNER"        //Owner's chat ID
-	BOT_NAME_IN_OS    = "AFINA_NAMES"  //Bot's names
-	BOT_GENDER_IN_OS  = "AFINA_GENDER" //Bot's gender
-	//DB connectore settings
-	REDIS_IN_OS      = "REDIS_IP"   //Redis ip address and port
-	REDIS_DB_IN_OS   = "REDIS_DB"   //Number DB in redis
-	REDIS_PASS_IN_OS = "REDIS_PASS" //Pass for redis
-	//Telegram bot settings
-	UPDATE_CONFIG_TIMEOUT = 60 //Some thing
-	MALE                  = 1  //Male gender
-	FEMALE                = 2  //Female gender
-	NEUTRAL               = 0  //Neutral gender
-	//Access statuses for chat rooms
-	CHAT_ALLOW      = 2 //Allow access to communicate with bot
-	CHAT_DISALLOW   = 0 //Denied access to communicate with bot
-	CHAT_IN_PROCESS = 1 //No access to communicate with bot
-	CHAT_BLACKLIST  = 3 //All access to bot is blocked
-	//Bot's states in chat rooms
-	BOT_SLEEP = 0 //Bot sleeps
-	BOT_RUN   = 1 //Bot lists a chat
-	//Temporary quest statuses
-	QUEST_IN_PROGRESS = 1 //Quest is'nt solved
-	QUEST_SOLVED      = 2 //Quest is solved
+	// BotLocaleInOs Localization data en/ru etc. in OS environment.
+	BotLocaleInOs = "AFINA_LOCALE"
+	// BotApiKeyInOs Telegram Bot API key in OS environment.
+	BotApiKeyInOs = "TB_API_KEY"
+	// AiApiKeysInOs List of API keys in OS environment.
+	AiApiKeysInOs = "AI_KEYS"
+	// AiNamesInOs List of AI names in OS environment.
+	AiNamesInOs = "AI_NAMES"
+	// AiUrlsInOs List of AI API URLs in OS environment.
+	AiUrlsInOs = "AI_URLS"
+	// AiBmInOs List of AI base models in OS environment.
+	AiBmInOs = "AI_BM"
+	// OwnerInOs Owner's telegram chat ID in OS environment.
+	OwnerInOs = "OWNER"
+	// BotNameInOs List of bot names in OS environment.
+	BotNameInOs = "AFINA_NAMES"
+	// BotGenderInOs Bot's gender data Male/Female/Neutral in OS environment
+	BotGenderInOs = "AFINA_GENDER"
+
+	// RedisInOs Redis ip address and port data in OS environment
+	RedisInOs = "REDIS_IP"
+	// RedisDbInOs Number of redis DB in OS environment
+	RedisDbInOs = "REDIS_DB" //Number DB in redis
+	// RedisPassInOs Password for redis in OS environment
+	RedisPassInOs = "REDIS_PASS" //Pass for redis
+
+	// UpdateConfigTimeout Some telegram client settings
+	UpdateConfigTimeout = 60
+
+	// Male Bot's gender
+	Male = 1
+	// Female Bot's gender
+	Female = 2
+	// Neutral Bot's gender
+	Neutral = 0
+
+	// ChatDisallow Chat status is disallowed - denied access to communicate with bot
+	ChatDisallow = 0
+	// ChatInProcess Chat status is undefined - request to communicate in progress. No access to communicate with bot
+	ChatInProcess = 1
+	// ChatAllow Chat status is allowed - allow access to communicate with bot
+	ChatAllow = 2
+	// ChatBlacklist Chat status is blocked - all access to bot is blocked
+	ChatBlacklist = 3
+
+	// BotSleep Bot's status is sleep - bot sleeps and only views all messages
+	BotSleep = 0
+	// BotRun Bot's status is run - bot lists and interacts with chat
+	BotRun = 1
+
+	// QuestInProgress Starus of request from bot - is not solved yet.
+	QuestInProgress = 1 //Quest is'nt solved
+	QUEST_SOLVED    = 2 //Quest is solved
+
 	//Called menu types
 	MSG_NOTHING        = 0  //Do nosting
 	MENU_GET_ACCESS    = 1  //Access query
@@ -94,6 +118,10 @@ const (
 	DOSEARCH    = 7
 	//VERSION
 	VER = "0.33.209"
+
+	//ERROR_CODES
+	ErrorCodeListModelsFailed = 18
+
 	//CHARAKTER TYPES
 	ISTJ = 1  // (Инспектор): Ответственный, организованный, практичный.
 	ISFJ = 2  // (Защитник): Заботливый, внимательный, преданный.
@@ -317,8 +345,8 @@ var gHsName = [][]openai.ChatCompletionMessage{{}} //Nulled prompt
 
 var gDefChatState = ChatState{
 	ChatID:      0,
-	BotState:    BOT_RUN,
-	AllowState:  CHAT_IN_PROCESS,
+	BotState:    BotRun,
+	AllowState:  ChatInProcess,
 	UserName:    "NoName",
 	Type:        "NoType",
 	Title:       "NoTitle",
