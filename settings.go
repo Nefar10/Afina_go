@@ -13,12 +13,9 @@ func SetChatStateDB(item ChatState) {
 	var jsonData []byte
 	var err error
 	SetCurOperation("Set chat state", 0)
-	if item.CharType < 1 {
-		item.CharType = ESFJ
-	}
 	jsonData, err = json.Marshal(item)
 	if err != nil {
-		SendToUser(gOwner, 0, gErr[11][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
+		SendToUser(gOwner, 0, gErr[11][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MsgError, 0, false)
 	} else {
 		DBWrite("ChatState:"+strconv.FormatInt(item.ChatID, 10), string(jsonData), 0)
 	}
@@ -30,7 +27,7 @@ func SetTuneChat(update tgbotapi.Update) {
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatItem = GetChatStateDB(ParseChatKeyID("ChatState:" + chatIDstr))
 	if chatItem.ChatID != 0 {
-		SendToUser(gOwner, 0, gIm[12][gLocale], MENU_TUNE_CHAT, 1, false, chatItem.ChatID)
+		SendToUser(gOwner, 0, gIm[12][gLocale], MenuTuneChat, 1, false, chatItem.ChatID)
 	}
 }
 
@@ -40,8 +37,8 @@ func SetBotStyle(update tgbotapi.Update) {
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatItem = GetChatStateDB(ParseChatKeyID("ChatState:" + chatIDstr))
 	if chatItem.ChatID != 0 {
-		chatItem.Bstyle, _ = strconv.Atoi(strings.Split(update.CallbackQuery.Data, "_ST:")[0])
-		SendToUser(gOwner, 0, "Выбран стиль общения "+gConversationStyle[chatItem.Bstyle].Name, MSG_INFO, 1, false)
+		chatItem.CStyle, _ = strconv.Atoi(strings.Split(update.CallbackQuery.Data, "_ST:")[0])
+		SendToUser(gOwner, 0, "Выбран стиль общения "+gConversationStyle[chatItem.CStyle].Name, MsgInfo, 1, false)
 		SetChatStateDB(chatItem)
 	}
 }
@@ -55,11 +52,11 @@ func SetBotCharacter(update tgbotapi.Update) {
 	if chatItem.ChatID != 0 {
 		intVal, err := strconv.Atoi(charValue)
 		if err != nil {
-			SendToUser(gOwner, 0, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
+			SendToUser(gOwner, 0, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MsgError, 0, false)
 		}
 		chatItem.CharType = byte(intVal)
 		SetChatStateDB(chatItem)
-		SendToUser(gOwner, 0, "Выбран тип характера: "+gCTDescr[gLocale][chatItem.CharType-1], MSG_INFO, 1, false, chatItem.ChatID)
+		SendToUser(gOwner, 0, "Выбран тип характера: "+gCharTypes[chatItem.CharType-1].Description[gLocale], MsgInfo, 1, false, chatItem.ChatID)
 	}
 }
 
@@ -69,15 +66,15 @@ func SetChatHistory(update tgbotapi.Update) {
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatItem = GetChatStateDB(ParseChatKeyID("ChatState:" + chatIDstr))
 	if chatItem.ChatID != 0 {
-		chatItem.SetState = HISTORY
+		chatItem.SetState = ParamHistory
 		gChangeSettings = chatItem.ChatID
 		SetChatStateDB(chatItem)
 		if len(chatItem.History) > 0 {
 			SendToUser(gOwner, 0, "**Текущая история базовая:**\n"+gHsBasePrompt[0].Prompt[gLocale][0].Content+"\n"+
-				"**Дополнитиельные факты:**\n"+chatItem.History[0].Content+"\nНапишите историю:", MSG_INFO, 1, false, chatItem.ChatID)
+				"**Дополнитиельные факты:**\n"+chatItem.History[0].Content+"\nНапишите историю:", MsgInfo, 1, false, chatItem.ChatID)
 		} else {
 			SendToUser(gOwner, 0, "**Текущая история базовая:**\n"+gHsBasePrompt[0].Prompt[gLocale][0].Content+"\n"+
-				"**Дополнитиельные факты:**\nНапишите историю:", MSG_INFO, 1, false, chatItem.ChatID)
+				"**Дополнитиельные факты:**\nНапишите историю:", MsgInfo, 1, false, chatItem.ChatID)
 		}
 	}
 }
@@ -88,10 +85,10 @@ func SetBotTemp(update tgbotapi.Update) {
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatItem = GetChatStateDB(ParseChatKeyID("ChatState:" + chatIDstr))
 	if chatItem.ChatID != 0 {
-		chatItem.SetState = TEMPERATURE
+		chatItem.SetState = ParamTemperature
 		gChangeSettings = chatItem.ChatID
 		SetChatStateDB(chatItem)
-		SendToUser(gOwner, 0, "Текущий уровень - "+strconv.Itoa(int(chatItem.Temperature*10))+"\nУкажите уровень экпрессии от 1 до 10", MSG_INFO, 1, false, chatItem.ChatID)
+		SendToUser(gOwner, 0, "Текущий уровень - "+strconv.Itoa(int(chatItem.Temperature*10))+"\nУкажите уровень экпрессии от 1 до 10", MsgInfo, 1, false, chatItem.ChatID)
 	}
 }
 
@@ -101,10 +98,10 @@ func SetBotInitiative(update tgbotapi.Update) {
 	chatIDstr := strings.Split(update.CallbackQuery.Data, " ")[1]
 	chatItem = GetChatStateDB(ParseChatKeyID("ChatState:" + chatIDstr))
 	if chatItem.ChatID != 0 {
-		chatItem.SetState = INITIATIVE
+		chatItem.SetState = ParamInitiative
 		gChangeSettings = chatItem.ChatID
 		SetChatStateDB(chatItem)
-		SendToUser(gOwner, 0, "Текущий уровень - "+strconv.Itoa(int(chatItem.Inity))+"\nУкажите степень инициативы от 0 до 10", MSG_INFO, 1, false, chatItem.ChatID)
+		SendToUser(gOwner, 0, "Текущий уровень - "+strconv.Itoa(int(chatItem.Inity))+"\nУкажите степень инициативы от 0 до 10", MsgInfo, 1, false, chatItem.ChatID)
 	}
 }
 
@@ -117,7 +114,7 @@ func SetTimeZone(update tgbotapi.Update) {
 	if chatItem.ChatID != 0 {
 		chatItem.TimeZone, _ = strconv.Atoi(strings.Split(update.CallbackQuery.Data, "_TZ:")[0])
 		SetChatStateDB(chatItem)
-		SendToUser(gOwner, 0, "Изменено на: "+gTimezones[chatItem.TimeZone], MSG_INFO, 1, false)
+		SendToUser(gOwner, 0, "Изменено на: "+gTimeZones[chatItem.TimeZone], MsgInfo, 1, false)
 		//log.Println(chatItem.IntFacts)
 	}
 }
@@ -129,9 +126,9 @@ func SetChatFacts(update tgbotapi.Update) {
 	chatItem = GetChatStateDB(ParseChatKeyID("ChatState:" + chatIDstr))
 	if chatItem.ChatID != 0 {
 		chatItem.InterFacts, _ = strconv.Atoi(strings.Split(update.CallbackQuery.Data, "_IF:")[0])
-		SendToUser(gOwner, 0, "Выбрана тема интересных фактов: "+gIntFacts[chatItem.InterFacts].Name, MSG_INFO, 1, false)
+		SendToUser(gOwner, 0, "Выбрана тема интересных фактов: "+gIntFacts[chatItem.InterFacts].Name, MsgInfo, 1, false)
 		SetChatStateDB(chatItem)
-		SendToUser(gOwner, 0, gIm[15][gLocale]+" "+chatIDstr, MSG_INFO, 1, false)
+		SendToUser(gOwner, 0, gIm[15][gLocale]+" "+chatIDstr, MsgInfo, 1, false)
 	}
 }
 
@@ -145,15 +142,15 @@ func SetBotModel(update tgbotapi.Update) {
 	if chatItem.ChatID != 0 {
 		modelID, err = strconv.Atoi(strings.Split(update.CallbackQuery.Data, ":")[1])
 		if err != nil {
-			SendToUser(gOwner, 0, "Ошибка определения ID модели", MSG_ERROR, 1, false)
+			SendToUser(gOwner, 0, "Ошибка определения ID модели", MsgError, 1, false)
 		}
-		chatItem.Model = gModels[modelID].AI_model_name
-		chatItem.AI_ID, err = strconv.Atoi(strings.Split(update.CallbackQuery.Data, ":")[2])
+		chatItem.Model = gModels[modelID].AiModelName
+		chatItem.AiId, err = strconv.Atoi(strings.Split(update.CallbackQuery.Data, ":")[2])
 		if err == nil {
 			SetChatStateDB(chatItem)
-			SendToUser(gOwner, 0, "Модель изменена на "+chatItem.Model+" от "+gAI[chatItem.AI_ID].AI_Name, MSG_INFO, 1, false)
+			SendToUser(gOwner, 0, "Модель изменена на "+chatItem.Model+" от "+gAI[chatItem.AiId].AiName, MsgInfo, 1, false)
 		} else {
-			SendToUser(gOwner, 0, "Ошибка определения ID нейросети", MSG_ERROR, 1, false)
+			SendToUser(gOwner, 0, "Ошибка определения ID нейросети", MsgError, 1, false)
 		}
 	}
 }
@@ -164,17 +161,17 @@ func SetChatSettings(chatItem ChatState, update tgbotapi.Update) {
 	SetCurOperation("Set chat settings", 0)
 	if chatItem.ChatID != 0 {
 		switch chatItem.SetState {
-		case HISTORY:
+		case ParamHistory:
 			{
 				chatItem.History = []openai.ChatCompletionMessage{
 					{Role: openai.ChatMessageRoleUser, Content: update.Message.Text},
 					{Role: openai.ChatMessageRoleAssistant, Content: "Принято!"}}
 			}
-		case TEMPERATURE:
+		case ParamTemperature:
 			{
 				temp, err = strconv.ParseFloat(update.Message.Text, 64)
 				if err != nil {
-					SendToUser(gOwner, 0, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
+					SendToUser(gOwner, 0, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MsgError, 0, false)
 					//log.Fatalln(err, E15[gLocale]+IM29[gLocale]+GetCurOperation())
 				} else {
 					chatItem.Temperature = float32(temp)
@@ -185,11 +182,11 @@ func SetChatSettings(chatItem ChatState, update tgbotapi.Update) {
 					chatItem.Temperature = chatItem.Temperature / 10
 				}
 			}
-		case INITIATIVE:
+		case ParamInitiative:
 			{
 				chatItem.Inity, err = strconv.Atoi(update.Message.Text)
 				if err != nil {
-					SendToUser(gOwner, 0, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
+					SendToUser(gOwner, 0, gErr[15][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MsgError, 0, false)
 					//log.Fatalln(err, E15[gLocale]+IM29[gLocale]+GetCurOperation())
 				}
 				if chatItem.Inity < 0 || chatItem.Inity > 1000 {
@@ -197,9 +194,9 @@ func SetChatSettings(chatItem ChatState, update tgbotapi.Update) {
 				}
 			}
 		}
-		chatItem.SetState = NO_ONE
+		chatItem.SetState = ParamNoOne
 		SetChatStateDB(chatItem)
-		SendToUser(gOwner, 0, "Принято!", MSG_INFO, 1, false)
+		SendToUser(gOwner, 0, "Принято!", MsgInfo, 1, false)
 		gChangeSettings = 0
 	}
 }

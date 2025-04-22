@@ -4,19 +4,19 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6b3b9b98-ba5b-4efd-9733-645f9158775b" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/Afina_go.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Afina_go.iml" afterDir="false" />
+    <list default="true" id="6b3b9b98-ba5b-4efd-9733-645f9158775b" name="Changes" comment="Refactoring">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vscode/launch.json" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/DButils.go" beforeDir="false" afterPath="$PROJECT_DIR$/DButils.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/activities.go" beforeDir="false" afterPath="$PROJECT_DIR$/activities.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/constants.go" beforeDir="false" afterPath="$PROJECT_DIR$/constants.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/deprecated/HLDS reader" beforeDir="false" afterPath="$PROJECT_DIR$/deprecated/HLDS reader" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/games.go" beforeDir="false" afterPath="$PROJECT_DIR$/games.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/menu.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/messages.go" beforeDir="false" afterPath="$PROJECT_DIR$/messages.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/misc.go" beforeDir="false" afterPath="$PROJECT_DIR$/misc.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/msgs/gErr.json" beforeDir="false" afterPath="$PROJECT_DIR$/msgs/gErr.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/settings.go" beforeDir="false" afterPath="$PROJECT_DIR$/settings.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -43,7 +43,7 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "Go Build.go build afina_go.executor": "Debug",
+    "Go Build.go build afina_go.executor": "Run",
     "Go Build.go build main.go.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
@@ -111,6 +111,10 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Refactoring" />
+    <option name="LAST_COMMIT_MESSAGE" value="Refactoring" />
   </component>
   <component name="VgoProject">
     <settings-migrated>true</settings-migrated>

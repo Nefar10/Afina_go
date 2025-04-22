@@ -47,9 +47,9 @@ func init() {
 	SetCurOperation("Environment initialization | Determining locale data", 1)
 	switch os.Getenv(BotLocaleInOs) {
 	case "Ru":
-		gLocale = 1
+		gLocale = LocaleRu
 	case "En":
-		gLocale = 0
+		gLocale = LocaleEn
 	default:
 		gLocale = 0
 	}
@@ -63,8 +63,8 @@ func init() {
 	gIntFacts, _ = loadCustomPrompts("prompts/gIntFacts.json")
 	gHsGame, _ = loadCustomPrompts("prompts/gHsGame.json")
 	gHsReaction, _ = loadCustomPrompts("prompts/gHsReaction.json")
-	gHsBasePrompt[0].Prompt[0][0].Content = fmt.Sprintf(gHsBasePrompt[0].Prompt[0][0].Content, VER)
-	gHsBasePrompt[0].Prompt[1][0].Content = fmt.Sprintf(gHsBasePrompt[0].Prompt[1][0].Content, VER)
+	gHsBasePrompt[0].Prompt[0][0].Content = fmt.Sprintf(gHsBasePrompt[0].Prompt[0][0].Content, Ver)
+	gHsBasePrompt[0].Prompt[1][0].Content = fmt.Sprintf(gHsBasePrompt[0].Prompt[1][0].Content, Ver)
 	//log.Println(gHsReaction)
 	//saveMsgs("msgs\\gBotReaction", gBotReaction)
 	gErr, _ = loadMsgs("msgs/gErr.json")
@@ -77,26 +77,26 @@ func init() {
 	SetCurOperation("Environment initialization | Reading bot API key", 1)
 	gToken = os.Getenv(BotApiKeyInOs)
 	if gToken == "" {
-		Log(gErr[1][gLocale]+BotApiKeyInOs+gIm[29][gLocale]+GetCurOperation(), CRIT, nil)
+		Log(gErr[1][gLocale]+BotApiKeyInOs+gIm[29][gLocale]+GetCurOperation(), ErrCritical, nil)
 	}
 
 	//Telegram bot init
 	SetCurOperation("Environment initialization | Connecting to telegram API", 1)
 	gBot, err = tgbotapi.NewBotAPI(gToken)
 	if err != nil {
-		Log(gErr[6][gLocale]+gIm[29][gLocale]+GetCurOperation(), CRIT, err)
+		Log(gErr[6][gLocale]+gIm[29][gLocale]+GetCurOperation(), ErrCritical, err)
 	} else {
 		if gVerboseLevel > 1 {
 			gBot.Debug = true
 		}
-		Log(gIm[30][gLocale]+gBot.Self.UserName, NOERR, nil)
+		Log(gIm[30][gLocale]+gBot.Self.UserName, ErrNo, nil)
 	}
 
 	//Read owner's chatID from OS env
 	SetCurOperation("Environment initialization | Owner determining", 1)
 	owner, err = strconv.ParseInt(os.Getenv(OwnerInOs), 10, 64)
 	if err != nil {
-		Log(gErr[2][gLocale]+OwnerInOs+gIm[29][gLocale]+GetCurOperation(), CRIT, err)
+		Log(gErr[2][gLocale]+OwnerInOs+gIm[29][gLocale]+GetCurOperation(), ErrCritical, err)
 	} else {
 		gOwner = owner //Storing owner's chat ID in variable
 		gChangeSettings = 0
@@ -113,19 +113,19 @@ func init() {
 	SetCurOperation("Environment initialization | Reading DB connection credentials data", 1)
 	gRedisIP = os.Getenv(RedisInOs)
 	if gRedisIP == "" {
-		SendToUser(gOwner, 0, gErr[3][gLocale]+RedisInOs+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
+		SendToUser(gOwner, 0, gErr[3][gLocale]+RedisInOs+gIm[29][gLocale]+GetCurOperation(), MsgError, 0, false)
 	}
 
 	//Redis password
 	gRedisPass = os.Getenv(RedisPassInOs)
 	if gRedisPass == "" {
-		SendToUser(gOwner, 0, gErr[4][gLocale]+RedisPassInOs+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
+		SendToUser(gOwner, 0, gErr[4][gLocale]+RedisPassInOs+gIm[29][gLocale]+GetCurOperation(), MsgError, 0, false)
 	}
 
 	//DB ID
 	db, err = strconv.Atoi(os.Getenv(RedisDbInOs))
 	if err != nil {
-		SendToUser(gOwner, 0, gErr[5][gLocale]+RedisDbInOs+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
+		SendToUser(gOwner, 0, gErr[5][gLocale]+RedisDbInOs+err.Error()+gIm[29][gLocale]+GetCurOperation(), MsgError, 0, false)
 	} else {
 		gRedisDB = db //Storing DB ID
 	}
@@ -142,7 +142,7 @@ func init() {
 	//Chek redis connection
 	err = redisPing(*gRedisClient)
 	if err != nil {
-		SendToUser(gOwner, 0, gErr[9][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
+		SendToUser(gOwner, 0, gErr[9][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MsgError, 0, false)
 	}
 
 	SetCurOperation("Environment initialization | Determining bot's name", 1)
@@ -150,7 +150,7 @@ func init() {
 	gBotNames = strings.Split(os.Getenv(BotNameInOs), ",")
 	if gBotNames[0] == "" {
 		gBotNames = gDefBotNames
-		SendToUser(gOwner, 0, gIm[1][gLocale]+BotNameInOs+gIm[29][gLocale]+GetCurOperation(), MSG_INFO, 0, false)
+		SendToUser(gOwner, 0, gIm[1][gLocale]+BotNameInOs+gIm[29][gLocale]+GetCurOperation(), MsgInfo, 0, false)
 	}
 
 	//Read bot gender from OS env adn character comletion with gender information
@@ -188,13 +188,13 @@ func init() {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 	for i, name := range ainames {
-		gAI = append(gAI, AI_params{AI_Name: name, AI_Token: tokens[i], AI_URL: urls[i], AI_BaseModel: basemodels[i]})
+		gAI = append(gAI, AiParams{AiName: name, AiToken: tokens[i], AiUrl: urls[i], AiBaseModel: basemodels[i]})
 		config := openai.DefaultConfig(tokens[i])
 		config.BaseURL = urls[i]
 		gClient = append(gClient, openai.NewClientWithConfig(config))
 		models, err := gClient[i].ListModels(ctx)
 		if err != nil {
-			SendToUser(gOwner, 0, gErr[ErrorCodeListModelsFailed][gLocale], MSG_INFO, 1, false)
+			SendToUser(gOwner, 0, gErr[ErrorCodeListModelsFailed][gLocale], MsgInfo, 1, false)
 			continue
 		} else {
 			for _, model := range models.Models {
@@ -202,20 +202,20 @@ func init() {
 				if strings.Contains(modelIDLower, "o1") || strings.Contains(modelIDLower, "4o") ||
 					strings.Contains(modelIDLower, "o3") || strings.Contains(modelIDLower, "deep") {
 					gSysMutex.Lock()
-					gModels = append(gModels, AI_Models{AI_ID: i, AI_model_name: model.ID})
+					gModels = append(gModels, AiModels{AiId: i, AiModelName: model.ID})
 					gSysMutex.Unlock()
 				}
 			}
 		}
 	}
 	if len(ainames) == 0 {
-		SendToUser(gOwner, 0, gErr[7][gLocale]+AiApiKeysInOs+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
+		SendToUser(gOwner, 0, gErr[7][gLocale]+AiApiKeysInOs+gIm[29][gLocale]+GetCurOperation(), MsgError, 0, false)
 	}
 	//gYaClient = yandexgpt.NewYandexGPTClientWithIAMToken("")
 
-	gClient_is_busy = false
+	gClientIsBusy = false
 	//Send init complete message to owner
-	SendToUser(gOwner, 0, fmt.Sprintf(gIm[3][gLocale]+" "+gIm[13][gLocale], VER), MSG_INFO, 5, true)
+	SendToUser(gOwner, 0, fmt.Sprintf(gIm[3][gLocale]+" "+gIm[13][gLocale], Ver), MsgInfo, 5, true)
 
 }
 

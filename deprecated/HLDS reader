@@ -6,16 +6,16 @@
 			}
 			conn, err := net.ListenUDP("udp", &addr)
 			if err != nil {
-				Log("Error creating UDP listener", ERR, err)
+				Log("Error creating UDP listener", Err, err)
 				os.Exit(1)
 			}
 			defer conn.Close()
-			Log("Listening on "+addr.String(), NOERR, nil)
+			Log("Listening on "+addr.String(), ERR_NO, nil)
 			buffer := make([]byte, 1024)
 			for {
 				n, _, err := conn.ReadFromUDP(buffer)
 				if err != nil {
-					fmt.Println("Error reading data:", ERR, err)
+					fmt.Println("Error reading data:", Err, err)
 					continue
 				}
 				//log.Println(string(buffer[33:n]))
@@ -199,14 +199,14 @@
 						chatItem = GetChatStateDB(-1002205274389)
 						CharPrmt := [2][]openai.ChatCompletionMessage{
 							{
-								{Role: openai.ChatMessageRoleUser, Content: "Important! Your personality type is " + gCT[chatItem.CharType-1]},
+								{Role: openai.ChatMessageRoleUser, Content: "Important! Your personality type is " + gCharType[chatItem.CharType-1]},
 							},
 							{
-								{Role: openai.ChatMessageRoleUser, Content: "Важно! Твой тип характера - " + gCT[chatItem.CharType-1]},
+								{Role: openai.ChatMessageRoleUser, Content: "Важно! Твой тип характера - " + gCharType[chatItem.CharType-1]},
 							},
 						}
 						FullPromt = nil
-						FullPromt = append(FullPromt, gConversationStyle[chatItem.Bstyle].Prompt[gLocale]...)
+						FullPromt = append(FullPromt, gConversationStyle[chatItem.CStyle].Prompt[gLocale]...)
 						FullPromt = append(FullPromt, gHsGender[gBotGender].Prompt[gLocale]...)
 						FullPromt = append(FullPromt, CharPrmt[gLocale]...)
 						FullPromt = append(FullPromt, chatItem.History...)
