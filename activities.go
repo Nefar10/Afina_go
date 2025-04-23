@@ -46,8 +46,8 @@ func ProcessInitiative() {
 						if gRand.Intn(50) == 0 {
 							LastMessages = append(LastMessages, gIntFacts[0].Prompt[gLocale][gRand.Intn(len(gIntFacts[0].Prompt[gLocale]))])
 						} else {
-							//LastMessages = append(LastMessages, gIntFacts[chatItem.InterFacts].Prompt[gLocale][gRand.Intn(len(gIntFacts[chatItem.InterFacts].Prompt[gLocale]))])
-							LastMessages = append(LastMessages, gIntFacts[chatItem.InterFacts].Prompt[gLocale][14])
+							LastMessages = append(LastMessages, gIntFacts[chatItem.InterFacts].Prompt[gLocale][gRand.Intn(len(gIntFacts[chatItem.InterFacts].Prompt[gLocale]))])
+							//LastMessages = append(LastMessages, gIntFacts[chatItem.InterFacts].Prompt[gLocale][14])
 						}
 						FullPromt = append(FullPromt, LastMessages...)
 						BotReaction = needFunction(LastMessages, chatItem)
