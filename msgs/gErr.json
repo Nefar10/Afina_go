@@ -1,10 +1,10 @@
 [
   [
-    "Telegram bot API key not forund in OS environment",
+    "Telegram bot API key not found in OS environment",
     "Не найден API ключ телеграмм бота в переменных окружения"
   ],
   [
-    "Telegram bot API key not forund in OS environment",
+    "Telegram bot API key not found in OS environment",
     "Не найден API ключ телеграмм бота в переменных окружения"
   ],
   [
@@ -20,7 +20,7 @@
     "Пароль к базе данных не найден в переменных окружения"
   ],
   [
-    "DB ID not forind or not valid in OS environment",
+    "DB ID not found or not valid in OS environment",
     "Идентификатор базы не найден в переменных окружения"
   ],
   [
@@ -28,7 +28,7 @@
     "Ошибка инициализации телеграмм бота"
   ],
   [
-    "OpenAI API tocken not found in OS environment",
+    "OpenAI API token not found in OS environment",
     "API ключ OpenAI не найден в перменных окружения"
   ],
   [
@@ -40,7 +40,7 @@
     "Ошибка подключения к базе данных"
   ],
   [
-    "Error writting to DB",
+    "Error writing to DB",
     "Ошибка записи в базу данных"
   ],
   [
@@ -56,11 +56,11 @@
     "Ошибка чтения знаяения ключа из базы данных"
   ],
   [
-    "Error json unmarshaling",
+    "Error json unmarshalling",
     "Ошибка парсинга Json"
   ],
   [
-    "Error convetring string to int",
+    "Error converting string to int",
     "Ошибка преобразования строки в число"
   ],
   [

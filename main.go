@@ -13,7 +13,7 @@ import (
 
 	"github.com/go-redis/redis"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/sashabaranov/go-openai"
 )
 
 func init() {
@@ -26,12 +26,14 @@ func init() {
 	for _, arg := range os.Args[1:] {
 		switch {
 		case arg == "-vvv":
+
 			gVerboseLevel = 3
 		case arg == "-vv":
 			gVerboseLevel = 2
 		case arg == "-v":
 			gVerboseLevel = 1
 		default:
+
 			gVerboseLevel = 0
 		}
 
@@ -43,11 +45,11 @@ func init() {
 
 	//Read localization setting from OS env
 	SetCurOperation("Environment initialization | Determining locale data", 1)
-	switch os.Getenv(BOT_LOCALE_IN_OS) {
+	switch os.Getenv(BotLocaleInOs) {
 	case "Ru":
-		gLocale = 1
+		gLocale = LocaleRu
 	case "En":
-		gLocale = 0
+		gLocale = LocaleEn
 	default:
 		gLocale = 0
 	}
@@ -61,8 +63,8 @@ func init() {
 	gIntFacts, _ = loadCustomPrompts("prompts/gIntFacts.json")
 	gHsGame, _ = loadCustomPrompts("prompts/gHsGame.json")
 	gHsReaction, _ = loadCustomPrompts("prompts/gHsReaction.json")
-	gHsBasePrompt[0].Prompt[0][0].Content = fmt.Sprintf(gHsBasePrompt[0].Prompt[0][0].Content, VER)
-	gHsBasePrompt[0].Prompt[1][0].Content = fmt.Sprintf(gHsBasePrompt[0].Prompt[1][0].Content, VER)
+	gHsBasePrompt[0].Prompt[0][0].Content = fmt.Sprintf(gHsBasePrompt[0].Prompt[0][0].Content, Ver)
+	gHsBasePrompt[0].Prompt[1][0].Content = fmt.Sprintf(gHsBasePrompt[0].Prompt[1][0].Content, Ver)
 	//log.Println(gHsReaction)
 	//saveMsgs("msgs\\gBotReaction", gBotReaction)
 	gErr, _ = loadMsgs("msgs/gErr.json")
@@ -73,30 +75,30 @@ func init() {
 
 	//Read bot API key from OS env
 	SetCurOperation("Environment initialization | Reading bot API key", 1)
-	gToken = os.Getenv(BOT_API_KEY_IN_OS)
+	gToken = os.Getenv(BotApiKeyInOs)
 	if gToken == "" {
-		Log(gErr[1][gLocale]+BOT_API_KEY_IN_OS+gIm[29][gLocale]+GetCurOperation(), CRIT, nil)
+		Log(gErr[1][gLocale]+BotApiKeyInOs+gIm[29][gLocale]+GetCurOperation(), ErrCritical, nil)
 	}
 
 	//Telegram bot init
-	SetCurOperation("Environment initialization | Connecting to telegramm API", 1)
+	SetCurOperation("Environment initialization | Connecting to telegram API", 1)
 	gBot, err = tgbotapi.NewBotAPI(gToken)
 	if err != nil {
-		Log(gErr[6][gLocale]+gIm[29][gLocale]+GetCurOperation(), CRIT, err)
+		Log(gErr[6][gLocale]+gIm[29][gLocale]+GetCurOperation(), ErrCritical, err)
 	} else {
 		if gVerboseLevel > 1 {
 			gBot.Debug = true
 		}
-		Log(gIm[30][gLocale]+gBot.Self.UserName, NOERR, nil)
+		Log(gIm[30][gLocale]+gBot.Self.UserName, ErrNo, nil)
 	}
 
 	//Read owner's chatID from OS env
 	SetCurOperation("Environment initialization | Owner determining", 1)
-	owner, err = strconv.ParseInt(os.Getenv(OWNER_IN_OS), 10, 64)
+	owner, err = strconv.ParseInt(os.Getenv(OwnerInOs), 10, 64)
 	if err != nil {
-		Log(gErr[2][gLocale]+OWNER_IN_OS+gIm[29][gLocale]+GetCurOperation(), CRIT, err)
+		Log(gErr[2][gLocale]+OwnerInOs+gIm[29][gLocale]+GetCurOperation(), ErrCritical, err)
 	} else {
-		gOwner = int64(owner) //Storing owner's chat ID in variable
+		gOwner = owner //Storing owner's chat ID in variable
 		gChangeSettings = 0
 	}
 
@@ -109,21 +111,21 @@ func init() {
 	//Read redis connector options from OS env
 	//Redis IP
 	SetCurOperation("Environment initialization | Reading DB connection credentials data", 1)
-	gRedisIP = os.Getenv(REDIS_IN_OS)
+	gRedisIP = os.Getenv(RedisInOs)
 	if gRedisIP == "" {
-		SendToUser(gOwner, 0, gErr[3][gLocale]+REDIS_IN_OS+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
+		SendToUser(gOwner, 0, gErr[3][gLocale]+RedisInOs+gIm[29][gLocale]+GetCurOperation(), MsgError, 0, false)
 	}
 
 	//Redis password
-	gRedisPass = os.Getenv(REDIS_PASS_IN_OS)
+	gRedisPass = os.Getenv(RedisPassInOs)
 	if gRedisPass == "" {
-		SendToUser(gOwner, 0, gErr[4][gLocale]+REDIS_PASS_IN_OS+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
+		SendToUser(gOwner, 0, gErr[4][gLocale]+RedisPassInOs+gIm[29][gLocale]+GetCurOperation(), MsgError, 0, false)
 	}
 
 	//DB ID
-	db, err = strconv.Atoi(os.Getenv(REDIS_DB_IN_OS))
+	db, err = strconv.Atoi(os.Getenv(RedisDbInOs))
 	if err != nil {
-		SendToUser(gOwner, 0, gErr[5][gLocale]+REDIS_DB_IN_OS+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
+		SendToUser(gOwner, 0, gErr[5][gLocale]+RedisDbInOs+err.Error()+gIm[29][gLocale]+GetCurOperation(), MsgError, 0, false)
 	} else {
 		gRedisDB = db //Storing DB ID
 	}
@@ -140,28 +142,28 @@ func init() {
 	//Chek redis connection
 	err = redisPing(*gRedisClient)
 	if err != nil {
-		SendToUser(gOwner, 0, gErr[9][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
+		SendToUser(gOwner, 0, gErr[9][gLocale]+err.Error()+gIm[29][gLocale]+GetCurOperation(), MsgError, 0, false)
 	}
 
 	SetCurOperation("Environment initialization | Determining bot's name", 1)
 	//Read bot names from OS env
-	gBotNames = strings.Split(os.Getenv(BOT_NAME_IN_OS), ",")
+	gBotNames = strings.Split(os.Getenv(BotNameInOs), ",")
 	if gBotNames[0] == "" {
 		gBotNames = gDefBotNames
-		SendToUser(gOwner, 0, gIm[1][gLocale]+BOT_NAME_IN_OS+gIm[29][gLocale]+GetCurOperation(), MSG_INFO, 0, false)
+		SendToUser(gOwner, 0, gIm[1][gLocale]+BotNameInOs+gIm[29][gLocale]+GetCurOperation(), MsgInfo, 0, false)
 	}
 
 	//Read bot gender from OS env adn character comletion with gender information
 	SetCurOperation("Environment initialization | Determining bot's gender", 1)
-	switch os.Getenv(BOT_GENDER_IN_OS) {
+	switch os.Getenv(BotGenderInOs) {
 	case "Male":
-		gBotGender = MALE
+		gBotGender = Male
 	case "Female":
-		gBotGender = FEMALE
+		gBotGender = Female
 	case "Neutral":
-		gBotGender = NEUTRAL
+		gBotGender = Neutral
 	default:
-		gBotGender = FEMALE
+		gBotGender = Female
 	}
 
 	//Bot naming prompt
@@ -178,39 +180,42 @@ func init() {
 
 	//Read OpenAI API token from OS env and creating connections
 	SetCurOperation("Environment initialization | Loading AI data", 1)
-	ainames := strings.Split(os.Getenv(AI_NAMES_IN_OS), ",")
-	tokens := strings.Split(os.Getenv(AI_API_KEYS_IN_OS), ",")
-	urls := strings.Split(os.Getenv(AI_URLS_IN_OS), ",")
-	basemodels := strings.Split(os.Getenv(AI_BM_IN_OS), ",")
+	ainames := strings.Split(os.Getenv(AiNamesInOs), ",")
+	tokens := strings.Split(os.Getenv(AiApiKeysInOs), ",")
+	urls := strings.Split(os.Getenv(AiUrlsInOs), ",")
+	basemodels := strings.Split(os.Getenv(AiBmInOs), ",")
 	gModels = nil
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
 	for i, name := range ainames {
-		gAI = append(gAI, AI_params{AI_Name: name, AI_Token: tokens[i], AI_URL: urls[i], AI_BaseModel: basemodels[i]})
+		gAI = append(gAI, AiParams{AiName: name, AiToken: tokens[i], AiUrl: urls[i], AiBaseModel: basemodels[i]})
 		config := openai.DefaultConfig(tokens[i])
 		config.BaseURL = urls[i]
 		gClient = append(gClient, openai.NewClientWithConfig(config))
-		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-		defer cancel()
-
 		models, err := gClient[i].ListModels(ctx)
 		if err != nil {
-			SendToUser(gOwner, 0, gErr[18][gLocale], MSG_INFO, 1, false)
+			SendToUser(gOwner, 0, gErr[ErrorCodeListModelsFailed][gLocale], MsgInfo, 1, false)
+			continue
 		} else {
 			for _, model := range models.Models {
-				if (strings.Contains(strings.ToLower(model.ID), "o1")) || (strings.Contains(strings.ToLower(model.ID), "4o")) ||
-					(strings.Contains(strings.ToLower(model.ID), "o3")) || (strings.Contains(strings.ToLower(model.ID), "deep")) {
-					gModels = append(gModels, AI_Models{AI_ID: i, AI_model_name: model.ID})
+				modelIDLower := strings.ToLower(model.ID)
+				if strings.Contains(modelIDLower, "o1") || strings.Contains(modelIDLower, "4o") ||
+					strings.Contains(modelIDLower, "o3") || strings.Contains(modelIDLower, "deep") {
+					gSysMutex.Lock()
+					gModels = append(gModels, AiModels{AiId: i, AiModelName: model.ID})
+					gSysMutex.Unlock()
 				}
 			}
 		}
 	}
 	if len(ainames) == 0 {
-		SendToUser(gOwner, 0, gErr[7][gLocale]+AI_API_KEYS_IN_OS+gIm[29][gLocale]+GetCurOperation(), MSG_ERROR, 0, false)
+		SendToUser(gOwner, 0, gErr[7][gLocale]+AiApiKeysInOs+gIm[29][gLocale]+GetCurOperation(), MsgError, 0, false)
 	}
 	//gYaClient = yandexgpt.NewYandexGPTClientWithIAMToken("")
 
-	gClient_is_busy = false
+	gClientIsBusy = false
 	//Send init complete message to owner
-	SendToUser(gOwner, 0, fmt.Sprintf(gIm[3][gLocale]+" "+gIm[13][gLocale], VER), MSG_INFO, 5, true)
+	SendToUser(gOwner, 0, fmt.Sprintf(gIm[3][gLocale]+" "+gIm[13][gLocale], Ver), MsgInfo, 5, true)
 
 }
 
@@ -249,7 +254,7 @@ func main() {
 	var updateQueue []tgbotapi.Update
 	var updateMutex sync.Mutex
 	updateConfig := tgbotapi.NewUpdate(0)
-	updateConfig.Timeout = UPDATE_CONFIG_TIMEOUT
+	updateConfig.Timeout = UpdateConfigTimeout
 	updates := gBot.GetUpdatesChan(updateConfig)
 
 	go func() {
