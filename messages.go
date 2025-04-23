@@ -34,7 +34,7 @@ func SendToUser(toChat int64, replyTo int, mesText string, quest int, ttl byte, 
 		FullPromt = append(FullPromt, []openai.ChatCompletionMessage{{Role: "user",
 			Content: "Перескажи в своем стиле, не упоминая об изменении стиля или пересказе: \n\n" + mesText}}...)
 		//log.Println(FullPromt)
-		mesText = SendRequest(FullPromt, chatItem)
+		mesText = SendRequest(FullPromt, chatItem, 0)
 		ChatMessages = append(ChatMessages, []openai.ChatCompletionMessage{{Role: "assistant", Content: mesText}}...)
 		UpdateDialog(toChat, ChatMessages)
 	}
@@ -450,7 +450,7 @@ func ProcessMessage(update tgbotapi.Update) {
 			switch BotReaction {
 			case DoCalculate:
 				{
-					resp = SendRequest(FullPromt, chatItem)
+					resp = SendRequest(FullPromt, chatItem, 0)
 					if resp != "" {
 						ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: resp})
 						ChatMessages = append(ChatMessages, openai.ChatCompletionMessage{
@@ -466,7 +466,7 @@ func ProcessMessage(update tgbotapi.Update) {
 						}
 
 						time.Sleep(5 * time.Second)
-						resp = SendRequest(FullPromt, chatItem)
+						resp = SendRequest(FullPromt, chatItem, 0)
 					}
 				}
 			case DoShowMenu, DoShowHistory, DoClearHistory, DoGame:
@@ -475,9 +475,9 @@ func ProcessMessage(update tgbotapi.Update) {
 				tmpMSGs := ProcessWebPage(LastMessages, chatItem)
 				FullPromt = append(FullPromt, tmpMSGs...)
 				ChatMessages = append(ChatMessages, tmpMSGs...)
-				resp = SendRequest(FullPromt, chatItem)
+				resp = SendRequest(FullPromt, chatItem, 0)
 			default:
-				resp = SendRequest(FullPromt, chatItem)
+				resp = SendRequest(FullPromt, chatItem, 0)
 			}
 			if (BotReaction <= DoCalculate || BotReaction == DoReadSite) && resp != "" {
 				msg.Text = resp

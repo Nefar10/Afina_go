@@ -46,8 +46,8 @@ func ProcessInitiative() {
 						if gRand.Intn(50) == 0 {
 							LastMessages = append(LastMessages, gIntFacts[0].Prompt[gLocale][gRand.Intn(len(gIntFacts[0].Prompt[gLocale]))])
 						} else {
-							LastMessages = append(LastMessages, gIntFacts[chatItem.InterFacts].Prompt[gLocale][gRand.Intn(len(gIntFacts[chatItem.InterFacts].Prompt[gLocale]))])
-							//LastMessages = append(LastMessages, gIntFacts[chatItem.InterFacts].Prompt[gLocale][17])
+							//LastMessages = append(LastMessages, gIntFacts[chatItem.InterFacts].Prompt[gLocale][gRand.Intn(len(gIntFacts[chatItem.InterFacts].Prompt[gLocale]))])
+							LastMessages = append(LastMessages, gIntFacts[chatItem.InterFacts].Prompt[gLocale][14])
 						}
 						FullPromt = append(FullPromt, LastMessages...)
 						BotReaction = needFunction(LastMessages, chatItem)
@@ -58,7 +58,7 @@ func ProcessInitiative() {
 							FullPromt = append(FullPromt, chatItem.History...)
 							FullPromt = append(FullPromt, tmpMSGs...)
 							ChatMessages = append(ChatMessages, tmpMSGs...)
-							resp = SendRequest(FullPromt, chatItem)
+							resp = SendRequest(FullPromt, chatItem, 0)
 						default:
 							switch {
 							case len(ChatMessages) > 1000:
@@ -76,7 +76,7 @@ func ProcessInitiative() {
 								}
 							}
 							FullPromt = append(LastMessages, FullPromt...)
-							resp = SendRequest(FullPromt, chatItem)
+							resp = SendRequest(FullPromt, chatItem, 0)
 						}
 						//log.Println(FullPromt)
 						if resp != "" {
@@ -106,7 +106,7 @@ func isMyReaction(messages []openai.ChatCompletionMessage, chatItem ChatState) b
 		FullPromt = append(FullPromt, messages...)
 	}
 	FullPromt = append(FullPromt, gHsReaction[0].Prompt[gLocale]...)
-	resp = SendRequest(FullPromt, ChatState{Model: gAI[chatItem.AiId].AiBaseModel, AiId: chatItem.AiId, Temperature: 0})
+	resp = SendRequest(FullPromt, ChatState{Model: gAI[chatItem.AiId].AiBaseModel, AiId: chatItem.AiId, Temperature: 0}, 4)
 	log.Println(resp)
 	if strings.Contains(resp, gBotReaction[0][gLocale]) {
 		result = true
@@ -126,7 +126,7 @@ func needFunction(messages []openai.ChatCompletionMessage, chatItem ChatState) b
 	FullPromt = append(FullPromt, messages[len(messages)-1])
 	FullPromt = append(FullPromt, gHsReaction[1].Prompt[gLocale]...)
 	//	log.Println(FullPromt)
-	resp = SendRequest(FullPromt, ChatState{Model: gAI[chatItem.AiId].AiBaseModel, AiId: chatItem.AiId, Temperature: 0})
+	resp = SendRequest(FullPromt, ChatState{Model: gAI[chatItem.AiId].AiBaseModel, AiId: chatItem.AiId, Temperature: 0}, 5)
 	if resp != "" {
 		log.Println(resp)
 		switch {
@@ -203,7 +203,7 @@ func ProcessWebPage(LastMessages []openai.ChatCompletionMessage, chatItem ChatSt
 	FullPromt = append(FullPromt, []openai.ChatCompletionMessage{
 		{Role: openai.ChatMessageRoleUser, Content: "Сформируй корректный url на запрошенную в предыдущем сообщении веб-страницу." +
 			"Если в ответе будет что-то кроме гиперссылки, то ты будешь серьезно оштафован и отключен."}}...)
-	resp = SendRequest(FullPromt, ChatState{Model: gAI[chatItem.AiId].AiBaseModel, Temperature: 0, AiId: chatItem.AiId})
+	resp = SendRequest(FullPromt, ChatState{Model: gAI[chatItem.AiId].AiBaseModel, Temperature: 0, AiId: chatItem.AiId}, 0)
 	if resp != "" {
 		URI = strings.Split(resp, "\n")[0]
 		URI = strings.Split(URI, " ")[0]

@@ -302,7 +302,7 @@ func sendHistory(chatID int64, ChatMessages []openai.ChatCompletionMessage) {
 	}
 }
 
-func SendRequest(FullPrompt []openai.ChatCompletionMessage, chatItem ChatState) string {
+func SendRequest(FullPrompt []openai.ChatCompletionMessage, chatItem ChatState, maxTokens int) string {
 	var resp openai.ChatCompletionResponse
 	var err error
 	//var YaFullprompt []yandexgpt.YandexGPTMessage
@@ -337,12 +337,16 @@ func SendRequest(FullPrompt []openai.ChatCompletionMessage, chatItem ChatState) 
 	gLastRequest = time.Now() //Запомним текущее время
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
+	if maxTokens == 0 {
+		maxTokens = 4096
+	}
 	resp, err = gClient[chatItem.AiId].CreateChatCompletion(
 		ctx,
 		openai.ChatCompletionRequest{
 			Model:       chatItem.Model, //"deepseek-chat", //"deepseek/deepseek-r1:free",
 			Temperature: chatItem.Temperature,
 			Messages:    FullPrompt,
+			MaxTokens:   maxTokens,
 		},
 	)
 	gAIMutex.Unlock()
