@@ -159,7 +159,7 @@ const (
 	DoSearch = 7
 
 	// Ver Code version.
-	Ver = "0.33.212"
+	Ver = "0.33.213"
 
 	// ErrorCodeListModelsFailed Fail to get list of ai-models.
 	ErrorCodeListModelsFailed = 18
